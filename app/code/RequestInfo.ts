@@ -23,12 +23,17 @@ export async function requestSingle(url: string): Promise<UInfo> {
     }
 
     const scrape = await scrapePage(sanitizedUrl);
-    const newInfo = {
+    const newInfo:UInfo = {
         url: scrape.url,
         hash: scrape.hash,
         title: scrape.title,
         summary: scrape.summary,
         image: scrape.image || "",
+        contentType: scrape.contentType || null,
+        duration: scrape.duration || null,
+        likes: scrape.likes || null,
+        authorName: scrape.authorName || null,
+        authorLink: scrape.authorLink || null,
         created: now,
         updated: now,
         checked: now,

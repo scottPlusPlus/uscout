@@ -4,11 +4,16 @@ import { PromiseQueues } from "./PromiseQueue.server";
 import { nowHHMMSS } from "./timeUtils";
 
 interface PageInfo {
-  url: string,
+  url: string;
   hash: string;
   title: string;
   summary: string;
   image?: string;
+  contentType?: string;
+  duration?: number;
+  likes?: number;
+  authorName?: string;
+  authorLink?: string;
 }
 
 const domainThrottle = new PromiseQueues();
