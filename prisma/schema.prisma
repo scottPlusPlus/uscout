@@ -13,6 +13,11 @@ model UInfo {
   title String
   summary String
   image String
+  contentType String?
+  duration Int?
+  likes Int?
+  authorName String?
+  authorLink String?
   
   created DateTime @default(now())
   updated DateTime @updatedAt

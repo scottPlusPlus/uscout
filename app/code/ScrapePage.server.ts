@@ -55,5 +55,11 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
     ?.getAttribute("content");
   const image = ogImage || twitterImage;
 
+  //TODO - if url is a youtube video
+  //set content type = Video
+  //call a separate function to scrape the video
+  //duration, likes, authorName, authorLink
+  //add all that to the output PageInfo
+
   return { url, hash, title, summary, image };
 }
