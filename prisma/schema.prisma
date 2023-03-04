@@ -1,3 +1,7 @@
+// CHEATSHEET
+// after updating the model, run `npx prisma migrate dev`
+// and `npx prisma generate`
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -22,6 +26,25 @@ model UInfo {
   created DateTime @default(now())
   updated DateTime @updatedAt
   checked DateTime @default(now())
+}
+
+model ItemModel {
+  id String @id
+  collection String
+  url String
+  comment String @default("")
+  tags String @default("")
+  priority Int @default(0)
+  created DateTime @default(now())
+  updated DateTime @updatedAt
+}
+
+model Collection {
+  id String @id @default(cuid())
+  title String @default("")
+  description String  @default("")
+  created DateTime @default(now())
+  updated DateTime @updatedAt
 }
 
 model User {
