@@ -1,7 +1,9 @@
+import { UInfo } from "@prisma/client";
 import { useState } from "react";
 import { Item, ItemFront } from "~/models/item.server";
+import Image3x2 from "./Image3x2";
 
-export default function EditableItem(props: { item: ItemFront, onSave:(arg0: ItemFront)=>void }) {
+export default function EditableItem(props: { item: ItemFront, info:UInfo, onSave:(arg0: ItemFront)=>void }) {
 
   const [editMode, setEditMode] = useState(false);
   const [editedItem, setEditedItem] = useState(props.item);
@@ -35,6 +37,7 @@ export default function EditableItem(props: { item: ItemFront, onSave:(arg0: Ite
     <div className="bg-gray-100 p-4 rounded-md shadow-md">
       <div className="mb-4">
         <a className="font-bold text-blue-700 mb-2" href={editedItem.url}>{editedItem.url}</a>
+        <Image3x2 src={props.info.image} />
       </div>
       <div className="mb-4">
         <label

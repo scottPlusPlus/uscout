@@ -13,6 +13,7 @@ generator client {
 
 model UInfo {
   url String @id
+  fullUrl String @default("")
   hash String
   title String
   summary String

@@ -17,15 +17,18 @@ export async function requestSingle(url: string): Promise<UInfo> {
 
     const existing = await UInfoModel.get(sanitizedUrl);
     if (existing){
+        console.log(sanitizedUrl + " already exists");
         if (existing.checked > twentyFourHoursAgo() ){
             console.log("returning cached info for " + sanitizedUrl);
             return existing;
         }
+        console.log("but I guess was too old?");
     }
 
     const scrape = await scrapePage(sanitizedUrl);
     const newInfo:UInfo = {
-        url: scrape.url,
+        url: sanitizedUrl,
+        fullUrl: scrape.url,
         hash: scrape.hash,
         title: scrape.title,
         summary: scrape.summary,

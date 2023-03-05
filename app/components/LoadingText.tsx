@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function LoadingText() {
+export default function LoadingText() {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
@@ -25,5 +25,3 @@ function LoadingText() {
     </>
   );
 }
-
-export default LoadingText;
