@@ -11,6 +11,8 @@ import ItemDisplay from "~/components/ItemDisplay";
 import { sanitizeUrl } from "~/code/urlUtils";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useEffect, useState } from "react";
+import CollectionDataDisplay from "~/components/CollectionDataDisplay";
+import { cleanCollectionType } from "~/code/modelUtils";
 
 type SearchTerm = {
   term:string,
@@ -36,6 +38,10 @@ export async function loader({ request, params }: LoaderArgs) {
 function remapPriorities(items:Item[], infoMap:Map<string, UInfo>, searchParams:SearchTerm[]){
   const prioritizedItems = items.map((item) => {
     searchParams.forEach(search => {
+      if (search.term.length == 0){
+        return;
+      }
+
       item.tags.forEach(tag => {
         if (tag.includes(search.term)){
           item.priority += (search.priority * 2);
@@ -88,6 +94,9 @@ export default function CollectionDetailsPage() {
     url.searchParams.forEach((value, key) => {
       initialSearchParams.push({term:key, priority:parseFloat(value)});
     });
+    if (initialSearchParams.length == 0){
+      initialSearchParams.push({term:"", priority:100});
+    }
     setSearchTerms(initialSearchParams);
     handleSearchUpdate(initialSearchParams);
   }, []);
@@ -100,6 +109,9 @@ export default function CollectionDetailsPage() {
       url.searchParams.delete(key);
     });
     newTerms.forEach(term => {
+      if (term.term.length == 0 || term.priority == 0){
+        return
+      }
       url.searchParams.set(term.term, term.priority.toString());
     });
     const newUrl = `${url.origin}${url.pathname}${url.search}`;
@@ -110,11 +122,13 @@ export default function CollectionDetailsPage() {
     }
 
     const prioritizedItems = remapPriorities(items, infoMap, newTerms,)
-    const sorted = prioritizedItems.sort((a, b)=> {
+    var sorted = prioritizedItems.sort((a, b)=> {
       return b.priority - a.priority;
     });
-    const sortedBla = sorted.map(item=> item.url);
-    //console.log("sorted: " + JSON.stringify(sortedBla));
+    if (sorted[0].priority > 0){
+      sorted = sorted.filter(i => i.priority > 0);
+    }
+
     setSortedItems(sorted);
     setSearchTerms(newTerms);
   }
@@ -128,13 +142,15 @@ export default function CollectionDetailsPage() {
   
   return (
     <div>
-      <h3 className="text-2xl font-bold">{data.collection.title}</h3>
-      <p className="py-6">{data.collection.description}</p>
+      <CollectionDataDisplay collection={cleanCollectionType(data.collection)}/>
       <DynamicInputFields searchTerms={searchTerms} onChange={handleSearchUpdate}/>
       <hr className="my-4" />
+      {sortedItems.length < items.length && (
+        <p>{items.length - sortedItems.length} Hidden Items</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {sortedItems.map(item => (
-       <ItemDisplay item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick}/>
+       <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick}/>
       ))}
     </div>
     </div>

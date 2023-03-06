@@ -42,6 +42,10 @@ export async function getUser(request: Request) {
   throw await logout(request);
 }
 
+/*
+* Checks if there is an active session for the user.
+* If NOT, automatically redirects the user to the login page
+*/
 export async function requireUserId(
   request: Request,
   redirectTo: string = new URL(request.url).pathname

@@ -1,8 +1,8 @@
-import type { ItemModel, UInfo } from "@prisma/client";
+import type { ItemModel } from "@prisma/client";
 import { sanitizeUrl } from "~/code/urlUtils";
 
 import { prisma } from "~/db.server";
-import { getCollection } from "./collection.server";
+import { actorMayUpdateCollection, getCollection } from "./collection.server";
 
 export type Item = {
   url: string;
@@ -51,10 +51,16 @@ function itemModelFromItem(input: Item): ItemModel {
 }
 
 export async function addItem(
+  actorId: string,
   collectionId: string,
   url: string
 ): Promise<Item> {
   console.log(`addItem ${collectionId} ${url}`);
+  const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
+  if (!mayUpdate) {
+    throw new Error("user does not have permissions");
+  }
+
   const collection = await getCollection(collectionId);
   if (!collection) {
     throw new Error("invalid collection id " + collectionId);
@@ -73,7 +79,16 @@ export async function addItem(
   return itemFromItemModel(x);
 }
 
-export async function updateItem(collectionId:string, input: ItemFront): Promise<Item> {
+export async function updateItem(
+  actorId: string,
+  collectionId: string,
+  input: ItemFront
+): Promise<Item> {
+  const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
+  if (!mayUpdate) {
+    throw new Error("user does not have permissions");
+  }
+
   const id = collectionId + input.url;
   const x = await prisma.itemModel.update({
     where: { id: id },

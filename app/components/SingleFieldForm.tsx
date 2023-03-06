@@ -1,20 +1,16 @@
 import { useState } from "react";
-
-const LABEL_CLASS = "block font-bold text-gray-700 mb-2";
-const INPUT_CLASS =
-    "border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2";
-const ERROR_CLASS = "text-red-500 text-sm italic mb-2";
-const SUBMIT_BUTTON_CLASS =
-    "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline";
+import { CSS_CLASSES } from "~/code/CssClasses";
 
 interface FormInputProps {
     name: string;
+    initialValue?: string;
+    inputType?: React.InputHTMLAttributes<HTMLInputElement>['type'];
     errors?: string;
     onSubmit: (value: string) => void;
 }
 
 export default function SingleFieldForm(props: FormInputProps) {
-    const [value, setValue] = useState("");
+    const [value, setValue] = useState(props.initialValue || "");
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValue(event.target.value);
@@ -27,20 +23,20 @@ export default function SingleFieldForm(props: FormInputProps) {
 
     return (
         <form className="bg-gray-100 rounded-md shadow-md p-4">
-            <label className={LABEL_CLASS} htmlFor={props.name}>
+            <label className={CSS_CLASSES.LABEL} htmlFor={props.name}>
                 {props.name.charAt(0).toUpperCase() + props.name.slice(1)}
             </label>
             <input
-                className={INPUT_CLASS}
-                type="text"
+                className={CSS_CLASSES.INPUT_FIELD}
+                type={props.inputType || "text"}
                 id={props.name}
                 name={props.name}
                 value={value}
                 onChange={handleInputChange}
             />
-            {props.errors && <p className={ERROR_CLASS}>{props.errors}</p>}
+            {props.errors && <p className={CSS_CLASSES.ERROR_CLASS}>{props.errors}</p>}
             <button
-                className={SUBMIT_BUTTON_CLASS}
+                className={CSS_CLASSES.SUBMIT_BUTTON}
                 type="submit"
                 onClick={handleSubmit}
             >
