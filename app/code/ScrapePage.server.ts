@@ -34,6 +34,9 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   const urlObj = new URL(urlStr);
   const domain = urlObj.hostname;
+  console.log(urlObj)
+  console.log("Hello World!")
+  console.log(domain)
 
   console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
   await domainThrottle.enqueue(domain);
@@ -66,5 +69,20 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   //duration, likes, authorName, authorLink
   //add all that to the output PageInfo
 
+  if (isYouTubeVideo(urlStr)) {
+    console.log("This is a youtube video")
+    const contentType = "Video"
+  }
+
   return { url, hash, title, summary, image };
+}
+
+function isYouTubeVideo(url: string) {
+  // Match YouTube watch URL format
+  const watchPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+
+  // Match YouTube short URL format
+  const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
+
+  return watchPattern.test(url) || shortPattern.test(url);
 }
