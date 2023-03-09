@@ -35,6 +35,9 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   const urlObj = new URL(urlStr);
   const domain = urlObj.hostname;
+  console.log(urlObj)
+  console.log("Hello World!")
+  console.log(domain)
 
   console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
   await domainThrottle.enqueue(domain);
@@ -66,6 +69,63 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   //call a separate function to scrape the video
   //duration, likes, authorName, authorLink
   //add all that to the output PageInfo
+  let contentType;
+  let authorLink;
+  let likes;
+  let authorName;
 
-  return { url, hash, title, summary, image };
+  if (isYouTubeVideo(urlStr)) {
+    let videoId = getVideoIdFromUrl(urlStr)
+    const scrapedVideoContent = await scrapeYouTubeVideo(videoId)
+    contentType = "Video"
+    authorLink = scrapedVideoContent.authorLink
+    likes = scrapedVideoContent.likes
+    authorName = scrapedVideoContent.authorName
+  }
+
+  return { url, hash, title, summary, image, contentType, authorLink, likes, authorName };
+}
+
+async function scrapeYouTubeVideo(videoId: string) {
+  const API_KEY = 'API_KEY';
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${API_KEY}`;
+
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+
+  console.log("Data: ", data)
+
+  const video = data.items[0];
+  // const duration = video.contentDetails.duration;
+  const likes = video.statistics.likeCount;
+  const authorName = video.snippet.channelTitle;
+  const authorLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
+  const contentType = "Video"
+
+  return {
+    // duration,
+    likes,
+    authorName,
+    authorLink,
+    contentType
+  };
+}
+
+function isYouTubeVideo(url: string) {
+  // Match YouTube watch URL format
+  const watchPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+
+  // Match YouTube short URL format
+  const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
+
+  return watchPattern.test(url) || shortPattern.test(url);
+}
+
+function getVideoIdFromUrl(url: string) {
+  const regex = /(?:\?v=|\/embed\/|\/watch\?v=|\/\w+\/\w+\/)([\w-]{11})/;
+  const match = url.match(regex);
+  if (match) {
+    return match[1];
+  }
+  return null;
 }
