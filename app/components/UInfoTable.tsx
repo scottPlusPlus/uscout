@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { UInfo } from "@prisma/client";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { CSS_CLASSES } from '~/code/CssClasses';
 dayjs.extend(relativeTime);
 
 type Props = {
   uinfos: UInfo[];
+  onDelete: (arg0: string)=>void;
 };
 
-export default function UInfoTable({ uinfos }: Props) {
+export default function UInfoTable({ uinfos, onDelete }: Props) {
 
   const cleanUInfos = uinfos.map((u) => {
     const copy = { ...u };
@@ -50,6 +52,14 @@ export default function UInfoTable({ uinfos }: Props) {
         <td className="px-4 py-2">{uinfo.hash.substring(0, 8)}...</td>
         <td className="px-4 py-2">{dayjs(uinfo.created).fromNow()}</td>
         <td className="px-4 py-2">{dayjs(uinfo.updated).fromNow()}</td>
+        <td className="px-4 py-2"> <button
+                className={CSS_CLASSES.SUBMIT_BUTTON}
+                type="submit"
+                onClick={()=>{onDelete(uinfo.url)}}
+            >
+                Delete
+            </button>
+            </td>
       </tr>
     ));
   };
@@ -95,6 +105,11 @@ export default function UInfoTable({ uinfos }: Props) {
               onClick={() => setSortBy('updated')}
             >
               Updated
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+            >
+              ...
             </th>
           </tr>
         </thead>

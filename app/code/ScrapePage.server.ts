@@ -76,13 +76,13 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   let authorName;
 
   if (isYouTubeVideo(urlStr)) {
-    let videoId = getVideoIdFromUrl(urlStr)
+    let videoId = getVideoIdFromUrl(urlStr);
     if (videoId){
-      const scrapedVideoContent = await scrapeYouTubeVideo(videoId)
-      contentType = "Video"
-      authorLink = scrapedVideoContent.authorLink
-      likes = scrapedVideoContent.likes
-      authorName = scrapedVideoContent.authorName
+      const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
+      contentType = "Video";
+      authorLink = scrapedVideoContent.authorLink;
+      likes = parseInt(scrapedVideoContent.likes);
+      authorName = scrapedVideoContent.authorName;
       console.log("author name = " + authorName);
     }
 
