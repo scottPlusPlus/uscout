@@ -34,10 +34,6 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   const urlObj = new URL(urlStr);
   const domain = urlObj.hostname;
-  console.log(urlObj)
-  console.log("Hello World!")
-  console.log(domain)
-
   console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
   await domainThrottle.enqueue(domain);
   console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
@@ -91,9 +87,6 @@ async function scrapeYouTubeVideo(videoId: string) {
 
   const response = await fetch(apiUrl);
   const data = await response.json();
-
-  console.log("Data: ", data)
-
   const video = data.items[0];
   // const duration = video.contentDetails.duration;
   const likes = video.statistics.likeCount;
