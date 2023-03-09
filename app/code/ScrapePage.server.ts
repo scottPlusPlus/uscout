@@ -17,6 +17,7 @@ interface PageInfo {
 }
 
 const domainThrottle = new PromiseQueues();
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
@@ -76,19 +77,22 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
 
   if (isYouTubeVideo(urlStr)) {
     let videoId = getVideoIdFromUrl(urlStr)
-    const scrapedVideoContent = await scrapeYouTubeVideo(videoId)
-    contentType = "Video"
-    authorLink = scrapedVideoContent.authorLink
-    likes = scrapedVideoContent.likes
-    authorName = scrapedVideoContent.authorName
+    if (videoId){
+      const scrapedVideoContent = await scrapeYouTubeVideo(videoId)
+      contentType = "Video"
+      authorLink = scrapedVideoContent.authorLink
+      likes = scrapedVideoContent.likes
+      authorName = scrapedVideoContent.authorName
+      console.log("author name = " + authorName);
+    }
+
   }
 
   return { url, hash, title, summary, image, contentType, authorLink, likes, authorName };
 }
 
 async function scrapeYouTubeVideo(videoId: string) {
-  const API_KEY = 'API_KEY';
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${API_KEY}`;
+  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`;
 
   const response = await fetch(apiUrl);
   const data = await response.json();
