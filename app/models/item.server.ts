@@ -1,4 +1,5 @@
 import type { ItemModel } from "@prisma/client";
+import { requestSingle } from "~/code/RequestInfo";
 import { sanitizeUrl } from "~/code/urlUtils";
 
 import { prisma } from "~/db.server";
@@ -69,6 +70,14 @@ export async function addItem(
   if (!sanitizedUrl) {
     throw new Error("invalid url " + sanitizedUrl);
   }
+
+  try {
+    const uInfo = await requestSingle(url);
+  } catch (err:any){
+    console.log("failed to get info for " + url + ":  " + err.message);
+    throw new Error("Sorry, we had an error with that url.  check server logs");
+  }
+
   const x = await prisma.itemModel.create({
     data: {
       id: collectionId + sanitizedUrl,

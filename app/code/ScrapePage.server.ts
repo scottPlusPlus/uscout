@@ -22,10 +22,11 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error) {
+  } catch (error:any) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
+      console.log("failed to fetch " + url + ":  " + error.message);
       throw error;
     }
   }

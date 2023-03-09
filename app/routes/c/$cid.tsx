@@ -8,7 +8,6 @@ import { getCollection } from "~/models/collection.server";
 import { getCollectionItems, Item } from "~/models/item.server";
 import { UInfo } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
-import { sanitizeUrl } from "~/code/urlUtils";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useEffect, useState } from "react";
 import CollectionDataDisplay from "~/components/CollectionDataDisplay";
@@ -125,7 +124,7 @@ export default function CollectionDetailsPage() {
     var sorted = prioritizedItems.sort((a, b)=> {
       return b.priority - a.priority;
     });
-    if (sorted[0].priority > 0){
+    if (sorted.length > 0 && sorted[0].priority > 0){
       sorted = sorted.filter(i => i.priority > 0);
     }
 

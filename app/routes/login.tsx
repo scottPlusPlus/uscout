@@ -50,6 +50,7 @@ export async function action({ request }: ActionArgs) {
     );
   }
 
+  console.log("returning createUserSession");
   return createUserSession({
     request,
     userId: user.id,

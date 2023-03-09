@@ -6,6 +6,8 @@ import { getUserById } from "~/models/user.server";
 
 invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 
+console.log("session secret = " + process.env.SESSION_SECRET);
+
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "__session",
@@ -13,7 +15,7 @@ export const sessionStorage = createCookieSessionStorage({
     path: "/",
     sameSite: "lax",
     secrets: [process.env.SESSION_SECRET],
-    secure: process.env.NODE_ENV === "production",
+    secure: false, //process.env.NODE_ENV === "production",
   },
 });
 
@@ -52,6 +54,7 @@ export async function requireUserId(
 ) {
   const userId = await getUserId(request);
   if (!userId) {
+    console.log("no user id, redirecting...");
     const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
     throw redirect(`/login?${searchParams}`);
   }
@@ -79,6 +82,7 @@ export async function createUserSession({
   redirectTo: string;
 }) {
   const session = await getSession(request);
+  console.log("setting User Sesson for " + userId);
   session.set(USER_SESSION_KEY, userId);
   return redirect(redirectTo, {
     headers: {

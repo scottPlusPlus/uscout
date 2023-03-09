@@ -7,7 +7,7 @@ export async function loader() {
 
   const startupCollection = await getCollection("startup");
   if (!startupCollection){
-    return redirect("/login");
+    return redirect("/me");
   }
 
   return redirect("/c/startup");
