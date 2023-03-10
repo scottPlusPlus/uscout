@@ -19,6 +19,7 @@ export default function SingleFieldForm(props: FormInputProps) {
     const handleSubmit = (event: { preventDefault: () => void; }) => {
         event.preventDefault();
         props.onSubmit(value);
+        setValue(props.initialValue || "");
     };
 
     return (

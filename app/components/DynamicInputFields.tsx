@@ -54,7 +54,7 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
                 name="field2"
                 value={term.priority}
                 onChange={(event) => handleInputChange(index, event)}
-                className="px-2 py-1 border rounded-md mr-2"
+                className="w-24 px-2 py-1 border rounded-md mr-2"
               />
               {index > 0 && (
                 <button type="button" onClick={() => handleRemoveFields(index)} className="px-2 py-1 rounded-md bg-red-500 text-white">

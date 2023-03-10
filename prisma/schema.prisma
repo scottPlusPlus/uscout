@@ -36,6 +36,7 @@ model ItemModel {
   comment String @default("")
   tags String @default("")
   priority Int @default(0)
+  status String @default("")
   created DateTime @default(now())
   updated DateTime @updatedAt
 }
