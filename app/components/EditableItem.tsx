@@ -14,6 +14,9 @@ export default function EditableItem(props: { item: ItemFront, info:UInfo, onSav
     if (name == "tags") {
       value = value.split(", ").map((v: string) => { return v.trim() });
     }
+    if (name == "priority") {
+      value = parseInt(value) || 0;
+    }
     setEditedItem((prevState) => ({
       ...prevState,
       [name]: value,
