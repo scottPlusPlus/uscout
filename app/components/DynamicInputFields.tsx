@@ -32,12 +32,11 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
   };
 
   return (
-    <div className="bg-gray-100">
       <div className="flex">
-        <div className="flex-none p-4">
+        <div className="flex-none">
           Search:
         </div>
-        <div className="flex-1 p-4">
+        <div className="flex-1 px-4">
           {props.searchTerms.map((term, index) => (
             <div key={index} className="flex items-center mb-2">
               <input
@@ -48,14 +47,14 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
                 onChange={(event) => handleInputChange(index, event)}
                 className="px-2 py-1 border rounded-md mr-2"
               />
-              <input
+              {/* <input
                 type="number"
                 placeholder="Enter Field 2"
                 name="field2"
                 value={term.priority}
                 onChange={(event) => handleInputChange(index, event)}
                 className="w-24 px-2 py-1 border rounded-md mr-2"
-              />
+              /> */}
               {index > 0 && (
                 <button type="button" onClick={() => handleRemoveFields(index)} className="px-2 py-1 rounded-md bg-red-500 text-white">
                   -
@@ -70,6 +69,5 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
           ))}
         </div>
       </div>
-    </div>
   );
 };

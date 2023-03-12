@@ -26,8 +26,6 @@ const ACTIONS = {
   MAKE_SUGGESTION: "suggestion"
 }
 
-const SHOW_PENDNG = "p";
-
 //Remix Action
 export async function action({ request, params }: ActionArgs) {
   invariant(params.cid, "cid not found");
@@ -40,14 +38,14 @@ export async function action({ request, params }: ActionArgs) {
     try {
       const itemUrl = getStringOrThrow(formData, "itemUrl");
       await suggestItem(params.cid, itemUrl);
-      return json({ suggestSuccess: true, suggestError:null },);
-    } catch (err:any){
+      return json({ suggestSuccess: true, suggestError: null },);
+    } catch (err: any) {
       const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
       return json({ suggestSuccess: false, suggestError: errMsg },);
     }
 
   } else {
-      throw new Error("invalid actionType " + aType);
+    throw new Error("invalid actionType " + aType);
   }
 
   return json({});;
@@ -110,13 +108,19 @@ export default function CollectionDetailsPage() {
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
   var actionData = null;
-  if (ad){
+  if (ad) {
     actionData = JSON.parse(JSON.stringify(ad));
+    console.log("have actionData: " + actionData.suggestSuccess);
   }
 
   const loadedItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
   });
+  const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
+  const pendingCount = loadedItems.filter(item => item.status == "pending").length;
+
+  // console.log(`Have ${loadedItems.length} loaded items`);
+  // console.log("loadedUrls: " + loadedItemUrls);
 
   const infoMap = new Map<string, UInfo>();
   data.infos.forEach(info => {
@@ -133,25 +137,21 @@ export default function CollectionDetailsPage() {
 
   useEffect(() => {
     //on first load
+    console.log("on first load...");
     const url = new URL(window.location.href);
     console.log("got first url");
     const initialSearchParams: SearchTerm[] = [];
-    var doShowPending = false;
     url.searchParams.forEach((value, key) => {
-      if (key == SHOW_PENDNG) {
-        doShowPending = true;
-        return;
-      }
       initialSearchParams.push({ term: key, priority: parseFloat(value) });
     });
     if (initialSearchParams.length == 0) {
       initialSearchParams.push({ term: "", priority: 100 });
     }
     setSearchTerms(initialSearchParams);
-    handleSearchUpdate(initialSearchParams, doShowPending);
-  }, []);
+    handleSearchUpdate(initialSearchParams, showPending);
+  }, [loadedItemUrls]);
 
-  const handleSearchUpdate = (newTerms: SearchTerm[], newShowPending:Boolean) => {
+  const handleSearchUpdate = (newTerms: SearchTerm[], newShowPending: Boolean) => {
     console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
     const url = new URL(window.location.href);
@@ -171,7 +171,7 @@ export default function CollectionDetailsPage() {
       window.history.pushState({}, '', newUrl);
     }
     var shownItems = loadedItems;
-    if (!newShowPending){
+    if (!newShowPending) {
       shownItems = shownItems.filter(item => item.status != "pending");
     }
 
@@ -179,7 +179,7 @@ export default function CollectionDetailsPage() {
     var sorted = prioritizedItems.sort((a, b) => {
       return b.priority - a.priority;
     });
-    if (sorted.length > 0 && sorted[0].priority > 0) {
+    if (sorted.length > 0 && newTerms[0].term.length > 0) {
       sorted = sorted.filter(i => i.priority > 0);
     }
 
@@ -194,11 +194,12 @@ export default function CollectionDetailsPage() {
     newTerms.push({ term: tag, priority: 100 });
     handleSearchUpdate(newTerms, showPending);
   }
-  
-  const handleAddSugestion = (suggestion:string) => {
+
+  const handleAddSugestion = (suggestion: string) => {
     const formData = new FormData(formRef.current || undefined)
     formData.set(ACTIONS.TYPE_FIELD, ACTIONS.MAKE_SUGGESTION);
     formData.set("itemUrl", suggestion);
+    handleSearchUpdate(searchTerms, true);
     submit(formData, { method: "post" });
   }
 
@@ -207,30 +208,43 @@ export default function CollectionDetailsPage() {
     handleSearchUpdate(searchTerms, !showPending);
   }
 
+  const hiddenItemMsg = () => {
+    var count = () => {
+      if (showPending) {
+        return loadedItems.length - sortedItems.length;
+      }
+      return (loadedItems.length - pendingCount) - sortedItems.length;
+    }
+    if (count() <= 0) {
+      return null;
+    }
+    return (<p>{count()} Hidden Items</p>)
+  }
+
   return (
     <div>
       <CollectionDataDisplay collection={cleanCollectionType(data.collection)} />
-      <DynamicInputFields searchTerms={searchTerms} onChange={(x)=>{handleSearchUpdate(x, showPending)}} />
-      <hr className="my-4" />
-      {sortedItems.length < loadedItems.length && (
-        <p>{loadedItems.length - sortedItems.length} Hidden Items</p>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {sortedItems.map(item => (
-          <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} />
-        ))}
+      <div className={CSS_CLASSES.SECTION_BG}>
+        <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
       </div>
-      <div>
-      <SingleFieldForm name={"Suggest a Url"} errors={actionData?.suggestError} onSubmit={handleAddSugestion} />
-      <button
-                className={CSS_CLASSES.SUBMIT_BUTTON}
-                type="button"
-                onClick={handleTogglePending}
-            >
-                {!showPending ? "Show Pending" : "Hide Pending"}
-            </button>
+      <div className="py-4">
+        {hiddenItemMsg()}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {sortedItems.map(item => (
+            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} />
+          ))}
+        </div>
       </div>
-
+      <div className={CSS_CLASSES.SECTION_BG}>
+        <SingleFieldForm name={"Suggest a Url"} errors={actionData?.suggestError} onSubmit={handleAddSugestion} />
+        <button
+          className={CSS_CLASSES.SUBMIT_BUTTON}
+          type="button"
+          onClick={handleTogglePending}
+        >
+          {!showPending ? "Show Pending" : "Hide Pending"}
+        </button>
+      </div>
       <Form ref={formRef} className="invisible"></Form>
     </div>
   );

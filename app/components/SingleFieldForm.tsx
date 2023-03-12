@@ -23,7 +23,7 @@ export default function SingleFieldForm(props: FormInputProps) {
     };
 
     return (
-        <form className="bg-gray-100 rounded-md shadow-md p-4">
+        <form>
             <label className={CSS_CLASSES.LABEL} htmlFor={props.name}>
                 {props.name.charAt(0).toUpperCase() + props.name.slice(1)}
             </label>
