@@ -68,7 +68,12 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[]) {
+function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive:Boolean=false) {
+  
+  const includes = (strA:string, strB:string) => {
+    return strA.toLowerCase().includes(strB.toLowerCase());
+  }
+  
   const prioritizedItems = items.map((item) => {
     searchParams.forEach(search => {
       if (search.term.length == 0) {
@@ -76,23 +81,23 @@ function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParam
       }
 
       item.tags.forEach(tag => {
-        if (tag.includes(search.term)) {
+        if (includes(tag, search.term)) {
           item.priority += (search.priority * 2);
         }
       });
 
-      if (item.comment.includes(search.term)) {
+      if (includes(item.comment, search.term)) {
         item.priority += search.priority
       }
-      if (item.url.includes(search.term)) {
+      if (includes(item.url, search.term)) {
         item.priority += search.priority;
       }
 
       const info = infoMap.get(item.url)!;
-      if (info.title.includes(search.term)) {
+      if (includes(info.title, search.term)) {
         item.priority += search.priority;
       }
-      if (info.summary.includes(search.term)) {
+      if (includes(info.summary, search.term)) {
         item.priority += search.priority;
       }
     });
@@ -175,11 +180,14 @@ export default function CollectionDetailsPage() {
       shownItems = shownItems.filter(item => item.status != "pending");
     }
 
-    const prioritizedItems = remapPriorities(shownItems, infoMap, newTerms,)
+    const validTerms = newTerms.filter(term => {
+      return term.term.length > 0
+    });
+    const prioritizedItems = remapPriorities(shownItems, infoMap, validTerms)
     var sorted = prioritizedItems.sort((a, b) => {
       return b.priority - a.priority;
     });
-    if (sorted.length > 0 && newTerms[0].term.length > 0) {
+    if (sorted.length > 0 && validTerms.length > 0) {
       sorted = sorted.filter(i => i.priority > 0);
     }
 

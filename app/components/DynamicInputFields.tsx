@@ -27,7 +27,11 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
 
   const handleRemoveFields = (index: number) => {
     const terms = [...props.searchTerms];
-    terms.splice(index, 1);
+    if (props.searchTerms.length > 1){
+      terms.splice(index, 1);      
+    } else {
+      terms[0].term = "";
+    }
     props.onChange(terms);
   };
 
@@ -55,13 +59,13 @@ export default function DynamicInputFields(props: { searchTerms: SearchTerm[], o
                 onChange={(event) => handleInputChange(index, event)}
                 className="w-24 px-2 py-1 border rounded-md mr-2"
               /> */}
-              {index > 0 && (
-                <button type="button" onClick={() => handleRemoveFields(index)} className="px-2 py-1 rounded-md bg-red-500 text-white">
+              {(props.searchTerms.length > 1 || term.term.length > 0) && (
+                <button type="button" onClick={() => handleRemoveFields(index)} className="px-4 py-1 rounded-md bg-red-500 text-white">
                   -
                 </button>
               )}
-              {index == props.searchTerms.length - 1 && (
-                <button type="button" onClick={() => handleAddFields()} className="px-2 py-1 rounded-md bg-green-500 text-white">
+              {(index == props.searchTerms.length - 1) && (
+                <button type="button" onClick={() => handleAddFields()} className="px-4 py-1 rounded-md bg-green-500 text-white">
                   +
                 </button>
               )}
