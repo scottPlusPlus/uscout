@@ -8,7 +8,7 @@ export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTag
     // console.log("info:  " + JSON.stringify(props.info));
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
-            <a href={props.info.fullUrl} target="_blank" rel="noreferrer">
+            <a href={props.info.fullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">
@@ -17,7 +17,7 @@ export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTag
                 <p className="text-gray-700 text-base">- - - - - </p>
                 <p className="text-gray-700 text-base">{props.item.comment}</p>
                 {
-                    props.item.status && (
+                    props.item.status == "pending" && (
                         <button key={"pending"} className={CSS_CLASSES.ITEM_TAG}>
                             {"pending"}
                         </button>

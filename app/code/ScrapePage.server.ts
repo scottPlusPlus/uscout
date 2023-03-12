@@ -2,6 +2,7 @@ import { parse } from "node-html-parser";
 import { createHash } from "crypto";
 import { PromiseQueues } from "./PromiseQueue.server";
 import { nowHHMMSS } from "./timeUtils";
+import getScreenshot from "./ScreenshotService.server";
 
 interface PageInfo {
   url: string;
@@ -63,7 +64,10 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   const twitterImage = root
     .querySelector('meta[name="twitter:image"]')
     ?.getAttribute("content");
-  const image = ogImage || twitterImage;
+  var image = ogImage || twitterImage;
+  if(!image){
+    image = await getScreenshot(url);
+  }
 
   //TODO - if url is a youtube video
   //set content type = Video

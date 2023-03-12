@@ -12,7 +12,7 @@ export default function EditableItem(props: { item: ItemFront, info:UInfo, onSav
   const handleInputChange = (event: { target: { name: any; value: any; }; }) => {
     var { name, value } = event.target;
     if (name == "tags") {
-      value = value.split(",").map((v: string) => { return v.trim() });
+      value = value.split(", ").map((v: string) => { return v.trim() });
     }
     setEditedItem((prevState) => ({
       ...prevState,
@@ -34,7 +34,7 @@ export default function EditableItem(props: { item: ItemFront, info:UInfo, onSav
   return (
     <div className="bg-gray-100 p-4 rounded-md shadow-md">
       <div className="mb-4">
-        <a className="font-bold text-blue-700 mb-2" href={editedItem.url}>{editedItem.url}</a>
+        <a className="font-bold text-blue-700 mb-2" href={props.info.fullUrl}>{editedItem.url}</a>
         <Image3x2 src={props.info.image} />
       </div>
       <div className="mb-4">
