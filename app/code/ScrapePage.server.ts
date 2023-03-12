@@ -15,8 +15,16 @@ interface PageInfo {
   authorName?: string
   authorLink?: string
   subRedditName?: string
-  redditPostId?: string
+  redditPostId?: number
   redditPostTitle?: string
+  posterUsername?: string
+  postThumbnail?: string
+  postVotes?: number
+  postCreationDate?: Date
+  postText?: string
+  redditAuthorName?: string
+  postCreationTime?: number
+  commentCount?: object
 }
 
 const domainThrottle = new PromiseQueues()
@@ -135,7 +143,18 @@ async function scrapePageImpl (urlStr: string): Promise<PageInfo> {
     contentType,
     authorLink,
     likes,
-    authorName
+    authorName,
+    subRedditName,
+    redditPostId,
+    redditPostTitle,
+    posterUsername,
+    postThumbnail,
+    postVotes,
+    postCreationDate,
+    postText,
+    redditAuthorName,
+    postCreationTime,
+    commentCount
   }
 }
 
