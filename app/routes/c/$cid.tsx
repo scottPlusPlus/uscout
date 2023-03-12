@@ -15,6 +15,7 @@ import { cleanCollectionType } from "~/code/modelUtils";
 import SingleFieldForm from "~/components/SingleFieldForm";
 import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
+import TagCloud from "~/components/TagCloud";
 
 type SearchTerm = {
   term: string,
@@ -68,7 +69,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive:Boolean=false) {
+function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive:Boolean=false): Item[] {
   
   const includes = (strA:string, strB:string) => {
     return strA.toLowerCase().includes(strB.toLowerCase());
@@ -82,7 +83,7 @@ function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParam
 
       item.tags.forEach(tag => {
         if (includes(tag, search.term)) {
-          item.priority += (search.priority * 2);
+          item.priority += (search.priority * 5);
         }
       });
 
@@ -140,6 +141,8 @@ export default function CollectionDetailsPage() {
   const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
 
+  const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+
   useEffect(() => {
     //on first load
     console.log("on first load...");
@@ -188,7 +191,7 @@ export default function CollectionDetailsPage() {
       return b.priority - a.priority;
     });
     if (sorted.length > 0 && validTerms.length > 0) {
-      sorted = sorted.filter(i => i.priority > 0);
+      sorted = sorted.filter(i => i.priority > 50);
     }
 
     setSortedItems(sorted);
@@ -234,15 +237,18 @@ export default function CollectionDetailsPage() {
       <CollectionDataDisplay collection={cleanCollectionType(data.collection)} />
       <div className={CSS_CLASSES.SECTION_BG}>
         <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
-      </div>
-      <div className="py-4">
+        <TagCloud items={itemsToCountTags} onTagClick={handleTagClick}/>
         {hiddenItemMsg()}
+      </div>
+
+      <div className="py-4">        
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
             <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} />
           ))}
         </div>
       </div>
+      
       <div className={CSS_CLASSES.SECTION_BG}>
         <SingleFieldForm name={"Suggest a Url"} errors={actionData?.suggestError} onSubmit={handleAddSugestion} />
         <button
