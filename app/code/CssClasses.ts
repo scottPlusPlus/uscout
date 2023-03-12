@@ -8,5 +8,5 @@ export const CSS_CLASSES = {
   CANCEL_BUTTON:
     "bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
   ITEM_TAG: "inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mt-2",
-  SECTION_BG: "bg-gray-100 rounded-md shadow-md p-4",  
+  SECTION_BG: "bg-gray-100 rounded-md shadow-md p-4", 
 };

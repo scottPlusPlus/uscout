@@ -158,6 +158,8 @@ export async function updateItem(
     throw new Error("user does not have permissions");
   }
 
+  console.log("Update Item: " + JSON.stringify(input));
+
   const id = collectionId + input.url;
   const x = await prisma.itemModel.update({
     where: { id: id },
@@ -165,6 +167,7 @@ export async function updateItem(
       comment: input.comment,
       tags: JSON.stringify(input.tags),
       priority: input.priority,
+      status: input.status,
     },
   });
   const res = itemFromItemModel(x);
