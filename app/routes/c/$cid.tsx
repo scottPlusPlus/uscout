@@ -2,6 +2,7 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useSubmit } from "@remix-run/react";
 import { requestMany } from "~/code/RequestInfo";
+import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
 import { getCollection } from "~/models/collection.server";
@@ -9,13 +10,14 @@ import { getCollectionItems, Item, suggestItem } from "~/models/item.server";
 import { UInfo } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CollectionDataDisplay from "~/components/CollectionDataDisplay";
 import { cleanCollectionType } from "~/code/modelUtils";
 import SingleFieldForm from "~/components/SingleFieldForm";
 import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import TagCloud from "~/components/TagCloud";
+import sendAnalyticEvent from "~/code/front/analyticUtils";
 
 type SearchTerm = {
   term: string,
@@ -69,12 +71,12 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive:Boolean=false): Item[] {
-  
-  const includes = (strA:string, strB:string) => {
+function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive: Boolean = false): Item[] {
+
+  const includes = (strA: string, strB: string) => {
     return strA.toLowerCase().includes(strB.toLowerCase());
   }
-  
+
   const prioritizedItems = items.map((item) => {
     searchParams.forEach(search => {
       if (search.term.length == 0) {
@@ -159,6 +161,11 @@ export default function CollectionDetailsPage() {
     handleSearchUpdate(initialSearchParams, showPending);
   }, [loadedItemUrls]);
 
+  const debouncedOnChange = useCallback(
+    debounce((newUrl) => {
+      sendAnalyticEvent("search", newUrl);
+    }, 500, { trailing: true }), []);
+
   const handleSearchUpdate = (newTerms: SearchTerm[], newShowPending: Boolean) => {
     console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
@@ -183,6 +190,9 @@ export default function CollectionDetailsPage() {
       shownItems = shownItems.filter(item => item.status != "pending");
     }
 
+    //send analytic event if no change in 1/2 second
+    debouncedOnChange(`${url.pathname}${url.search}`);
+
     const validTerms = newTerms.filter(term => {
       return term.term.length > 0
     });
@@ -204,6 +214,10 @@ export default function CollectionDetailsPage() {
     const newTerms = [...searchTerms];
     newTerms.push({ term: tag, priority: 100 });
     handleSearchUpdate(newTerms, showPending);
+  }
+
+  const handleLinkClick = (linkUrl:string) => {
+    sendAnalyticEvent("link", linkUrl);
   }
 
   const handleAddSugestion = (suggestion: string) => {
@@ -237,18 +251,18 @@ export default function CollectionDetailsPage() {
       <CollectionDataDisplay collection={cleanCollectionType(data.collection)} />
       <div className={CSS_CLASSES.SECTION_BG}>
         <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
-        <TagCloud items={itemsToCountTags} onTagClick={handleTagClick}/>
+        <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
         {hiddenItemMsg()}
       </div>
 
-      <div className="py-4">        
+      <div className="py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} />
+            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} />
           ))}
         </div>
       </div>
-      
+
       <div className={CSS_CLASSES.SECTION_BG}>
         <SingleFieldForm name={"Suggest a Url"} errors={actionData?.suggestError} onSubmit={handleAddSugestion} />
         <button
