@@ -1,5 +1,5 @@
 export async function scrapeYouTubeVideo(videoId: string) {
-    const API_KEY = 'AIzaSyBg9sAY8yzV_rYh03dgZd_zfeX0L4LgNr4'
+    const API_KEY = ''
     const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${API_KEY}`
 
     const response = await fetch(apiUrl)
