@@ -7,6 +7,9 @@ ENV NODE_ENV production
 # Install openssl for Prisma
 RUN apt-get update && apt-get install -y openssl sqlite3
 
+#install Prisma
+RUN npm install -g prisma@4.11.0
+
 # Install all node_modules, including dev dependencies
 FROM base as deps
 
@@ -58,4 +61,8 @@ COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/start.sh /myapp/start.sh
 COPY --from=build /myapp/prisma /myapp/prisma
 
-ENTRYPOINT [ "./start.sh" ]
+# Expose port 80 for incoming traffic
+EXPOSE 8080
+
+# Run database migration and start the app
+CMD npx prisma migrate deploy && npm run start

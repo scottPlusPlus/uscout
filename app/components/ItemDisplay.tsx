@@ -1,13 +1,21 @@
 import { UInfo } from "@prisma/client";
+import { CSS_CLASSES } from "~/code/CssClasses";
 import { ItemFront } from "~/models/item.server";
 import Image3x2 from "./Image3x2";
 
-export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTagClick:(arg0: string)=>void }) {
+export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTagClick: (arg0: string) => void, onLinkClick?:(url:string)=>void, }) {
     // console.log("Render ItemDisplay for " + props.item.url);
     // console.log("info:  " + JSON.stringify(props.info));
+    
+    const handleLinkClick = (event:React.MouseEvent<HTMLAnchorElement>) => {
+        if (props.onLinkClick){
+            props.onLinkClick(props.item.url);
+        }
+    }
+    
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
-            <a href={props.info.fullUrl} target="_blank" rel="noreferrer">
+            <a onClick={handleLinkClick} href={props.info.fullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">
@@ -15,8 +23,15 @@ export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTag
                 <p className="text-gray-700 text-base">{props.info.summary}</p>
                 <p className="text-gray-700 text-base">- - - - - </p>
                 <p className="text-gray-700 text-base">{props.item.comment}</p>
+                {
+                    props.item.status == "pending" && (
+                        <button key={"pending"} className={CSS_CLASSES.ITEM_TAG}>
+                            {"pending"}
+                        </button>
+                    )
+                }
                 {props.item.tags.map(tag => (
-                    <button key={tag} onClick={()=>{props.onTagClick(tag)}} className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mt-2">
+                    <button key={tag} onClick={() => { props.onTagClick(tag) }} className={CSS_CLASSES.ITEM_TAG}>
                         {tag}
                     </button>
                 ))}

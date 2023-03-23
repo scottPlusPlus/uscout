@@ -12,40 +12,48 @@ generator client {
 }
 
 model UInfo {
-  url String @id
-  fullUrl String @default("")
-  hash String
-  title String
-  summary String
-  image String
+  url         String  @id
+  fullUrl     String  @default("")
+  hash        String
+  title       String
+  summary     String
+  image       String
   contentType String?
-  duration Int?
-  likes Int?
-  authorName String?
-  authorLink String?
-  
+  duration    Int?
+  likes       Int?
+  authorName  String?
+  authorLink  String?
+
   created DateTime @default(now())
   updated DateTime @updatedAt
   checked DateTime @default(now())
 }
 
 model ItemModel {
-  id String @id
+  id         String   @id
   collection String
-  url String
-  comment String @default("")
-  tags String @default("")
-  priority Int @default(0)
-  created DateTime @default(now())
-  updated DateTime @updatedAt
+  url        String
+  comment    String   @default("")
+  tags       String   @default("")
+  priority   Int      @default(0)
+  status     String   @default("")
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
 }
 
 model Collection {
-  id String @id @default(cuid())
-  title String @default("")
-  description String  @default("")
-  created DateTime @default(now())
-  updated DateTime @updatedAt
+  id          String   @id @default(cuid())
+  title       String   @default("")
+  description String   @default("")
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+}
+
+model CollectionRoles {
+  id           String @id
+  collectionId String
+  userId       String
+  role         String
 }
 
 model User {
@@ -76,4 +84,12 @@ model Note {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
+}
+
+model AnalyticEvent {
+  id    Int      @id @default(autoincrement())
+  ts    DateTime @default(now())
+  ip    String
+  event String
+  data  String
 }

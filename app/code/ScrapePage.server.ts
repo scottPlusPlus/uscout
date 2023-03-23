@@ -4,6 +4,8 @@ import { PromiseQueues } from './PromiseQueue.server'
 import { nowHHMMSS } from './timeUtils'
 import * as reddit from './reddit'
 import * as youtube from './youtube'
+import getScreenshot from "./ScreenshotService.server";
+
 
 interface PageInfo {
   url: string
@@ -19,17 +21,19 @@ interface PageInfo {
   authorLink?: string
 }
 
-const domainThrottle = new PromiseQueues()
+const domainThrottle = new PromiseQueues();
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ': starting fetch')
   try {
-    return await scrapePageImpl('https://' + url)
-  } catch (error) {
+    return await scrapePageImpl("https://" + url);
+  } catch (error: any) {
     try {
       return await scrapePageImpl('http://' + url)
     } catch (err2) {
-      throw error
+      console.log("failed to fetch " + url + ":  " + error.message);
+      throw error;
     }
   }
 }
@@ -61,8 +65,11 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
     ?.getAttribute('content')
   const twitterImage = root
     .querySelector('meta[name="twitter:image"]')
-    ?.getAttribute('content')
-  const image = ogImage || twitterImage
+    ?.getAttribute("content");
+  var image = ogImage || twitterImage;
+  if (!image) {
+    image = await getScreenshot(url);
+  }
 
   // Youtube stuff
   // let contentType

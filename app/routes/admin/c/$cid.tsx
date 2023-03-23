@@ -1,28 +1,34 @@
-import { UInfo } from "@prisma/client";
+import { Collection, UInfo } from "@prisma/client";
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useActionData, useSubmit, useTransition, Form } from "@remix-run/react";
 import { useRef } from "react";
 
-
 import invariant from "tiny-invariant";
 import { getStringOrThrow } from "~/code/formUtils";
+import { cleanCollectionType } from "~/code/modelUtils";
 import { requestMany } from "~/code/RequestInfo";
 import { sanitizeUrl } from "~/code/urlUtils";
+import CollectionDataDisplay from "~/components/CollectionDataDisplay";
 import EditableItem from "~/components/EditableItem";
+import EditCollectionData from "~/components/EditCollectionData";
 import SingleFieldForm from "~/components/SingleFieldForm";
-import { getCollection } from "~/models/collection.server";
+import { getCollection, updateCollection } from "~/models/collection.server";
 import { addItem, getCollectionItems, ItemFront, updateItem } from "~/models/item.server";
+import { requireUserId } from "~/session.server";
 
 const createItemAction = "createItem";
 const updateItemAction = "updateItem";
+const actionUpdateCollection = "updateCollection";
 const customAction = "customAction";
 
 export async function action({ request, params }: ActionArgs) {
     invariant(params.cid, "cid not found");
     const cid = params.cid;
-
     console.log("running Collection action");
+
+    //if no userId, throws a redirect to login page
+    const userId = await requireUserId(request);
 
     const formData = await request.formData();
     console.log("form data: " + JSON.stringify(formData));
@@ -31,11 +37,15 @@ export async function action({ request, params }: ActionArgs) {
 
     if (actionType == createItemAction) {
         const itemUrl = getStringOrThrow(formData, "itemUrl");
-        await addItem(cid, itemUrl);
+        await addItem(userId, cid, itemUrl);
     } else if (actionType == updateItemAction) {
         const itemJson = getStringOrThrow(formData, "itemJson");
         const itemFront: ItemFront = JSON.parse(itemJson);
-        await updateItem(cid, itemFront);
+        await updateItem(userId, cid, itemFront);
+    } else if (actionType == actionUpdateCollection){
+        const collectionJson = getStringOrThrow(formData, "collectionJson");
+        const collection: Collection = JSON.parse(collectionJson);
+        await updateCollection(userId, collection);
     } else {
         throw new Error("invalid actionType " + actionType);
     }
@@ -58,17 +68,7 @@ export async function loader({ request, params }: LoaderArgs) {
     return json({ collection, items, infos });
 }
 
-// export async function action({ request, params }: ActionArgs) {
-//   const userId = await requireUserId(request);
-//   invariant(params.noteId, "noteId not found");
-
-//   await deleteNote({ userId, id: params.noteId });
-
-//   return redirect("/notes");
-// }
-
 export default function CollectionDetailsPage() {
-
     console.log("rendering CollectionDetailsPage");
     const data = useLoaderData<typeof loader>();
     const infoMap = new Map<string, UInfo>();
@@ -103,11 +103,21 @@ export default function CollectionDetailsPage() {
         submit(formData, { method: "post" });
     }
 
-    return (
+    const handleUpdateCollectionData = (collection:Collection) => {
+        console.log("updating collection: " + JSON.stringify(collection));
+        const formData = new FormData(formRef.current || undefined)
+        formData.set(customAction, actionUpdateCollection);
+        formData.set("collectionJson", JSON.stringify(collection));
+        submit(formData, { method: "post" });
+    }
 
+    return (
         <div>
-            <h3 className="text-2xl font-bold">{data.collection.title}</h3>
-            <p className="py-6">{data.collection.description}</p>
+            <CollectionDataDisplay collection={cleanCollectionType(data.collection)}/>
+            <hr className="my-4" />
+            <h3> Edit the Data...</h3>
+            <EditCollectionData collection={cleanCollectionType(data.collection)} onSubmit={handleUpdateCollectionData}/>
+            
             <hr className="my-4" />
             <h3>Add new Item</h3>
             <SingleFieldForm name="url" onSubmit={handleNewUrl} />
