@@ -41,11 +41,13 @@ async function scrapeAndSavePage(url: string): Promise<UInfo> {
     contentType: scrape.contentType || null,
     duration: scrape.duration || null,
     likes: scrape.likes || null,
+    dislikes: scrape.dislikes || null,
     authorName: scrape.authorName || null,
     authorLink: scrape.authorLink || null,
+    publishedTime: scrape.publishedTime || null,
     created: now,
     updated: now,
-    checked: now,
+    checked: now
   };
   return await UInfoModel.set(newInfo);
 }
