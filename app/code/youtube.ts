@@ -1,7 +1,6 @@
-export async function scrapeYouTubeVideo(videoId: string) {
-    const API_KEY = ''
-    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${API_KEY}`
-
+async function scrapeYouTubeVideoImpl(videoId: string) {
+    const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`
     const response = await fetch(apiUrl)
     const data = await response.json()
     const video = data.items[0]
@@ -38,3 +37,36 @@ export function getVideoIdFromUrl(url: string) {
     }
     return null
 }
+
+export async function scrapeYouTubeVideo(urlStr: string) {
+    if (isYouTubeVideo(urlStr)) {
+        let videoId = getVideoIdFromUrl(urlStr)
+        if (videoId === null) {
+            return null
+        }
+        console.log('VideoID: ', videoId)
+        const scrapedVideoContent = await scrapeYouTubeVideoImpl(videoId)
+        console.log('Scraped video Content: ', scrapedVideoContent)
+
+        const contentType = scrapedVideoContent.contentType
+        const authorLink = scrapedVideoContent.authorLink
+        const likes = scrapedVideoContent.likes
+        const authorName = scrapedVideoContent.authorName
+        console.log('Content Type: ', contentType)
+        console.log('Author Link: ', authorLink)
+        console.log('Likes: ', likes)
+        console.log('Author Name: ', authorName)
+
+
+        return {
+            contentType,
+            authorLink,
+            likes,
+            // dislikes,
+            authorName
+        }
+    }
+
+}
+
+
