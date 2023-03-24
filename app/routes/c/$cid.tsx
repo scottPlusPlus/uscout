@@ -5,8 +5,8 @@ import { requestMany } from "~/code/RequestInfo";
 import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
-import { getCollection } from "~/models/collection.server";
-import { getCollectionItems, Item, suggestItem } from "~/models/item.server";
+import { actorMayUpdateCollection, getCollection } from "~/models/collection.server";
+import { addItem, getCollectionItems, Item, suggestItem } from "~/models/item.server";
 import { UInfo } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
@@ -18,6 +18,8 @@ import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
+import { useOptionalUser } from "~/utils";
+import { getUserId } from "~/session.server";
 
 type SearchTerm = {
   term: string,
@@ -26,7 +28,8 @@ type SearchTerm = {
 
 const ACTIONS = {
   TYPE_FIELD: "a",
-  MAKE_SUGGESTION: "suggestion"
+  MAKE_SUGGESTION: "suggestion",
+  ADMIN_ADD_ITEM: "addItem"
 }
 
 //Remix Action
@@ -37,22 +40,38 @@ export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
   const aType = getStringOrThrow(formData, ACTIONS.TYPE_FIELD);
 
+  const userId = await getUserId(request);
+
+  var err:string|null = "invalid action";
   if (aType == ACTIONS.MAKE_SUGGESTION) {
-    try {
-      const itemUrl = getStringOrThrow(formData, "itemUrl");
-      await suggestItem(params.cid, itemUrl);
-      return json({ suggestSuccess: true, suggestError: null },);
-    } catch (err: any) {
-      const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
-      return json({ suggestSuccess: false, suggestError: errMsg },);
-    }
-
-  } else {
-    throw new Error("invalid actionType " + aType);
+    err = await actionAddSubmission(params.cid, formData);
+   
+  } else if (aType == ACTIONS.ADMIN_ADD_ITEM){
+    err = await actionAdminAddItem(params.cid, userId, formData);
   }
-
-  return json({});;
+  return json({ action: aType, success: err == null, error: err });
 }
+
+async function actionAddSubmission(cid: string, formInput:FormData): Promise<string | null> {
+  try {
+    const itemUrl = getStringOrThrow(formInput, "itemUrl");
+    await suggestItem(cid, itemUrl);
+    return null;
+  } catch (err: any) {
+    const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
+    return errMsg;
+  }
+}
+
+async function actionAdminAddItem(cid: string, actor:string|undefined, formInput:FormData): Promise<string | null> {
+  if (actor == null){
+    return "Must be logged in";
+  }
+  const itemUrl = getStringOrThrow(formInput, "itemUrl");
+  await addItem(actor, cid, itemUrl);
+  return null;
+}
+
 
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
@@ -67,7 +86,13 @@ export async function loader({ request, params }: LoaderArgs) {
   const urls = items.map((i) => i.url);
   const infos = await requestMany(urls);
 
-  return json({ collection, items, infos });
+  const userId = await getUserId(request);
+  var admin = false;
+  if (userId){
+    admin =  await actorMayUpdateCollection(userId, params.cid);
+  }
+
+  return json({ collection, items, infos, userId, admin });
 }
 
 
@@ -115,6 +140,7 @@ export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
+
   var actionData = null;
   if (ad) {
     actionData = JSON.parse(JSON.stringify(ad));
@@ -126,6 +152,8 @@ export default function CollectionDetailsPage() {
   });
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
+  const admin = data.admin;
+  const userId = data.userId;
 
   // console.log(`Have ${loadedItems.length} loaded items`);
   // console.log("loadedUrls: " + loadedItemUrls);
@@ -220,10 +248,12 @@ export default function CollectionDetailsPage() {
     sendAnalyticEvent("link", linkUrl);
   }
 
-  const handleAddSugestion = (suggestion: string) => {
+
+  const handleAddItem = (newUrl:string) => {
     const formData = new FormData(formRef.current || undefined)
-    formData.set(ACTIONS.TYPE_FIELD, ACTIONS.MAKE_SUGGESTION);
-    formData.set("itemUrl", suggestion);
+    const action = admin ? ACTIONS.ADMIN_ADD_ITEM : ACTIONS.MAKE_SUGGESTION;
+    formData.set(ACTIONS.TYPE_FIELD, action);
+    formData.set("itemUrl", newUrl);
     handleSearchUpdate(searchTerms, true);
     submit(formData, { method: "post" });
   }
@@ -246,9 +276,14 @@ export default function CollectionDetailsPage() {
     return (<p>{count()} Hidden Items</p>)
   }
 
+  const submitLabel = admin ? "Add Item" : "Suggest a Url";
+
   return (
     <div>
       <CollectionDataDisplay collection={cleanCollectionType(data.collection)} />
+      { userId && (
+        <p>{userId}</p>
+      )}
       <div className={CSS_CLASSES.SECTION_BG}>
         <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
         <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
@@ -258,20 +293,13 @@ export default function CollectionDetailsPage() {
       <div className="py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} />
+            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} admin={admin} />
           ))}
         </div>
       </div>
 
       <div className={CSS_CLASSES.SECTION_BG}>
-        <SingleFieldForm name={"Suggest a Url"} errors={actionData?.suggestError} onSubmit={handleAddSugestion} />
-        <button
-          className={CSS_CLASSES.SUBMIT_BUTTON}
-          type="button"
-          onClick={handleTogglePending}
-        >
-          {!showPending ? "Show Pending" : "Hide Pending"}
-        </button>
+        <SingleFieldForm name={submitLabel} errors={actionData?.suggestError} onSubmit={handleAddItem} />
       </div>
       <Form ref={formRef} className="invisible"></Form>
     </div>

@@ -3,16 +3,24 @@ import { CSS_CLASSES } from "~/code/CssClasses";
 import { ItemFront } from "~/models/item.server";
 import Image3x2 from "./Image3x2";
 
-export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTagClick: (arg0: string) => void, onLinkClick?:(url:string)=>void, }) {
+type ItemProps = {
+    item: ItemFront,
+    info: UInfo,
+    onTagClick: (arg0: string) => void,
+    onLinkClick?: (url: string) => void,
+    admin: boolean
+}
+
+export default function ItemDisplay(props: ItemProps) {
     // console.log("Render ItemDisplay for " + props.item.url);
     // console.log("info:  " + JSON.stringify(props.info));
-    
-    const handleLinkClick = (event:React.MouseEvent<HTMLAnchorElement>) => {
-        if (props.onLinkClick){
+
+    const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (props.onLinkClick) {
             props.onLinkClick(props.item.url);
         }
     }
-    
+
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
             <a onClick={handleLinkClick} href={props.info.fullUrl} target="_blank">
