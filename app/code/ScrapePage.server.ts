@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { PromiseQueues } from "./PromiseQueue.server";
 import { nowHHMMSS } from "./timeUtils";
 import getScreenshot from "./ScreenshotService.server";
+import axios from 'axios';
 
 interface PageInfo {
   url: string;
@@ -24,7 +25,7 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error:any) {
+  } catch (error: any) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -35,64 +36,87 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
 }
 
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
-  const urlObj = new URL(urlStr);
-  const domain = urlObj.hostname;
-  console.log(urlObj)
-  console.log("Hello World!")
-  console.log(domain)
+  try {
+    const urlObj = new URL(urlStr);
+    const domain = urlObj.hostname;
+    console.log(urlObj);
+    console.log(domain);
 
-  console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
-  await domainThrottle.enqueue(domain);
-  console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-  const response = await fetch(urlStr);
-  const html = await response.text();
+    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+    await domainThrottle.enqueue(domain);
 
-  const hash = createHash("sha256").update(html).digest("hex");
+    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+    const html = await fetchHtml(urlStr);
 
-  const root = parse(html);
-  const canonicalLink = root.querySelector('link[rel="canonical"]');
-  const canonUrl = canonicalLink?.getAttribute('href');
-  const url = canonUrl ? canonUrl : urlStr;
-  const title = root.querySelector("title")?.text || "";
-  const summary =
-    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-    "";
+    const hash = createHash("sha256").update(html).digest("hex");
 
-  const ogImage = root
-    .querySelector('meta[property="og:image"]')
-    ?.getAttribute("content");
-  const twitterImage = root
-    .querySelector('meta[name="twitter:image"]')
-    ?.getAttribute("content");
-  var image = ogImage || twitterImage;
-  if(!image){
-    image = await getScreenshot(url);
-  }
+    const root = parse(html);
+    const canonicalLink = root.querySelector('link[rel="canonical"]');
+    const canonUrl = canonicalLink?.getAttribute("href");
+    const url = canonUrl ? canonUrl : urlStr;
+    const title = root.querySelector("title")?.text || "";
+    const summary =
+      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+      "";
 
-  //TODO - if url is a youtube video
-  //set content type = Video
-  //call a separate function to scrape the video
-  //duration, likes, authorName, authorLink
-  //add all that to the output PageInfo
-  let contentType;
-  let authorLink;
-  let likes;
-  let authorName;
-
-  if (isYouTubeVideo(urlStr)) {
-    let videoId = getVideoIdFromUrl(urlStr);
-    if (videoId){
-      const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
-      contentType = "Video";
-      authorLink = scrapedVideoContent.authorLink;
-      likes = parseInt(scrapedVideoContent.likes);
-      authorName = scrapedVideoContent.authorName;
-      console.log("author name = " + authorName);
+    const ogImage = root
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content");
+    const twitterImage = root
+      .querySelector('meta[name="twitter:image"]')
+      ?.getAttribute("content");
+    var image = ogImage || twitterImage;
+    if (!image) {
+      image = await getScreenshot(url);
     }
 
-  }
+    //TODO - if url is a youtube video
+    //set content type = Video
+    //call a separate function to scrape the video
+    //duration, likes, authorName, authorLink
+    //add all that to the output PageInfo
+    let contentType;
+    let authorLink;
+    let likes;
+    let authorName;
 
-  return { url, hash, title, summary, image, contentType, authorLink, likes, authorName };
+    if (isYouTubeVideo(urlStr)) {
+      let videoId = getVideoIdFromUrl(urlStr);
+      if (videoId) {
+        const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
+        contentType = "Video";
+        authorLink = scrapedVideoContent.authorLink;
+        likes = parseInt(scrapedVideoContent.likes);
+        authorName = scrapedVideoContent.authorName;
+        console.log("author name = " + authorName);
+      }
+    }
+
+    return {
+      url,
+      hash,
+      title,
+      summary,
+      image,
+      contentType,
+      authorLink,
+      likes,
+      authorName,
+    };
+  } catch (error: any) {
+    console.log("error with scrapePageImpl:  " + error.message);
+    throw error;
+  }
+}
+
+async function fetchHtml(url: string): Promise<string> {
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error:any) {
+    console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
+    throw error;
+  }
 }
 
 async function scrapeYouTubeVideo(videoId: string) {
@@ -101,21 +125,21 @@ async function scrapeYouTubeVideo(videoId: string) {
   const response = await fetch(apiUrl);
   const data = await response.json();
 
-  console.log("Data: ", data)
+  console.log("Data: ", data);
 
   const video = data.items[0];
   // const duration = video.contentDetails.duration;
   const likes = video.statistics.likeCount;
   const authorName = video.snippet.channelTitle;
   const authorLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
-  const contentType = "Video"
+  const contentType = "Video";
 
   return {
     // duration,
     likes,
     authorName,
     authorLink,
-    contentType
+    contentType,
   };
 }
 
