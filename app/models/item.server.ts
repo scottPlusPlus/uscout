@@ -92,6 +92,9 @@ export async function addItem(
 
   try {
     const uInfo = await requestSingle(url);
+    if (uInfo == null){
+      throw new Error("faild to get "+ url);
+    }
   } catch (err: any) {
     console.log("failed to get info for " + url + ":  " + err.message);
     throw new Error("Sorry, we had an error with that url.  check server logs");
@@ -132,6 +135,9 @@ export async function suggestItem(
 
   try {
     const uInfo = await requestSingle(url);
+    if (uInfo == null){
+      throw new Error("faild to get "+ url);
+    }
   } catch (err: any) {
     console.log("failed to get info for " + url + ":  " + err.message);
     throw new Error("Sorry, we had an error with that url.  check server logs");
