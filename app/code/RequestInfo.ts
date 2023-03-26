@@ -57,6 +57,7 @@ async function scrapeAndSavePage(url: string): Promise<UInfo|null> {
 }
 
 export async function requestMany(urls: string[]): Promise<UInfo[]> {
+  console.log("request many: " + JSON.stringify(urls));
   const promises = urls.map((u) => {
     return requestSingle(u);
   });
