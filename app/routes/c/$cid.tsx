@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
 import { actorMayUpdateCollection, getCollection } from "~/models/collection.server";
-import { addItem, getCollectionItems, Item, suggestItem } from "~/models/item.server";
+import { addItem, getCollectionItems, Item, ItemFront, suggestItem, updateItem } from "~/models/item.server";
 import { UInfo } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
@@ -20,6 +20,7 @@ import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { useOptionalUser } from "~/utils";
 import { getUserId } from "~/session.server";
+import { nowHHMMSS } from "~/code/timeUtils";
 
 type SearchTerm = {
   term: string,
@@ -29,7 +30,8 @@ type SearchTerm = {
 const ACTIONS = {
   TYPE_FIELD: "a",
   MAKE_SUGGESTION: "suggestion",
-  ADMIN_ADD_ITEM: "addItem"
+  ADMIN_ADD_ITEM: "addItem",
+  UPDATE_ITEM: "updateItem",
 }
 
 //Remix Action
@@ -42,35 +44,54 @@ export async function action({ request, params }: ActionArgs) {
 
   const userId = await getUserId(request);
 
-  var err:string|null = "invalid action";
-  if (aType == ACTIONS.MAKE_SUGGESTION) {
-    err = await actionAddSubmission(params.cid, formData);
-   
-  } else if (aType == ACTIONS.ADMIN_ADD_ITEM){
-    err = await actionAdminAddItem(params.cid, userId, formData);
+  var err:string|null = null;
+  var data:Object|null = null;
+  try {
+    if (aType == ACTIONS.MAKE_SUGGESTION) {
+      data = await actionAddSubmission(params.cid, formData);
+    } else if (aType == ACTIONS.ADMIN_ADD_ITEM){
+      data = await actionAdminAddItem(params.cid, userId, formData);
+    } else if (aType == ACTIONS.UPDATE_ITEM){
+      data = await actionUpdateItem(params.cid, userId, formData);
+    }
+    throw("invalid action");
+  } catch (error:any){
+    err = error.message;
   }
-  return json({ action: aType, success: err == null, error: err });
+
+  const now = nowHHMMSS();
+  return json({ action: aType, error: err, data:data, time: now});
 }
 
-async function actionAddSubmission(cid: string, formInput:FormData): Promise<string | null> {
+async function actionAddSubmission(cid: string, formInput:FormData): Promise<Object | null> {
   try {
     const itemUrl = getStringOrThrow(formInput, "itemUrl");
     await suggestItem(cid, itemUrl);
     return null;
   } catch (err: any) {
     const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
-    return errMsg;
+    throw(errMsg);
   }
 }
 
-async function actionAdminAddItem(cid: string, actor:string|undefined, formInput:FormData): Promise<string | null> {
+async function actionAdminAddItem(cid: string, actor:string|undefined, formInput:FormData): Promise<Object | null> {
   if (actor == null){
-    return "Must be logged in";
+    throw("Must be logged in");
   }
   const itemUrl = getStringOrThrow(formInput, "itemUrl");
   await addItem(actor, cid, itemUrl);
   return null;
 }
+
+async function actionUpdateItem(cid: string, actor:string|undefined, formInput:FormData): Promise<Object | null> {
+  if (actor == null){
+    throw("Must be logged in");
+  }
+  const itemJson = getStringOrThrow(formInput, "itemJson");
+  const itemFront: ItemFront = JSON.parse(itemJson);
+  return await updateItem(actor, cid, itemFront);
+}
+
 
 
 //Remix Loader Func
@@ -140,12 +161,9 @@ export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
+  
+  console.log("have actionData: " + ad);
 
-  var actionData = null;
-  if (ad) {
-    actionData = JSON.parse(JSON.stringify(ad));
-    console.log("have actionData: " + actionData.suggestSuccess);
-  }
 
   const loadedItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
@@ -155,8 +173,10 @@ export default function CollectionDetailsPage() {
   const admin = data.admin;
   const userId = data.userId;
 
+
   // console.log(`Have ${loadedItems.length} loaded items`);
   // console.log("loadedUrls: " + loadedItemUrls);
+  console.log("admin = "+admin);
 
   const infoMap = new Map<string, UInfo>();
   data.infos.forEach(info => {
@@ -188,6 +208,20 @@ export default function CollectionDetailsPage() {
     setSearchTerms(initialSearchParams);
     handleSearchUpdate(initialSearchParams, showPending);
   }, [loadedItemUrls]);
+
+  useEffect(() => {
+    //on an action...
+    console.log("handling action: " + JSON.stringify(ad));
+    if (ad?.action == ACTIONS.UPDATE_ITEM){
+      const actionItem:Item = ad?.data as Item;
+      const index = loadedItems.findIndex(item => item.url === actionItem.url);
+      console.log(`replaced ${actionItem.url} into index ${index}`);
+      loadedItems[index] = actionItem;
+      handleSearchUpdate(searchTerms, showPending);
+    } else if (ad?.action == ACTIONS.ADMIN_ADD_ITEM){
+      handleSearchUpdate(searchTerms, showPending);
+    }
+  }, [ad?.time]);
 
   const debouncedOnChange = useCallback(
     debounce((newUrl) => {
@@ -254,14 +288,19 @@ export default function CollectionDetailsPage() {
     const action = admin ? ACTIONS.ADMIN_ADD_ITEM : ACTIONS.MAKE_SUGGESTION;
     formData.set(ACTIONS.TYPE_FIELD, action);
     formData.set("itemUrl", newUrl);
-    handleSearchUpdate(searchTerms, true);
+    // handleSearchUpdate(searchTerms, true);
     submit(formData, { method: "post" });
   }
 
-  const handleTogglePending = () => {
-    console.log("toggle pending.  currently " + showPending);
-    handleSearchUpdate(searchTerms, !showPending);
-  }
+
+  const handleItemEdit = (item: ItemFront) => {
+    console.log("handleItemEdit for " + item.url);
+    const formData = new FormData(formRef.current || undefined)
+    formData.set(ACTIONS.TYPE_FIELD, ACTIONS.UPDATE_ITEM);
+    formData.set("itemJson", JSON.stringify(item));
+    handleSearchUpdate(searchTerms, showPending);
+    submit(formData, { method: "post" });
+}
 
   const hiddenItemMsg = () => {
     var count = () => {
@@ -277,6 +316,7 @@ export default function CollectionDetailsPage() {
   }
 
   const submitLabel = admin ? "Add Item" : "Suggest a Url";
+  const submitError = ad?.error ? ad?.error : undefined;
 
   return (
     <div>
@@ -293,13 +333,13 @@ export default function CollectionDetailsPage() {
       <div className="py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} admin={admin} />
+            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} admin={admin} onItemUpdate={handleItemEdit} />
           ))}
         </div>
       </div>
 
       <div className={CSS_CLASSES.SECTION_BG}>
-        <SingleFieldForm name={submitLabel} errors={actionData?.suggestError} onSubmit={handleAddItem} />
+        <SingleFieldForm name={submitLabel} errors={submitError} onSubmit={handleAddItem} />
       </div>
       <Form ref={formRef} className="invisible"></Form>
     </div>

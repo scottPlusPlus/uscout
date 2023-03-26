@@ -1,6 +1,7 @@
 import { UInfo } from "@prisma/client";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import { ItemFront } from "~/models/item.server";
+import EditableItem from "./EditableItem";
 import Image3x2 from "./Image3x2";
 
 type ItemProps = {
@@ -8,6 +9,7 @@ type ItemProps = {
     info: UInfo,
     onTagClick: (arg0: string) => void,
     onLinkClick?: (url: string) => void,
+    onItemUpdate: (arg0: ItemFront) => void
     admin: boolean
 }
 
@@ -43,6 +45,11 @@ export default function ItemDisplay(props: ItemProps) {
                         {tag}
                     </button>
                 ))}
+            </div>
+            <div>
+            { props.admin && (
+                <EditableItem item={props.item} info={props.info} onSave={props.onItemUpdate} />
+            )}
             </div>
         </div>
     );
