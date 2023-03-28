@@ -25,7 +25,14 @@ export async function requestSingle(url: string): Promise<UInfo|null> {
     console.log("returning cached info for " + sanitizedUrl);
     return existing;
   }
-  return await scrapeAndSavePage(sanitizedUrl);
+  const scrapePromise = scrapeAndSavePage(sanitizedUrl);
+  const timeoutPromise = new Promise<null>((resolve, _) => {
+    setTimeout(() => {
+      console.log(`Timeout exceeded for ${sanitizedUrl}`);
+      resolve(null);
+    }, 10000);
+  });
+  return await Promise.race([scrapePromise, timeoutPromise]);
 } 
 
 
