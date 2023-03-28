@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 import { PromiseQueues } from "./PromiseQueue.server";
 import { nowHHMMSS } from "./timeUtils";
 import getScreenshot from "./ScreenshotService.server";
-import axios from 'axios';
+import axios from "axios";
 
 interface PageInfo {
   url: string;
@@ -83,12 +83,14 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
     if (isYouTubeVideo(urlStr)) {
       let videoId = getVideoIdFromUrl(urlStr);
       if (videoId) {
-        const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
-        contentType = "Video";
-        authorLink = scrapedVideoContent.authorLink;
-        likes = parseInt(scrapedVideoContent.likes);
-        authorName = scrapedVideoContent.authorName;
-        console.log("author name = " + authorName);
+        try {
+          const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
+          contentType = "Video";
+          authorLink = scrapedVideoContent.authorLink;
+          likes = parseInt(scrapedVideoContent.likes);
+          authorName = scrapedVideoContent.authorName;
+          console.log("author name = " + authorName);
+        } catch (error) {}
       }
     }
 
@@ -113,34 +115,38 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     const response = await axios.get(url);
     return response.data;
-  } catch (error:any) {
+  } catch (error: any) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     throw error;
   }
 }
 
 async function scrapeYouTubeVideo(videoId: string) {
-  const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`;
+  try {
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`;
 
-  const response = await fetch(apiUrl);
-  const data = await response.json();
+    const response = await fetch(apiUrl);
+    const data = await response.json();
 
-  console.log("Data: ", data);
+    console.log("Data: ", data);
 
-  const video = data.items[0];
-  // const duration = video.contentDetails.duration;
-  const likes = video.statistics.likeCount;
-  const authorName = video.snippet.channelTitle;
-  const authorLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
-  const contentType = "Video";
-
-  return {
-    // duration,
-    likes,
-    authorName,
-    authorLink,
-    contentType,
-  };
+    const video = data.items[0];
+    // const duration = video.contentDetails.duration;
+    const likes = video.statistics.likeCount;
+    const authorName = video.snippet.channelTitle;
+    const authorLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
+    const contentType = "Video";
+    return {
+      // duration,
+      likes,
+      authorName,
+      authorLink,
+      contentType,
+    };
+  } catch (error: any) {
+    console.log(`Error scraping youtube for ${videoId}:  ${error.message}`);
+    throw error;
+  }
 }
 
 function isYouTubeVideo(url: string) {

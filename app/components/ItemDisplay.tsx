@@ -22,10 +22,17 @@ export default function ItemDisplay(props: ItemProps) {
             props.onLinkClick(props.item.url);
         }
     }
+    
+    var thisFullUrl = props.info?.fullUrl;
+    if (thisFullUrl === undefined){
+        console.log("error: no full url for: "+props.item.url);
+        console.log(JSON.stringify(props.info));
+        thisFullUrl = "??";
+    }
 
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
-            <a onClick={handleLinkClick} href={props.info.fullUrl} target="_blank">
+            <a onClick={handleLinkClick} href={thisFullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">

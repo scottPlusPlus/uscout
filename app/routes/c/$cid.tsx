@@ -18,9 +18,13 @@ import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
+<<<<<<< HEAD
 import { useOptionalUser } from "~/utils";
 import { getUserId } from "~/session.server";
 import { nowHHMMSS } from "~/code/timeUtils";
+=======
+import { sanitizeUrl } from "~/code/urlUtils";
+>>>>>>> main
 
 type SearchTerm = {
   term: string,
@@ -104,7 +108,7 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 
   const items = await getCollectionItems(params.cid);
-  const urls = items.map((i) => i.url);
+  const urls = items.map((i) => sanitizeUrl(i.url)!);
   const infos = await requestMany(urls);
 
   const userId = await getUserId(request);
@@ -165,8 +169,22 @@ export default function CollectionDetailsPage() {
   console.log("have actionData: " + ad);
 
 
-  const loadedItems: Item[] = data.items.map(item => {
+  const infoMap = new Map<string, UInfo>();
+  data.infos.forEach(info => {
+    const betterInfo = JSON.parse(JSON.stringify(info));
+    infoMap.set(info.url, betterInfo);
+  });
+
+  var loadedItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
+  });
+  loadedItems = loadedItems.filter(item => {
+    const info = infoMap.get(item.url);
+    if (!info){
+      console.log("missing info for " + item.url);
+      return false;
+    }
+    return true;
   });
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
@@ -178,11 +196,6 @@ export default function CollectionDetailsPage() {
   // console.log("loadedUrls: " + loadedItemUrls);
   console.log("admin = "+admin);
 
-  const infoMap = new Map<string, UInfo>();
-  data.infos.forEach(info => {
-    const betterInfo = JSON.parse(JSON.stringify(info));
-    infoMap.set(info.url, betterInfo);
-  });
 
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();

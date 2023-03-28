@@ -14,26 +14,29 @@ async function get(url: string): Promise<UInfo | null> {
   });
 }
 
-async function removeUinfo(actorId:string, url: string): Promise<void> {
+async function removeUinfo(actorId: string, url: string): Promise<void> {
   console.log("uinfo remove " + url);
+  console.log(". check role for " + actorId);
   const role = await prisma.collectionRoles.findFirst({
     where: {
-        userId: actorId,
-      },
+      userId: actorId,
+    },
   });
-  if (!role){
+  if (!role) {
     throw new Error("Must be valid user to remove a thing");
   }
   const sUrl = sanitizeUrl(url)!;
+  if (url != sUrl) {
+    console.warn(`. Input ${url}  !=  ${sUrl}`);
+  }
+  console.log(`. Input ${url}  vs  ${sUrl}`);
   await prisma.uInfo.delete({
-    where: { url: sUrl },
+    where: { url: url },
   });
 }
 
-
-
 async function set(info: UInfo): Promise<UInfo> {
-  info.url = sanitizeUrl(info.url)!
+  info.url = sanitizeUrl(info.url)!;
   console.log(info.url + ": saving info");
   if (!info.image) {
     const existing = await get(info.url);
@@ -85,7 +88,7 @@ const UInfoModel = {
   get: get,
   set: set,
   getRecent: getRecent,
-  removeUinfo: removeUinfo
+  removeUinfo: removeUinfo,
 };
 
 export default UInfoModel;
