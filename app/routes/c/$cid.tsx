@@ -5,9 +5,9 @@ import { requestMany } from "~/code/RequestInfo";
 import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
-import { actorMayUpdateCollection, getCollection } from "~/models/collection.server";
+import { actorMayUpdateCollection, getCollection, updateCollection } from "~/models/collection.server";
 import { addItem, getCollectionItems, Item, ItemFront, suggestItem, updateItem } from "~/models/item.server";
-import { UInfo } from "@prisma/client";
+import { Collection, UInfo } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,13 +18,11 @@ import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
-<<<<<<< HEAD
 import { useOptionalUser } from "~/utils";
 import { getUserId } from "~/session.server";
 import { nowHHMMSS } from "~/code/timeUtils";
-=======
 import { sanitizeUrl } from "~/code/urlUtils";
->>>>>>> main
+import EditCollectionData from "~/components/EditCollectionData";
 
 type SearchTerm = {
   term: string,
@@ -33,9 +31,11 @@ type SearchTerm = {
 
 const ACTIONS = {
   TYPE_FIELD: "a",
+  DATA_FIELD: "aData",
   MAKE_SUGGESTION: "suggestion",
   ADMIN_ADD_ITEM: "addItem",
   UPDATE_ITEM: "updateItem",
+  UPDATE_COLLECTION: "collection"
 }
 
 //Remix Action
@@ -45,55 +45,62 @@ export async function action({ request, params }: ActionArgs) {
 
   const formData = await request.formData();
   const aType = getStringOrThrow(formData, ACTIONS.TYPE_FIELD);
-
   const userId = await getUserId(request);
 
-  var err:string|null = null;
-  var data:Object|null = null;
+  var err: string | null = null;
+  var data: Object | null = null;
   try {
+    const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
     if (aType == ACTIONS.MAKE_SUGGESTION) {
-      data = await actionAddSubmission(params.cid, formData);
-    } else if (aType == ACTIONS.ADMIN_ADD_ITEM){
-      data = await actionAdminAddItem(params.cid, userId, formData);
-    } else if (aType == ACTIONS.UPDATE_ITEM){
-      data = await actionUpdateItem(params.cid, userId, formData);
+      data = await actionAddSubmission(params.cid, inputData);
+    } else if (aType == ACTIONS.ADMIN_ADD_ITEM) {
+      data = await actionAdminAddItem(params.cid, userId, inputData);
+    } else if (aType == ACTIONS.UPDATE_ITEM) {
+      data = await actionUpdateItem(params.cid, userId, inputData);
+    } else if (aType == ACTIONS.UPDATE_COLLECTION) {
+      data = await actionUpdateCollection(params.cid, userId, inputData);
     }
-    throw("invalid action");
-  } catch (error:any){
+    throw ("invalid action");
+  } catch (error: any) {
     err = error.message;
   }
 
   const now = nowHHMMSS();
-  return json({ action: aType, error: err, data:data, time: now});
+  return json({ action: aType, error: err, data: data, time: now });
 }
 
-async function actionAddSubmission(cid: string, formInput:FormData): Promise<Object | null> {
+async function actionAddSubmission(cid: string, inputData: string): Promise<Object | null> {
   try {
-    const itemUrl = getStringOrThrow(formInput, "itemUrl");
-    await suggestItem(cid, itemUrl);
+    await suggestItem(cid, inputData);
     return null;
   } catch (err: any) {
     const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
-    throw(errMsg);
+    throw (errMsg);
   }
 }
 
-async function actionAdminAddItem(cid: string, actor:string|undefined, formInput:FormData): Promise<Object | null> {
-  if (actor == null){
-    throw("Must be logged in");
+async function actionAdminAddItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
+  if (actor == null) {
+    throw ("Must be logged in");
   }
-  const itemUrl = getStringOrThrow(formInput, "itemUrl");
-  await addItem(actor, cid, itemUrl);
+  await addItem(actor, cid, inputData);
   return null;
 }
 
-async function actionUpdateItem(cid: string, actor:string|undefined, formInput:FormData): Promise<Object | null> {
-  if (actor == null){
-    throw("Must be logged in");
+async function actionUpdateItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
+  if (actor == null) {
+    throw ("Must be logged in");
   }
-  const itemJson = getStringOrThrow(formInput, "itemJson");
-  const itemFront: ItemFront = JSON.parse(itemJson);
+  const itemFront: ItemFront = JSON.parse(inputData);
   return await updateItem(actor, cid, itemFront);
+}
+
+async function actionUpdateCollection(cid: string, actor: string | undefined, inputData: string): Promise<Object> {
+  if (actor == null) {
+    throw ("Must be logged in");
+  }
+  const collection: Collection = JSON.parse(inputData);
+  return await updateCollection(actor, collection);
 }
 
 
@@ -113,8 +120,8 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const userId = await getUserId(request);
   var admin = false;
-  if (userId){
-    admin =  await actorMayUpdateCollection(userId, params.cid);
+  if (userId) {
+    admin = await actorMayUpdateCollection(userId, params.cid);
   }
 
   return json({ collection, items, infos, userId, admin });
@@ -165,7 +172,7 @@ export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
-  
+
   console.log("have actionData: " + ad);
 
 
@@ -180,7 +187,7 @@ export default function CollectionDetailsPage() {
   });
   loadedItems = loadedItems.filter(item => {
     const info = infoMap.get(item.url);
-    if (!info){
+    if (!info) {
       console.log("missing info for " + item.url);
       return false;
     }
@@ -188,13 +195,12 @@ export default function CollectionDetailsPage() {
   });
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
-  const admin = data.admin;
+
   const userId = data.userId;
 
 
   // console.log(`Have ${loadedItems.length} loaded items`);
   // console.log("loadedUrls: " + loadedItemUrls);
-  console.log("admin = "+admin);
 
 
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
@@ -203,6 +209,7 @@ export default function CollectionDetailsPage() {
   const [showPending, setShowPending] = useState<Boolean>(false);
   const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
+  const [admin, setAdmin] = useState(false);
 
   const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
 
@@ -213,7 +220,10 @@ export default function CollectionDetailsPage() {
     console.log("got first url");
     const initialSearchParams: SearchTerm[] = [];
     url.searchParams.forEach((value, key) => {
-      initialSearchParams.push({ term: key, priority: parseFloat(value) });
+      const valAsNum = Number(value);
+      if (!isNaN(valAsNum)) {
+        initialSearchParams.push({ term: key, priority: valAsNum });
+      }
     });
     if (initialSearchParams.length == 0) {
       initialSearchParams.push({ term: "", priority: 100 });
@@ -225,16 +235,25 @@ export default function CollectionDetailsPage() {
   useEffect(() => {
     //on an action...
     console.log("handling action: " + JSON.stringify(ad));
-    if (ad?.action == ACTIONS.UPDATE_ITEM){
-      const actionItem:Item = ad?.data as Item;
+    if (ad?.action == ACTIONS.UPDATE_ITEM) {
+      const actionItem: Item = ad?.data as Item;
       const index = loadedItems.findIndex(item => item.url === actionItem.url);
       console.log(`replaced ${actionItem.url} into index ${index}`);
       loadedItems[index] = actionItem;
       handleSearchUpdate(searchTerms, showPending);
-    } else if (ad?.action == ACTIONS.ADMIN_ADD_ITEM){
+    } else if (ad?.action == ACTIONS.ADMIN_ADD_ITEM) {
       handleSearchUpdate(searchTerms, showPending);
     }
   }, [ad?.time]);
+
+  const submitAction = (action: string, actionData: string) => {
+    console.log(`submitAction:  ${action},  ${actionData}`);
+    const formData = new FormData(formRef.current || undefined)
+    formData.set(ACTIONS.TYPE_FIELD, action);
+    formData.set(ACTIONS.DATA_FIELD, actionData);
+    // handleSearchUpdate(searchTerms, true);
+    submit(formData, { method: "post" });
+  }
 
   const debouncedOnChange = useCallback(
     debounce((newUrl) => {
@@ -245,8 +264,11 @@ export default function CollectionDetailsPage() {
     console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
     const url = new URL(window.location.href);
-    url.searchParams.forEach((_, key) => {
-      url.searchParams.delete(key);
+    url.searchParams.forEach((value, key) => {
+      const valAsNum = Number(value);
+      if (!isNaN(valAsNum)) {
+        url.searchParams.delete(key);
+      }
     });
     newTerms.forEach(term => {
       if (term.term.length == 0 || term.priority == 0) {
@@ -291,29 +313,23 @@ export default function CollectionDetailsPage() {
     handleSearchUpdate(newTerms, showPending);
   }
 
-  const handleLinkClick = (linkUrl:string) => {
+  const handleLinkClick = (linkUrl: string) => {
     sendAnalyticEvent("link", linkUrl);
   }
 
 
-  const handleAddItem = (newUrl:string) => {
-    const formData = new FormData(formRef.current || undefined)
+  const handleAddItem = (newUrl: string) => {
+    console.log("handleAddItem for " + newUrl);
     const action = admin ? ACTIONS.ADMIN_ADD_ITEM : ACTIONS.MAKE_SUGGESTION;
-    formData.set(ACTIONS.TYPE_FIELD, action);
-    formData.set("itemUrl", newUrl);
-    // handleSearchUpdate(searchTerms, true);
-    submit(formData, { method: "post" });
+    submitAction(action, newUrl);
   }
 
 
   const handleItemEdit = (item: ItemFront) => {
     console.log("handleItemEdit for " + item.url);
-    const formData = new FormData(formRef.current || undefined)
-    formData.set(ACTIONS.TYPE_FIELD, ACTIONS.UPDATE_ITEM);
-    formData.set("itemJson", JSON.stringify(item));
-    handleSearchUpdate(searchTerms, showPending);
-    submit(formData, { method: "post" });
-}
+    submitAction(ACTIONS.UPDATE_ITEM, JSON.stringify(item));
+    //handleSearchUpdate(searchTerms, showPending);
+  }
 
   const hiddenItemMsg = () => {
     var count = () => {
@@ -328,15 +344,23 @@ export default function CollectionDetailsPage() {
     return (<p>{count()} Hidden Items</p>)
   }
 
+  const handleUpdateCollectionData = (collection: Collection) => {
+    const collectionStr = JSON.stringify(collection);
+    console.log("updating collection: " + collectionStr);
+    submitAction(ACTIONS.UPDATE_COLLECTION, collectionStr);
+  }
+
   const submitLabel = admin ? "Add Item" : "Suggest a Url";
   const submitError = ad?.error ? ad?.error : undefined;
+  const collection = cleanCollectionType(data.collection);
 
   return (
     <div>
-      <CollectionDataDisplay collection={cleanCollectionType(data.collection)} />
-      { userId && (
-        <p>{userId}</p>
+      <CollectionDataDisplay collection={collection} />
+      {admin && (
+        <EditCollectionData collection={collection} onSubmit={handleUpdateCollectionData} />
       )}
+
       <div className={CSS_CLASSES.SECTION_BG}>
         <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
         <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
@@ -353,6 +377,15 @@ export default function CollectionDetailsPage() {
 
       <div className={CSS_CLASSES.SECTION_BG}>
         <SingleFieldForm name={submitLabel} errors={submitError} onSubmit={handleAddItem} />
+        {data.admin && (
+          <button
+            className={CSS_CLASSES.SUBMIT_BUTTON}
+            type="submit"
+            onClick={() => { setAdmin(!admin) }}
+          >
+            Toggle Admin
+          </button>
+        )}
       </div>
       <Form ref={formRef} className="invisible"></Form>
     </div>

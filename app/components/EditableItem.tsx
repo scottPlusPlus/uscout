@@ -108,7 +108,7 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
             <button
               className={CSS_CLASSES.SUBMIT_BUTTON}
               onClick={handleSave}>Save</button>
-            <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={handleDiscard}>Discard</button>
+            <button className={CSS_CLASSES.CANCEL_BUTTON} onClick={handleDiscard}>Discard</button>
           </>
 
         </div>
