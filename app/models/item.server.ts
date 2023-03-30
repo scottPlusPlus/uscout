@@ -92,6 +92,9 @@ export async function addItem(
 
   try {
     const uInfo = await requestSingle(url);
+    if (uInfo == null){
+      throw new Error("faild to get "+ url);
+    }
   } catch (err: any) {
     console.log("failed to get info for " + url + ":  " + err.message);
     throw new Error("Sorry, we had an error with that url.  check server logs");
@@ -132,6 +135,9 @@ export async function suggestItem(
 
   try {
     const uInfo = await requestSingle(url);
+    if (uInfo == null){
+      throw new Error("faild to get "+ url);
+    }
   } catch (err: any) {
     console.log("failed to get info for " + url + ":  " + err.message);
     throw new Error("Sorry, we had an error with that url.  check server logs");
@@ -201,5 +207,34 @@ export async function getCollectionItems(collectonId: string): Promise<Item[]> {
     where: { collection: collectonId },
   });
   itemModels = itemModels.filter((item) => item.status != STATUS.REJECTED);
+  
+  //enforce sanitized Urls
+  const fixes:Array<Promise<ItemModel>> = [];
+  itemModels.forEach(item => {
+    const sUrl = sanitizeUrl(item.url);
+    if (!sUrl){
+      console.error("Item has invalid Url: " + item.url);
+      return;
+    }
+    if (item.url == sUrl){
+      return;
+    }
+    const fix = prisma.itemModel.update({
+      where: { id: item.id },
+      data: {
+        url: sUrl,
+      },
+    });
+    fixes.push(fix);
+  });
+
+  if (fixes.length > 0){
+    const fixedItems = await Promise.all(fixes);
+    itemModels = itemModels.map(itemA => {
+      const itemF = fixedItems.find(item => item.id === itemA.id);
+      return itemF ? itemF : itemA;
+    });
+  }
+
   return itemModels.map(itemFromItemModel);
 }

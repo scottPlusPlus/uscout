@@ -14,7 +14,7 @@ export default function UInfoTable({ uinfos, onDelete }: Props) {
 
   const cleanUInfos = uinfos.map((u) => {
     const copy = { ...u };
-    copy.url = copy.url.replace(/^https?:\/\//i, '');
+    // copy.url = copy.url.replace(/^https?:\/\//i, '');
     return copy;
   })
 

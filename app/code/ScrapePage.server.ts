@@ -5,6 +5,7 @@ import { nowHHMMSS } from "./timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
+import axios from "axios";
 
 interface PageInfo {
   url: string;
@@ -22,6 +23,7 @@ interface PageInfo {
 }
 
 const domainThrottle = new PromiseQueues();
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
@@ -38,35 +40,39 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
 }
 
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
-  const urlObj = new URL(urlStr);
-  const domain = urlObj.hostname;
-  console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
-  await domainThrottle.enqueue(domain);
-  console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-  const response = await fetch(urlStr);
-  const html = await response.text();
+  try {
+    const urlObj = new URL(urlStr);
+    const domain = urlObj.hostname;
+    console.log(urlObj);
+    console.log(domain);
 
-  const hash = createHash("sha256").update(html).digest("hex");
+    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+    await domainThrottle.enqueue(domain);
 
-  const root = parse(html);
-  const canonicalLink = root.querySelector('link[rel="canonical"]');
-  const canonUrl = canonicalLink?.getAttribute("href");
-  const url = canonUrl ? canonUrl : urlStr;
-  const title = root.querySelector("title")?.text || "";
-  const summary =
-    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-    "";
+    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+    const html = await fetchHtml(urlStr);
 
-  const ogImage = root
-    .querySelector('meta[property="og:image"]')
-    ?.getAttribute("content");
-  const twitterImage = root
-    .querySelector('meta[name="twitter:image"]')
-    ?.getAttribute("content");
-  var image = ogImage || twitterImage;
-  if (!image) {
-    image = await getScreenshot(url);
-  }
+    const hash = createHash("sha256").update(html).digest("hex");
+
+    const root = parse(html);
+    const canonicalLink = root.querySelector('link[rel="canonical"]');
+    const canonUrl = canonicalLink?.getAttribute("href");
+    const url = canonUrl ? canonUrl : urlStr;
+    const title = root.querySelector("title")?.text || "";
+    const summary =
+      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+      "";
+
+    const ogImage = root
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content");
+    const twitterImage = root
+      .querySelector('meta[name="twitter:image"]')
+      ?.getAttribute("content");
+    var image = ogImage || twitterImage;
+    if (!image) {
+      image = await getScreenshot(url);
+    }
 
   const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
   const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
@@ -108,4 +114,21 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   };
 }
 
-// Separate this out to another file
+function isYouTubeVideo(url: string) {
+  // Match YouTube watch URL format
+  const watchPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
+
+  // Match YouTube short URL format
+  const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
+
+  return watchPattern.test(url) || shortPattern.test(url);
+}
+
+function getVideoIdFromUrl(url: string) {
+  const regex = /(?:\?v=|\/embed\/|\/watch\?v=|\/\w+\/\w+\/)([\w-]{11})/;
+  const match = url.match(regex);
+  if (match) {
+    return match[1];
+  }
+  return null;
+}
