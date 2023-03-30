@@ -39,6 +39,16 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
   }
 }
 
+async function fetchHtml(url: string): Promise<string> {
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error: any) {
+    console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
+    throw error;
+  }
+}
+
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
   try {
     const urlObj = new URL(urlStr);
@@ -74,61 +84,46 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
       image = await getScreenshot(url);
     }
 
-  const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
-  const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
+    const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
+    const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
 
-  if (scrapedYoutubeContent) {
+    if (scrapedYoutubeContent) {
+      return {
+        url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: scrapedYoutubeContent.contentType,
+        likes: scrapedYoutubeContent.likes,
+        authorLink: scrapedYoutubeContent.authorLink,
+        authorName: scrapedYoutubeContent.authorName
+      };
+    } else if (scrapedRedditContent) {
+      return {
+        url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: scrapedRedditContent.contentType,
+        likes: scrapedRedditContent.likes,
+        dislikes: scrapedRedditContent.dislikes,
+        authorLink: scrapedRedditContent.authorLink,
+        authorName: scrapedRedditContent.authorName,
+        publishedTime: scrapedRedditContent.postCreationTime
+      };
+    }
+
     return {
       url,
       hash,
       title,
       summary,
-      image,
-      contentType: scrapedYoutubeContent.contentType,
-      likes: scrapedYoutubeContent.likes,
-      authorLink: scrapedYoutubeContent.authorLink,
-      authorName: scrapedYoutubeContent.authorName
+      image
     };
-  } else if (scrapedRedditContent) {
-    return {
-      url,
-      hash,
-      title,
-      summary,
-      image,
-      contentType: scrapedRedditContent.contentType,
-      likes: scrapedRedditContent.likes,
-      dislikes: scrapedRedditContent.dislikes,
-      authorLink: scrapedRedditContent.authorLink,
-      authorName: scrapedRedditContent.authorName,
-      publishedTime: scrapedRedditContent.postCreationTime
-    };
+  } catch (error: any) {
+    console.log("error with scrapePageImpl:  " + error.message);
+    throw error;
   }
-
-  return {
-    url,
-    hash,
-    title,
-    summary,
-    image
-  };
-}
-
-function isYouTubeVideo(url: string) {
-  // Match YouTube watch URL format
-  const watchPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
-
-  // Match YouTube short URL format
-  const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
-
-  return watchPattern.test(url) || shortPattern.test(url);
-}
-
-function getVideoIdFromUrl(url: string) {
-  const regex = /(?:\?v=|\/embed\/|\/watch\?v=|\/\w+\/\w+\/)([\w-]{11})/;
-  const match = url.match(regex);
-  if (match) {
-    return match[1];
-  }
-  return null;
 }
