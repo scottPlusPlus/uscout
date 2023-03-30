@@ -2,8 +2,9 @@ import { UInfo } from "@prisma/client";
 import { useState } from "react";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import { Item, ItemFront } from "~/models/item.server";
+import Image3x2 from "./Image3x2";
 
-export default function EditableItem(props: { item: ItemFront, info: UInfo, onSave: (arg0: ItemFront) => void }) {
+export default function EditableItem(props: { item: ItemFront, info:UInfo, onSave:(arg0: ItemFront)=>void }) {
 
   const [editMode, setEditMode] = useState(false);
   const [editedItem, setEditedItem] = useState(props.item);
@@ -33,24 +34,20 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
     setEditMode(false);
   };
 
-  if (!editMode) {
-    return (
-      <div className="flex justify-end">
-        <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={() => setEditMode(true)}>Edit</button>
+  return (
+    <div className="bg-gray-100 p-4 rounded-md shadow-md">
+      <div className="mb-4">
+        <a className="font-bold text-blue-700 mb-2" href={props.info.fullUrl}>{editedItem.url}</a>
+        <Image3x2 src={props.info.image} />
       </div>
-    );
-  } else {
-    return (
-      <div>
-
-        <div className="mb-4">
-          <label
-            className={CSS_CLASSES.LABEL}
-            htmlFor="comment"
-          >
-            Comment
-          </label>
-
+      <div className="mb-4">
+        <label
+          className={CSS_CLASSES.LABEL}
+          htmlFor="comment"
+        >
+          Comment
+        </label>
+        {editMode ? (
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -58,12 +55,15 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
             value={editedItem.comment}
             onChange={handleInputChange}
           />
-
-        </div>
-        <div className="mb-4">
-          <label className={CSS_CLASSES.LABEL} htmlFor="tags">
-            Tags
-          </label>
+        ) : (
+          <p className="text-gray-700">{props.item.comment}</p>
+        )}
+      </div>
+      <div className="mb-4">
+        <label className={CSS_CLASSES.LABEL} htmlFor="tags">
+          Tags
+        </label>
+        {editMode ? (
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -71,15 +71,18 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
             value={editedItem.tags.join(", ")}
             onChange={handleInputChange}
           />
-
-        </div>
-        <div className="mb-4">
-          <label
-            className={CSS_CLASSES.LABEL}
-            htmlFor="priority"
-          >
-            Priority
-          </label>
+        ) : (
+          <p className="text-gray-700">{props.item.tags.join(", ")}</p>
+        )}
+      </div>
+      <div className="mb-4">
+        <label
+          className={CSS_CLASSES.LABEL}
+          htmlFor="priority"
+        >
+          Priority
+        </label>
+        {editMode ? (
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="number"
@@ -87,12 +90,15 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
             value={editedItem.priority}
             onChange={handleInputChange}
           />
-
-        </div>
-        <div className="mb-4">
-          <label className={CSS_CLASSES.LABEL} htmlFor="status">
-            Status
-          </label>
+        ) : (
+          <p className="text-gray-700">{editedItem.priority}</p>
+        )}
+      </div>
+      <div className="mb-4">
+        <label className={CSS_CLASSES.LABEL} htmlFor="status">
+          Status
+        </label>
+        {editMode ? (
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -100,21 +106,23 @@ export default function EditableItem(props: { item: ItemFront, info: UInfo, onSa
             value={editedItem.status}
             onChange={handleInputChange}
           />
-        </div>
+        ) : (
+          <p className="text-gray-700">{editedItem.status}</p>
+        )}
+      </div>
 
-        <div className="flex justify-end">
-
+      <div className="flex justify-end">
+        {editMode ? (
           <>
             <button
               className={CSS_CLASSES.SUBMIT_BUTTON}
               onClick={handleSave}>Save</button>
-            <button className={CSS_CLASSES.CANCEL_BUTTON} onClick={handleDiscard}>Discard</button>
+            <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={handleDiscard}>Discard</button>
           </>
-
-        </div>
+        ) : (
+          <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={() => setEditMode(true)}>Edit</button>
+        )}
       </div>
-    );
-  }
-
-
+    </div>
+  );
 }

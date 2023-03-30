@@ -5,7 +5,6 @@ import { nowHHMMSS } from "./timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
-import axios from "axios";
 
 interface PageInfo {
   url: string;
@@ -23,7 +22,6 @@ interface PageInfo {
 }
 
 const domainThrottle = new PromiseQueues();
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
@@ -50,39 +48,35 @@ async function fetchHtml(url: string): Promise<string> {
 }
 
 async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
-  try {
-    const urlObj = new URL(urlStr);
-    const domain = urlObj.hostname;
-    console.log(urlObj);
-    console.log(domain);
+  const urlObj = new URL(urlStr);
+  const domain = urlObj.hostname;
+  console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+  await domainThrottle.enqueue(domain);
+  console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+  const response = await fetch(urlStr);
+  const html = await response.text();
 
-    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
-    await domainThrottle.enqueue(domain);
+  const hash = createHash("sha256").update(html).digest("hex");
 
-    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-    const html = await fetchHtml(urlStr);
+  const root = parse(html);
+  const canonicalLink = root.querySelector('link[rel="canonical"]');
+  const canonUrl = canonicalLink?.getAttribute("href");
+  const url = canonUrl ? canonUrl : urlStr;
+  const title = root.querySelector("title")?.text || "";
+  const summary =
+    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+    "";
 
-    const hash = createHash("sha256").update(html).digest("hex");
-
-    const root = parse(html);
-    const canonicalLink = root.querySelector('link[rel="canonical"]');
-    const canonUrl = canonicalLink?.getAttribute("href");
-    const url = canonUrl ? canonUrl : urlStr;
-    const title = root.querySelector("title")?.text || "";
-    const summary =
-      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-      "";
-
-    const ogImage = root
-      .querySelector('meta[property="og:image"]')
-      ?.getAttribute("content");
-    const twitterImage = root
-      .querySelector('meta[name="twitter:image"]')
-      ?.getAttribute("content");
-    var image = ogImage || twitterImage;
-    if (!image) {
-      image = await getScreenshot(url);
-    }
+  const ogImage = root
+    .querySelector('meta[property="og:image"]')
+    ?.getAttribute("content");
+  const twitterImage = root
+    .querySelector('meta[name="twitter:image"]')
+    ?.getAttribute("content");
+  var image = ogImage || twitterImage;
+  if (!image) {
+    image = await getScreenshot(url);
+  }
 
     const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
     const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
