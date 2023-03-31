@@ -38,10 +38,15 @@ async function scrapeAndSavePage(url: string): Promise<UInfoV2 | null> {
 }
 
 export async function requestMany(urls: string[]): Promise<UInfoV2[]> {
+  console.log("request many: " + JSON.stringify(urls));
   const promises = urls.map((u) => {
     return requestSingle(u);
   });
   const data = await Promise.all(promises);
+  const res: UInfoV2[] = [];
+  data.forEach((item) => {
+    if (item != null) {
+      res.push(item);
     }
   });
   return res;
