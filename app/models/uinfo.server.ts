@@ -51,16 +51,22 @@ async function get(url: string): Promise<UInfo | null> {
 
 async function removeUinfo(actorId: string, url: string): Promise<void> {
   console.log("uinfo remove " + url);
+  console.log(". check role for " + actorId);
   const role = await prisma.collectionRoles.findFirst({
     where: {
-      userId: actorId
-    }
+      userId: actorId,
+    },
   });
   if (!role) {
     throw new Error("Must be valid user to remove a thing");
   }
   const sUrl = sanitizeUrl(url)!;
   if (url != sUrl) {
+    console.warn(`. Input ${url}  !=  ${sUrl}`);
+  }
+  console.log(`. Input ${url}  vs  ${sUrl}`);
+  await prisma.uInfoDb.delete({
+    where: { url: url },
   });
 }
 
@@ -104,10 +110,10 @@ async function set(info: UInfo): Promise<UInfo> {
       contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
-      dislikes: info.dislikes,
+      //dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
-      publishedTime: info.publishedTime,
+      //publishedTime: info.publishedTime,
       updated: new Date(),
       checked: new Date()
     },
@@ -121,10 +127,10 @@ async function set(info: UInfo): Promise<UInfo> {
       contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
-      dislikes: info.dislikes,
+      //dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
-      publishedTime: info.publishedTime
+      //publishedTime: info.publishedTime
     }
   });
 }
