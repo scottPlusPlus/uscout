@@ -6,7 +6,7 @@ import { twentyFourHoursAgo } from "./timeUtils";
 import * as createError from "http-errors";
 import { sanitizeUrl } from "./urlUtils";
 
-export async function requestSingle(url: string): Promise<UInfo> {
+export async function requestSingle(url: string): Promise<UInfo|null> {
   const sanitizedUrl = sanitizeUrl(url);
   if (!sanitizedUrl) {
     return Promise.reject(createError.BadRequest("Invalid URL"));
@@ -58,9 +58,16 @@ async function scrapeAndSavePage(url: string): Promise<UInfo> {
   return await UInfoModel.set(newInfo);
 }
 
-export function requestMany(urls: string[]): Promise<UInfo[]> {
+export async function requestMany(urls: string[]): Promise<UInfo[]> {
   const promises = urls.map((u) => {
     return requestSingle(u);
   });
-  return Promise.all(promises);
+  const infos = await Promise.all(promises);
+  const res:Array<UInfo> = [];
+  infos.forEach(info => {
+    if (info !== null){
+      res.push(info);
+    }
+  });
+  return res;
 }

@@ -21,10 +21,10 @@ model UInfo {
   contentType   String?
   duration      Int?
   likes         Int?
-  dislikes      Int?
+  //dislikes      Int?
   authorName    String?
   authorLink    String?
-  publishedTime Int?
+  //publishedTime Int?
 
   created DateTime @default(now())
   updated DateTime @updatedAt

@@ -7,8 +7,9 @@ import { getRoleType } from "./role.server";
 export type { UInfo } from "@prisma/client";
 
 async function get(url: string): Promise<UInfo | null> {
-  console.log("uinfo get");
+  console.log("uinfo get " + url);
   const sUrl = sanitizeUrl(url)!;
+  console.log("surl: " + sUrl);
   return prisma.uInfo.findFirst({
     where: { url: sUrl }
   });
