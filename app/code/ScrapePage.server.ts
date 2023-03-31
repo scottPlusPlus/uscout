@@ -2,8 +2,9 @@ import { parse } from "node-html-parser";
 import { createHash } from "crypto";
 import { PromiseQueues } from "./PromiseQueue.server";
 import { nowHHMMSS } from "./timeUtils";
+import * as reddit from "./reddit";
+import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
-import axios from "axios";
 
 interface PageInfo {
   url: string;
@@ -14,12 +15,13 @@ interface PageInfo {
   contentType?: string;
   duration?: number;
   likes?: number;
+  dislikes?: number;
   authorName?: string;
   authorLink?: string;
+  publishedTime?: number | null;
 }
 
 const domainThrottle = new PromiseQueues();
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
@@ -35,82 +37,6 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
   }
 }
 
-async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
-  try {
-    const urlObj = new URL(urlStr);
-    const domain = urlObj.hostname;
-    console.log(urlObj);
-    console.log(domain);
-
-    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
-    await domainThrottle.enqueue(domain);
-
-    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-    const html = await fetchHtml(urlStr);
-
-    const hash = createHash("sha256").update(html).digest("hex");
-
-    const root = parse(html);
-    const canonicalLink = root.querySelector('link[rel="canonical"]');
-    const canonUrl = canonicalLink?.getAttribute("href");
-    const url = canonUrl ? canonUrl : urlStr;
-    const title = root.querySelector("title")?.text || "";
-    const summary =
-      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-      "";
-
-    const ogImage = root
-      .querySelector('meta[property="og:image"]')
-      ?.getAttribute("content");
-    const twitterImage = root
-      .querySelector('meta[name="twitter:image"]')
-      ?.getAttribute("content");
-    var image = ogImage || twitterImage;
-    if (!image) {
-      image = await getScreenshot(url);
-    }
-
-    //TODO - if url is a youtube video
-    //set content type = Video
-    //call a separate function to scrape the video
-    //duration, likes, authorName, authorLink
-    //add all that to the output PageInfo
-    let contentType;
-    let authorLink;
-    let likes;
-    let authorName;
-
-    if (isYouTubeVideo(urlStr)) {
-      let videoId = getVideoIdFromUrl(urlStr);
-      if (videoId) {
-        try {
-          const scrapedVideoContent = await scrapeYouTubeVideo(videoId);
-          contentType = "Video";
-          authorLink = scrapedVideoContent.authorLink;
-          likes = parseInt(scrapedVideoContent.likes);
-          authorName = scrapedVideoContent.authorName;
-          console.log("author name = " + authorName);
-        } catch (error) {}
-      }
-    }
-
-    return {
-      url,
-      hash,
-      title,
-      summary,
-      image,
-      contentType,
-      authorLink,
-      likes,
-      authorName,
-    };
-  } catch (error: any) {
-    console.log("error with scrapePageImpl:  " + error.message);
-    throw error;
-  }
-}
-
 async function fetchHtml(url: string): Promise<string> {
   try {
     const response = await axios.get(url);
@@ -121,49 +47,77 @@ async function fetchHtml(url: string): Promise<string> {
   }
 }
 
-async function scrapeYouTubeVideo(videoId: string) {
-  try {
-    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`;
+async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
+  const urlObj = new URL(urlStr);
+  const domain = urlObj.hostname;
+  console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+  await domainThrottle.enqueue(domain);
+  console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+  const response = await fetch(urlStr);
+  const html = await response.text();
 
-    const response = await fetch(apiUrl);
-    const data = await response.json();
+  const hash = createHash("sha256").update(html).digest("hex");
 
-    console.log("Data: ", data);
+  const root = parse(html);
+  const canonicalLink = root.querySelector('link[rel="canonical"]');
+  const canonUrl = canonicalLink?.getAttribute("href");
+  const url = canonUrl ? canonUrl : urlStr;
+  const title = root.querySelector("title")?.text || "";
+  const summary =
+    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+    "";
 
-    const video = data.items[0];
-    // const duration = video.contentDetails.duration;
-    const likes = video.statistics.likeCount;
-    const authorName = video.snippet.channelTitle;
-    const authorLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
-    const contentType = "Video";
+  const ogImage = root
+    .querySelector('meta[property="og:image"]')
+    ?.getAttribute("content");
+  const twitterImage = root
+    .querySelector('meta[name="twitter:image"]')
+    ?.getAttribute("content");
+  var image = ogImage || twitterImage;
+  if (!image) {
+    image = await getScreenshot(url);
+  }
+
+    const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
+    const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
+
+    if (scrapedYoutubeContent) {
+      return {
+        url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: scrapedYoutubeContent.contentType,
+        likes: scrapedYoutubeContent.likes,
+        authorLink: scrapedYoutubeContent.authorLink,
+        authorName: scrapedYoutubeContent.authorName
+      };
+    } else if (scrapedRedditContent) {
+      return {
+        url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: scrapedRedditContent.contentType,
+        likes: scrapedRedditContent.likes,
+        dislikes: scrapedRedditContent.dislikes,
+        authorLink: scrapedRedditContent.authorLink,
+        authorName: scrapedRedditContent.authorName,
+        publishedTime: scrapedRedditContent.postCreationTime
+      };
+    }
+
     return {
-      // duration,
-      likes,
-      authorName,
-      authorLink,
-      contentType,
+      url,
+      hash,
+      title,
+      summary,
+      image
     };
   } catch (error: any) {
-    console.log(`Error scraping youtube for ${videoId}:  ${error.message}`);
+    console.log("error with scrapePageImpl:  " + error.message);
     throw error;
   }
-}
-
-function isYouTubeVideo(url: string) {
-  // Match YouTube watch URL format
-  const watchPattern = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
-
-  // Match YouTube short URL format
-  const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]+)/;
-
-  return watchPattern.test(url) || shortPattern.test(url);
-}
-
-function getVideoIdFromUrl(url: string) {
-  const regex = /(?:\?v=|\/embed\/|\/watch\?v=|\/\w+\/\w+\/)([\w-]{11})/;
-  const match = url.match(regex);
-  if (match) {
-    return match[1];
-  }
-  return null;
 }

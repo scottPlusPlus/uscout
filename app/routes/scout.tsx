@@ -24,9 +24,6 @@ export const action = async ({ request }: ActionArgs) => {
 
     try {
         const scrapeInfo = await requestSingle(inputUrl);
-        if (scrapeInfo == null){
-            throw new Error("failed to scrape info for " + inputUrl);
-        }
         return { info: scrapeInfo };
     } catch (err) {
         console.log(err);

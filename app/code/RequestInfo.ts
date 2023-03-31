@@ -6,8 +6,7 @@ import { twentyFourHoursAgo } from "./timeUtils";
 import * as createError from "http-errors";
 import { sanitizeUrl } from "./urlUtils";
 
-export async function requestSingle(url: string): Promise<UInfo|null> {
-
+export async function requestSingle(url: string): Promise<UInfo> {
   const sanitizedUrl = sanitizeUrl(url);
   if (!sanitizedUrl) {
     return Promise.reject(createError.BadRequest("Invalid URL"));
@@ -35,45 +34,33 @@ export async function requestSingle(url: string): Promise<UInfo|null> {
   return await Promise.race([scrapePromise, timeoutPromise]);
 } 
 
-
-async function scrapeAndSavePage(url: string): Promise<UInfo|null> {
-  try {
-    const scrape = await scrapePage(url);
-    const now = new Date();
-    const newInfo: UInfo = {
-      url: url,
-      fullUrl: scrape.url,
-      hash: scrape.hash,
-      title: scrape.title,
-      summary: scrape.summary,
-      image: scrape.image || "",
-      contentType: scrape.contentType || null,
-      duration: scrape.duration || null,
-      likes: scrape.likes || null,
-      authorName: scrape.authorName || null,
-      authorLink: scrape.authorLink || null,
-      created: now,
-      updated: now,
-      checked: now,
-    };
-    return await UInfoModel.set(newInfo);
-  } catch (error:any) {
-    console.log(error.message);
-    return null
-  }
+async function scrapeAndSavePage(url: string): Promise<UInfo> {
+  const scrape = await scrapePage(url);
+  const now = new Date();
+  const newInfo: UInfo = {
+    url: url,
+    fullUrl: scrape.url,
+    hash: scrape.hash,
+    title: scrape.title,
+    summary: scrape.summary,
+    image: scrape.image || "",
+    contentType: scrape.contentType || null,
+    duration: scrape.duration || null,
+    likes: scrape.likes || null,
+    dislikes: scrape.dislikes || null,
+    authorName: scrape.authorName || null,
+    authorLink: scrape.authorLink || null,
+    publishedTime: scrape.publishedTime || null,
+    created: now,
+    updated: now,
+    checked: now
+  };
+  return await UInfoModel.set(newInfo);
 }
 
-export async function requestMany(urls: string[]): Promise<UInfo[]> {
-  console.log("request many: " + JSON.stringify(urls));
+export function requestMany(urls: string[]): Promise<UInfo[]> {
   const promises = urls.map((u) => {
     return requestSingle(u);
   });
-  const data = await Promise.all(promises);
-  const res:UInfo[] = [];
-  data.forEach(item => {
-    if (item != null){
-      res.push(item);
-    }
-  });
-  return res;
+  return Promise.all(promises);
 }

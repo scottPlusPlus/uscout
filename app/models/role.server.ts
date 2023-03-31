@@ -1,4 +1,3 @@
-import { CollectionRoles } from "@prisma/client";
 import { prisma } from "~/db.server";
 
 export const ROLE_TYPE = {
@@ -16,12 +15,4 @@ export async function getRoleType(actorId:string, collectionId:string):Promise<s
         return null;
     }
     return role.role;
-}
-
-export async function getRolesTable():Promise<CollectionRoles[]>{
-    const roles = await prisma.collectionRoles.findMany({
-        take: 100,
-        orderBy: { collectionId: "desc" },
-    });
-    return roles;
 }

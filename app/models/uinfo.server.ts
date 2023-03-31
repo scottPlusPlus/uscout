@@ -10,28 +10,23 @@ async function get(url: string): Promise<UInfo | null> {
   console.log("uinfo get");
   const sUrl = sanitizeUrl(url)!;
   return prisma.uInfo.findFirst({
-    where: { url: sUrl },
+    where: { url: sUrl }
   });
 }
 
 async function removeUinfo(actorId: string, url: string): Promise<void> {
   console.log("uinfo remove " + url);
-  console.log(". check role for " + actorId);
   const role = await prisma.collectionRoles.findFirst({
     where: {
-      userId: actorId,
-    },
+      userId: actorId
+    }
   });
   if (!role) {
     throw new Error("Must be valid user to remove a thing");
   }
   const sUrl = sanitizeUrl(url)!;
-  if (url != sUrl) {
-    console.warn(`. Input ${url}  !=  ${sUrl}`);
-  }
-  console.log(`. Input ${url}  vs  ${sUrl}`);
   await prisma.uInfo.delete({
-    where: { url: url },
+    where: { url: sUrl }
   });
 }
 
@@ -55,12 +50,15 @@ async function set(info: UInfo): Promise<UInfo> {
       title: info.title,
       summary: info.summary,
       image: info.image,
+      contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
+      dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
+      publishedTime: info.publishedTime,
       updated: new Date(),
-      checked: new Date(),
+      checked: new Date()
     },
     create: {
       url: info.url,
@@ -69,18 +67,21 @@ async function set(info: UInfo): Promise<UInfo> {
       title: info.title,
       summary: info.summary,
       image: info.image,
+      contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
+      dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
-    },
+      publishedTime: info.publishedTime
+    }
   });
 }
 
 async function getRecent(): Promise<UInfo[]> {
   return prisma.uInfo.findMany({
     take: 100,
-    orderBy: { updated: "desc" },
+    orderBy: { updated: "desc" }
   });
 }
 
@@ -88,7 +89,7 @@ const UInfoModel = {
   get: get,
   set: set,
   getRecent: getRecent,
-  removeUinfo: removeUinfo,
+  removeUinfo: removeUinfo
 };
 
 export default UInfoModel;
