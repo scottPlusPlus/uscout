@@ -78,6 +78,7 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
     image = await getScreenshot(url);
   }
 
+  try {
     const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
     const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
 
