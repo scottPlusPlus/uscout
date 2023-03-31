@@ -12,17 +12,19 @@ generator client {
 }
 
 model UInfo {
-  url         String  @id
-  fullUrl     String  @default("")
-  hash        String
-  title       String
-  summary     String
-  image       String
-  contentType String?
-  duration    Int?
-  likes       Int?
-  authorName  String?
-  authorLink  String?
+  url           String  @id
+  fullUrl       String  @default("")
+  hash          String
+  title         String
+  summary       String
+  image         String
+  contentType   String?
+  duration      Int?
+  likes         Int?
+  dislikes      Int?
+  authorName    String?
+  authorLink    String?
+  publishedTime Int?
 
   created DateTime @default(now())
   updated DateTime @updatedAt
