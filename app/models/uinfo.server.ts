@@ -1,10 +1,44 @@
 import type { UInfo } from "@prisma/client";
 import { sanitizeUrl } from "~/code/urlUtils";
-
 import { prisma } from "~/db.server";
-import { getRoleType } from "./role.server";
 
 export type { UInfo } from "@prisma/client";
+
+export type UInfoV2 = {
+  url:         string
+  info: {
+    fullUrl:     string,
+    hash:        string,
+    title:       string,
+    summary:     string,
+    image:       string,
+    contentType: string|null,
+    duration:    number|null,
+    likes:       number|null,
+    authorName:  string|null,
+    authorLink:  string|null,
+  },
+  scrapeHistory: Array<scrapeHistory>,
+
+}
+
+type scrapeHistory = {
+  timestamp: number,
+  status: number,
+}
+
+async function getInfo(url:string):Promise<UInfoV2|null> {
+  const sUrl = sanitizeUrl(url)!;
+  const data = await prisma.uInfoDb.findFirst({
+    where: { url: sUrl },
+  });
+  if (!data){
+    return null;
+  }
+  const parsedData:UInfoV2 = JSON.parse(data.dataJson);
+  return parsedData;
+}
+
 
 async function get(url: string): Promise<UInfo | null> {
   console.log("uinfo get");
@@ -30,9 +64,26 @@ async function removeUinfo(actorId: string, url: string): Promise<void> {
     console.warn(`. Input ${url}  !=  ${sUrl}`);
   }
   console.log(`. Input ${url}  vs  ${sUrl}`);
-  await prisma.uInfo.delete({
+  await prisma.uInfoDb.delete({
     where: { url: url },
   });
+}
+
+async function setInfo(info:UInfoV2):Promise<UInfoV2> {
+  const url = info.url;
+  console.log("saveInfo: " + info.url);
+  const data = JSON.stringify(info);
+  await prisma.uInfoDb.upsert({
+    where: {url: url},
+    update: {
+      dataJson: data
+    },
+    create: {
+      url: url,
+      dataJson: data
+    }
+  });
+  return info;
 }
 
 async function set(info: UInfo): Promise<UInfo> {
@@ -77,16 +128,21 @@ async function set(info: UInfo): Promise<UInfo> {
   });
 }
 
-async function getRecent(): Promise<UInfo[]> {
-  return prisma.uInfo.findMany({
+async function getRecent(): Promise<UInfoV2[]> {
+  const infos = await prisma.uInfoDb.findMany({
     take: 100,
     orderBy: { updated: "desc" },
   });
+  const res = infos.map(info => {
+    const infoOut:UInfoV2 = JSON.parse(info.dataJson);
+    return infoOut;
+  });
+  return res;
 }
 
 const UInfoModel = {
-  get: get,
-  set: set,
+  getInfo: getInfo,
+  setInfo: setInfo,
   getRecent: getRecent,
   removeUinfo: removeUinfo,
 };

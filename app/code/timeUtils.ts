@@ -7,8 +7,22 @@ export function nowHHMMSS(): string {
 }
 
 const twentyFourHoursInMS = 24 * 60 * 60 * 1000;
+const twentyFourHoursInS =  24 * 60 * 60;
 
 export function twentyFourHoursAgo():Date {
     const now = new Date();
     return new Date(now.getTime() - (twentyFourHoursInMS));
+}
+
+export function twentyFourHoursAgoTimestamp():number {
+    return nowUnixTimestamp() - twentyFourHoursInS;
+}
+
+
+export function nowUnixTimestamp():number {
+    return Math.floor(Date.now() / 1000);
+}
+
+export function timeStampFromDate(date:Date):number {
+    return Math.floor(date.getTime() / 1000);
 }
