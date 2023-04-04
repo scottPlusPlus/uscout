@@ -3,12 +3,14 @@ import { UInfo } from "@prisma/client";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { CSS_CLASSES } from '~/code/CssClasses';
+import { UInfoV2, hashOrF, imageOrF, titleOrF, updatedTime } from '~/code/datatypes/info';
 dayjs.extend(relativeTime);
 
 type Props = {
-  uinfos: UInfo[];
+  uinfos: UInfoV2[];
   onDelete: (arg0: string)=>void;
 };
+
 
 export default function UInfoTable({ uinfos, onDelete }: Props) {
 
@@ -26,17 +28,16 @@ export default function UInfoTable({ uinfos, onDelete }: Props) {
   const sortedUInfos = ()=> {
     console.log("sorting by " + sortBy);
     const x = cleanUInfos.sort((a, b) => {
+
       switch(sortBy){
-        case 'created':
-          return dayjs(b.created).diff(dayjs(a.created));
         case 'url':
           return a.url.localeCompare(b.url);
         case 'hash':
-          return a.hash.localeCompare(b.hash);
+          return hashOrF(a).localeCompare(hashOrF(b));
         case 'title':
-          return a.title.localeCompare(b.title);
+          return titleOrF(a).localeCompare(titleOrF(b));
         default:
-          return dayjs(b.updated).diff(dayjs(a.updated));
+          return dayjs(updatedTime(b)).diff(dayjs(updatedTime(a)));
       }
     });
     return x;
@@ -47,11 +48,10 @@ export default function UInfoTable({ uinfos, onDelete }: Props) {
     return sortedUInfos().map((uinfo) => (
       <tr key={uinfo.url}>
         <td className="px-4 py-2">{uinfo.url}</td>
-        <td className="px-4 py-2">{uinfo.title}</td>
-        <td className="px-4 py-2">{uinfo.image}</td>
-        <td className="px-4 py-2">{uinfo.hash.substring(0, 8)}...</td>
-        <td className="px-4 py-2">{dayjs(uinfo.created).fromNow()}</td>
-        <td className="px-4 py-2">{dayjs(uinfo.updated).fromNow()}</td>
+        <td className="px-4 py-2">{titleOrF(uinfo)}</td>
+        <td className="px-4 py-2">{imageOrF(uinfo)}</td>
+        <td className="px-4 py-2">{hashOrF(uinfo).substring(0, 8)}...</td>
+        <td className="px-4 py-2">{dayjs(updatedTime(uinfo)*1000).fromNow()}</td>
         <td className="px-4 py-2"> <button
                 className={CSS_CLASSES.SUBMIT_BUTTON}
                 type="submit"
@@ -93,12 +93,6 @@ export default function UInfoTable({ uinfos, onDelete }: Props) {
               onClick={() => setSortBy('hash')}
             >
               Hash
-            </th>
-            <th
-              className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('created')}
-            >
-              Created
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
