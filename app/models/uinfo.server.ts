@@ -5,47 +5,50 @@ import { prisma } from "~/db.server";
 export type { UInfo } from "@prisma/client";
 
 export type UInfoV2 = {
-  url:         string
-  info: {
-    fullUrl:     string,
-    hash:        string,
-    title:       string,
-    summary:     string,
-    image:       string,
-    contentType: string|null,
-    duration:    number|null,
-    likes:       number|null,
-    authorName:  string|null,
-    authorLink:  string|null,
-  },
-  scrapeHistory: Array<scrapeHistory>,
+  url: string;
+  info: ScrapedInfo | null;
+  scrapeHistory: Array<scrapeHistory>;
+};
 
-}
+export type ScrapedInfo = {
+  url:string;
+  fullUrl: string;
+  hash: string;
+  title: string;
+  summary: string;
+  image: string;
+  contentType: string | null;
+  duration?: number;
+  likes?: number;
+  dislikes?: number;
+  authorName?: string;
+  authorLink?: string;
+  publishTime?: number;
+};
 
 type scrapeHistory = {
-  timestamp: number,
-  status: number,
-}
+  timestamp: number;
+  status: number;
+};
 
-async function getInfo(url:string):Promise<UInfoV2|null> {
+async function getInfo(url: string): Promise<UInfoV2 | null> {
   const sUrl = sanitizeUrl(url)!;
   const data = await prisma.uInfoDb.findFirst({
     where: { url: sUrl },
   });
-  if (!data){
+  if (!data) {
     return null;
   }
-  const parsedData:UInfoV2 = JSON.parse(data.dataJson);
+  const parsedData: UInfoV2 = JSON.parse(data.dataJson);
   return parsedData;
 }
-
 
 async function get(url: string): Promise<UInfo | null> {
   console.log("uinfo get " + url);
   const sUrl = sanitizeUrl(url)!;
   console.log("surl: " + sUrl);
   return prisma.uInfo.findFirst({
-    where: { url: sUrl }
+    where: { url: sUrl },
   });
 }
 
@@ -70,19 +73,22 @@ async function removeUinfo(actorId: string, url: string): Promise<void> {
   });
 }
 
-async function setInfo(info:UInfoV2):Promise<UInfoV2> {
+async function setInfo(info: UInfoV2): Promise<UInfoV2> {
   const url = info.url;
+  if (info.info){
+    info.info.url = url;
+  }
   console.log("saveInfo: " + info.url);
   const data = JSON.stringify(info);
   await prisma.uInfoDb.upsert({
-    where: {url: url},
+    where: { url: url },
     update: {
-      dataJson: data
+      dataJson: data,
     },
     create: {
       url: url,
-      dataJson: data
-    }
+      dataJson: data,
+    },
   });
   return info;
 }
@@ -115,7 +121,7 @@ async function set(info: UInfo): Promise<UInfo> {
       authorLink: info.authorLink,
       //publishedTime: info.publishedTime,
       updated: new Date(),
-      checked: new Date()
+      checked: new Date(),
     },
     create: {
       url: info.url,
@@ -131,17 +137,17 @@ async function set(info: UInfo): Promise<UInfo> {
       authorName: info.authorName,
       authorLink: info.authorLink,
       //publishedTime: info.publishedTime
-    }
+    },
   });
 }
 
 async function getRecent(): Promise<UInfoV2[]> {
   const infos = await prisma.uInfoDb.findMany({
     take: 100,
-    orderBy: { updated: "desc" }
+    orderBy: { updated: "desc" },
   });
-  const res = infos.map(info => {
-    const infoOut:UInfoV2 = JSON.parse(info.dataJson);
+  const res = infos.map((info) => {
+    const infoOut: UInfoV2 = JSON.parse(info.dataJson);
     return infoOut;
   });
   return res;
@@ -151,7 +157,7 @@ const UInfoModel = {
   getInfo: getInfo,
   setInfo: setInfo,
   getRecent: getRecent,
-  removeUinfo: removeUinfo
+  removeUinfo: removeUinfo,
 };
 
 export default UInfoModel;

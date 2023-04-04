@@ -2,8 +2,9 @@ import { UInfo } from "@prisma/client";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import { ItemFront } from "~/models/item.server";
 import Image3x2 from "./Image3x2";
+import { ScrapedInfo } from "~/models/uinfo.server";
 
-export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTagClick: (arg0: string) => void, onLinkClick?:(url:string)=>void, }) {
+export default function ItemDisplay(props: { item: ItemFront, info: ScrapedInfo, onTagClick: (arg0: string) => void, onLinkClick?:(url:string)=>void, }) {
     // console.log("Render ItemDisplay for " + props.item.url);
     // console.log("info:  " + JSON.stringify(props.info));
     

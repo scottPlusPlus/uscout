@@ -6,25 +6,12 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import axios from "axios";
-
-interface PageInfo {
-  url: string;
-  hash: string;
-  title: string;
-  summary: string;
-  image?: string;
-  contentType?: string;
-  duration?: number;
-  likes?: number;
-  dislikes?: number;
-  authorName?: string;
-  authorLink?: string;
-  publishedTime?: number | null;
-}
+import { ScrapedInfo } from "~/models/uinfo.server";
+import { asUndefined } from "./tsUtils";
 
 const domainThrottle = new PromiseQueues();
 
-export default async function scrapePage(url: string): Promise<PageInfo> {
+export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
@@ -48,15 +35,14 @@ async function fetchHtml(url: string): Promise<string> {
   }
 }
 
-async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
+async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
   try {
     const urlObj = new URL(urlStr);
     const domain = urlObj.hostname;
     console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
     await domainThrottle.enqueue(domain);
     console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-    const response = await fetch(urlStr);
-    const html = await response.text();
+    const html = await fetchHtml(urlStr);
 
     const hash = createHash("sha256").update(html).digest("hex");
 
@@ -85,7 +71,8 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
 
     if (scrapedYoutubeContent) {
       return {
-        url,
+        url: url,
+        fullUrl: url,
         hash,
         title,
         summary,
@@ -96,8 +83,10 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
         authorName: scrapedYoutubeContent.authorName,
       };
     } else if (scrapedRedditContent) {
+
       return {
-        url,
+        url: url,
+        fullUrl:url,
         hash,
         title,
         summary,
@@ -107,16 +96,18 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
         dislikes: scrapedRedditContent.dislikes,
         authorLink: scrapedRedditContent.authorLink,
         authorName: scrapedRedditContent.authorName,
-        publishedTime: scrapedRedditContent.postCreationTime,
+        publishTime: asUndefined(scrapedRedditContent.postCreationTime),
       };
     }
 
     return {
-      url,
+      url: url,
+      fullUrl:url,
       hash,
       title,
       summary,
       image,
+      contentType:null
     };
   } catch (error: any) {
     console.log("error with scrapePageImpl:  " + error.message);

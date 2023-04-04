@@ -7,7 +7,7 @@ import { debounce } from 'lodash';
 import invariant from "tiny-invariant";
 import { getCollection } from "~/models/collection.server";
 import { getCollectionItems, Item, suggestItem } from "~/models/item.server";
-import { UInfo } from "@prisma/client";
+
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,6 +18,7 @@ import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
+import { ScrapedInfo } from "~/models/uinfo.server";
 
 type SearchTerm = {
   term: string,
@@ -71,7 +72,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-function remapPriorities(items: Item[], infoMap: Map<string, UInfo>, searchParams: SearchTerm[], caseSensitive: Boolean = false): Item[] {
+function remapPriorities(items: Item[], infoMap: Map<string, ScrapedInfo>, searchParams: SearchTerm[], caseSensitive: Boolean = false): Item[] {
 
   const includes = (strA: string, strB: string) => {
     return strA.toLowerCase().includes(strB.toLowerCase());
@@ -130,7 +131,7 @@ export default function CollectionDetailsPage() {
   // console.log(`Have ${loadedItems.length} loaded items`);
   // console.log("loadedUrls: " + loadedItemUrls);
 
-  const infoMap = new Map<string, UInfo>();
+  const infoMap = new Map<string, ScrapedInfo>();
   data.infos.forEach(info => {
     const betterInfo = JSON.parse(JSON.stringify(info));
     infoMap.set(info.url, betterInfo);
@@ -216,7 +217,7 @@ export default function CollectionDetailsPage() {
     handleSearchUpdate(newTerms, showPending);
   }
 
-  const handleLinkClick = (linkUrl:string) => {
+  const handleLinkClick = (linkUrl: string) => {
     sendAnalyticEvent("link", linkUrl);
   }
 
