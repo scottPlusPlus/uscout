@@ -5,6 +5,8 @@ import { nowHHMMSS } from "./timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
+import * as twitter from "./twitter";
+const axios = require("axios");
 
 interface PageInfo {
   url: string;
@@ -27,7 +29,7 @@ export default async function scrapePage(url: string): Promise<PageInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error: any) {
+  } catch (error) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -41,7 +43,7 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     const response = await axios.get(url);
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     throw error;
   }
@@ -110,6 +112,21 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
       };
     }
 
+    (async () => {
+      const twitterHandle = await twitter.getTwitterHandle(root);
+      if (twitterHandle) {
+        console.log(`Twitter handle found: ${twitterHandle}`);
+        const latestTweetDate = await twitter.getLatestTweetDate(twitterHandle);
+        if (latestTweetDate) {
+          console.log(`Latest tweet date: ${latestTweetDate}`);
+        } else {
+          console.log("No tweets found.");
+        }
+      } else {
+        console.log("No Twitter handle found.");
+      }
+    })();
+
     return {
       url,
       hash,
@@ -117,7 +134,7 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
       summary,
       image
     };
-  } catch (error: any) {
+  } catch (error) {
     console.log("error with scrapePageImpl:  " + error.message);
     throw error;
   }
