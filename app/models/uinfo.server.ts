@@ -1,33 +1,71 @@
 import type { UInfo } from "@prisma/client";
+import { UInfoV2 } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
-
 import { prisma } from "~/db.server";
-import { getRoleType } from "./role.server";
 
 export type { UInfo } from "@prisma/client";
 
-async function get(url: string): Promise<UInfo | null> {
-  console.log("uinfo get");
+
+async function getInfo(url: string): Promise<UInfoV2 | null> {
   const sUrl = sanitizeUrl(url)!;
+  const data = await prisma.uInfoDb.findFirst({
+    where: { url: sUrl },
+  });
+  if (!data) {
+    return null;
+  }
+  const parsedData: UInfoV2 = JSON.parse(data.dataJson);
+  return parsedData;
+}
+
+async function get(url: string): Promise<UInfo | null> {
+  console.log("uinfo get " + url);
+  const sUrl = sanitizeUrl(url)!;
+  console.log("surl: " + sUrl);
   return prisma.uInfo.findFirst({
-    where: { url: sUrl }
+    where: { url: sUrl },
   });
 }
 
 async function removeUinfo(actorId: string, url: string): Promise<void> {
   console.log("uinfo remove " + url);
+  console.log(". check role for " + actorId);
   const role = await prisma.collectionRoles.findFirst({
     where: {
-      userId: actorId
-    }
+      userId: actorId,
+    },
   });
   if (!role) {
     throw new Error("Must be valid user to remove a thing");
   }
   const sUrl = sanitizeUrl(url)!;
-  await prisma.uInfo.delete({
-    where: { url: sUrl }
+  if (url != sUrl) {
+    console.warn(`. Input ${url}  !=  ${sUrl}`);
+  }
+  console.log(`. Input ${url}  vs  ${sUrl}`);
+  await prisma.uInfoDb.delete({
+    where: { url: url },
   });
+}
+
+async function setInfo(info: UInfoV2): Promise<UInfoV2> {
+  const url = info.url;
+  if (info.info){
+    info.info.url = url;
+  }
+  console.log("saveInfo: " + info.url);
+  const data = JSON.stringify(info);
+  await prisma.uInfoDb.upsert({
+    where: { url: url },
+    update: {
+      dataJson: data,
+    },
+    create: {
+      url: url,
+      dataJson: data,
+    },
+  });
+  return info;
 }
 
 async function set(info: UInfo): Promise<UInfo> {
@@ -53,12 +91,12 @@ async function set(info: UInfo): Promise<UInfo> {
       contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
-      dislikes: info.dislikes,
+      //dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
-      publishedTime: info.publishedTime,
+      //publishedTime: info.publishedTime,
       updated: new Date(),
-      checked: new Date()
+      checked: new Date(),
     },
     create: {
       url: info.url,
@@ -70,26 +108,31 @@ async function set(info: UInfo): Promise<UInfo> {
       contentType: info.contentType,
       duration: info.duration,
       likes: info.likes,
-      dislikes: info.dislikes,
+      //dislikes: info.dislikes,
       authorName: info.authorName,
       authorLink: info.authorLink,
-      publishedTime: info.publishedTime
-    }
+      //publishedTime: info.publishedTime
+    },
   });
 }
 
-async function getRecent(): Promise<UInfo[]> {
-  return prisma.uInfo.findMany({
+async function getRecent(): Promise<UInfoV2[]> {
+  const infos = await prisma.uInfoDb.findMany({
     take: 100,
-    orderBy: { updated: "desc" }
+    orderBy: { updated: "desc" },
   });
+  const res = infos.map((info) => {
+    const infoOut: UInfoV2 = JSON.parse(info.dataJson);
+    return infoOut;
+  });
+  return res;
 }
 
 const UInfoModel = {
-  get: get,
-  set: set,
+  getInfo: getInfo,
+  setInfo: setInfo,
   getRecent: getRecent,
-  removeUinfo: removeUinfo
+  removeUinfo: removeUinfo,
 };
 
 export default UInfoModel;

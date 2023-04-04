@@ -1,21 +1,38 @@
-import { UInfo } from "@prisma/client";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import { ItemFront } from "~/models/item.server";
+import EditableItem from "./EditableItem";
 import Image3x2 from "./Image3x2";
+import { ScrapedInfo } from "~/code/datatypes/info";
 
-export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTagClick: (arg0: string) => void, onLinkClick?:(url:string)=>void, }) {
+type ItemProps = {
+    item: ItemFront,
+    info: ScrapedInfo,
+    onTagClick: (arg0: string) => void,
+    onLinkClick?: (url: string) => void,
+    onItemUpdate: (arg0: ItemFront) => void
+    admin: boolean
+}
+
+export default function ItemDisplay(props: ItemProps) {
     // console.log("Render ItemDisplay for " + props.item.url);
     // console.log("info:  " + JSON.stringify(props.info));
-    
-    const handleLinkClick = (event:React.MouseEvent<HTMLAnchorElement>) => {
-        if (props.onLinkClick){
+
+    const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (props.onLinkClick) {
             props.onLinkClick(props.item.url);
         }
     }
-    
+
+    var thisFullUrl = props.info?.fullUrl;
+    if (thisFullUrl === undefined) {
+        console.log("error: no full url for: " + props.item.url);
+        console.log(JSON.stringify(props.info));
+        thisFullUrl = "??";
+    }
+
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
-            <a onClick={handleLinkClick} href={props.info.fullUrl} target="_blank">
+            <a onClick={handleLinkClick} href={thisFullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">
@@ -35,6 +52,11 @@ export default function ItemDisplay(props: { item: ItemFront, info: UInfo, onTag
                         {tag}
                     </button>
                 ))}
+            </div>
+            <div>
+                {props.admin && (
+                    <EditableItem item={props.item} info={props.info} onSave={props.onItemUpdate} />
+                )}
             </div>
         </div>
     );

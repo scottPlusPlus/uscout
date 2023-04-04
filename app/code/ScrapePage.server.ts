@@ -6,26 +6,14 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
-const axios = require("axios");
 
-interface PageInfo {
-  url: string;
-  hash: string;
-  title: string;
-  summary: string;
-  image?: string;
-  contentType?: string;
-  duration?: number;
-  likes?: number;
-  dislikes?: number;
-  authorName?: string;
-  authorLink?: string;
-  publishedTime?: number | null;
-}
+import axios from "axios";
+import { asUndefined } from "./tsUtils";
+import { ScrapedInfo } from "./datatypes/info";
 
 const domainThrottle = new PromiseQueues();
 
-export default async function scrapePage(url: string): Promise<PageInfo> {
+export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
@@ -49,44 +37,44 @@ async function fetchHtml(url: string): Promise<string> {
   }
 }
 
-async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
-  const urlObj = new URL(urlStr);
-  const domain = urlObj.hostname;
-  console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
-  await domainThrottle.enqueue(domain);
-  console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
-  const response = await fetch(urlStr);
-  const html = await response.text();
-
-  const hash = createHash("sha256").update(html).digest("hex");
-
-  const root = parse(html);
-  const canonicalLink = root.querySelector('link[rel="canonical"]');
-  const canonUrl = canonicalLink?.getAttribute("href");
-  const url = canonUrl ? canonUrl : urlStr;
-  const title = root.querySelector("title")?.text || "";
-  const summary =
-    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-    "";
-
-  const ogImage = root
-    .querySelector('meta[property="og:image"]')
-    ?.getAttribute("content");
-  const twitterImage = root
-    .querySelector('meta[name="twitter:image"]')
-    ?.getAttribute("content");
-  var image = ogImage || twitterImage;
-  if (!image) {
-    image = await getScreenshot(url);
-  }
-
+async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
   try {
+    const urlObj = new URL(urlStr);
+    const domain = urlObj.hostname;
+    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+    await domainThrottle.enqueue(domain);
+    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+    const html = await fetchHtml(urlStr);
+
+    const hash = createHash("sha256").update(html).digest("hex");
+
+    const root = parse(html);
+    const canonicalLink = root.querySelector('link[rel="canonical"]');
+    const canonUrl = canonicalLink?.getAttribute("href");
+    const url = canonUrl ? canonUrl : urlStr;
+    const title = root.querySelector("title")?.text || "";
+    const summary =
+      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+      "";
+
+    const ogImage = root
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content");
+    const twitterImage = root
+      .querySelector('meta[name="twitter:image"]')
+      ?.getAttribute("content");
+    var image = ogImage || twitterImage;
+    if (!image) {
+      image = await getScreenshot(url);
+    }
+
     const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
     const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
 
     if (scrapedYoutubeContent) {
       return {
-        url,
+        url: url,
+        fullUrl: url,
         hash,
         title,
         summary,
@@ -98,7 +86,8 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
       };
     } else if (scrapedRedditContent) {
       return {
-        url,
+        url: url,
+        fullUrl: url,
         hash,
         title,
         summary,
@@ -108,7 +97,7 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
         dislikes: scrapedRedditContent.dislikes,
         authorLink: scrapedRedditContent.authorLink,
         authorName: scrapedRedditContent.authorName,
-        publishedTime: scrapedRedditContent.postCreationTime
+        publishTime: asUndefined(scrapedRedditContent.postCreationTime)
       };
     }
 
@@ -128,11 +117,13 @@ async function scrapePageImpl(urlStr: string): Promise<PageInfo> {
     })();
 
     return {
-      url,
+      url: url,
+      fullUrl: url,
       hash,
       title,
       summary,
-      image
+      image,
+      contentType: null
     };
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error.message);
