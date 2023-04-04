@@ -1,35 +1,10 @@
 import type { UInfo } from "@prisma/client";
+import { UInfoV2 } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
 import { prisma } from "~/db.server";
 
 export type { UInfo } from "@prisma/client";
 
-export type UInfoV2 = {
-  url: string;
-  info: ScrapedInfo | null;
-  scrapeHistory: Array<scrapeHistory>;
-};
-
-export type ScrapedInfo = {
-  url:string;
-  fullUrl: string;
-  hash: string;
-  title: string;
-  summary: string;
-  image: string;
-  contentType: string | null;
-  duration?: number;
-  likes?: number;
-  dislikes?: number;
-  authorName?: string;
-  authorLink?: string;
-  publishTime?: number;
-};
-
-type scrapeHistory = {
-  timestamp: number;
-  status: number;
-};
 
 async function getInfo(url: string): Promise<UInfoV2 | null> {
   const sUrl = sanitizeUrl(url)!;

@@ -6,8 +6,8 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import axios from "axios";
-import { ScrapedInfo } from "~/models/uinfo.server";
 import { asUndefined } from "./tsUtils";
+import { ScrapedInfo } from "./datatypes/info";
 
 const domainThrottle = new PromiseQueues();
 

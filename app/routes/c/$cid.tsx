@@ -23,7 +23,8 @@ import { getUserId } from "~/session.server";
 import { nowHHMMSS } from "~/code/timeUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import EditCollectionData from "~/components/EditCollectionData";
-import { ScrapedInfo } from "~/models/uinfo.server";
+import { ScrapedInfo } from "~/code/datatypes/info";
+
 
 type SearchTerm = {
   term: string,
@@ -211,6 +212,10 @@ export default function CollectionDetailsPage() {
   const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
   const [admin, setAdmin] = useState(false);
+
+  if (admin && !showPending){
+    setShowPending(true);
+  }
 
   const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
 
