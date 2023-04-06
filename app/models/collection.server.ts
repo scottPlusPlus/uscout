@@ -2,6 +2,8 @@ import type { Collection } from "@prisma/client";
 
 import { prisma } from "~/db.server";
 import { getRoleType, ROLE_TYPE } from "./role.server";
+import { CollectionJson } from "~/code/datatypes/collectionJson";
+import { getCollectionItems, Item, removeItem, upsertItem } from "./item.server";
 
 export async function getCollection(id: string) {
   return prisma.collection.findUnique({ where: { id } });
@@ -60,6 +62,30 @@ export async function updateCollection(
       description: collection.description,
     },
   });
+}
+
+export async function overrideCollection(
+  actorId: string,
+  data: CollectionJson
+){
+  const mayUpdate = await actorMayUpdateCollection(actorId, data.collection.id);
+  if (!mayUpdate){
+    throw new Error("user does not have permissions");
+  }
+  await updateCollection(actorId, data.collection);
+
+  const currentItems = await getCollectionItems(data.collection.id);
+  const newUrls = new Set(data.items.map(item => item.url));
+  const itemsToRemove = currentItems.filter(item => !newUrls.has(item.url));
+  console.log("items to remove:\n" + JSON.stringify(currentItems));
+
+  //intentionally done in sequence, in case of dupes
+  for (const item of itemsToRemove) {
+    await removeItem(actorId, data.collection.id, item.url);
+  }
+  for (const item of data.items) {
+    await upsertItem(actorId, item);
+  }
 }
 
 export async function actorMayUpdateCollection(actorId:string, collectionId:string):Promise<boolean>{

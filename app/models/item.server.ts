@@ -121,12 +121,8 @@ export async function suggestItem(
     throw new Error("invalid url " + url);
   }
   const itemId = collectionId + sanitizedUrl;
-  const existingItem = await prisma.itemModel.findFirst({
-    where: {
-      id: itemId,
-    },
-  });
-  if (existingItem) {
+  const e = await exists(collectionId, sanitizedUrl);
+  if (e) {
     throw new Error("Item already exists " + sanitizedUrl);
   }
 
@@ -174,32 +170,71 @@ export async function updateItem(
   return res;
 }
 
-// export async function upsert(input: Item): Promise<Item> {
-//   const item = itemModelFromItem(input);
-//   const x = await prisma.itemModel.upsert({
-//     where: { id: item.id },
-//     create: {
-//       id: item.id,
-//       url: item.url,
-//       collection: item.collection,
-//       comment: item.comment,
-//       tags: item.tags,
-//       priority: item.priority,
-//     },
-//     update: {
-//       comment: item.comment,
-//       tags: item.tags,
-//       priority: item.priority,
-//     },
-//   });
-//   const res = itemFromItemModel(item);
-//   return res;
-// }
+export async function upsertItem(actorId: string, input: Item): Promise<Item> {
+  const e = await exists(input.collection, input.url);
+  if (!e) {
+    await addItem(actorId, input.collection, input.url);
+  }
+  return await updateItem(actorId, input.collection, input);
+}
+
+async function exists(collectionId: string, url: string): Promise<boolean> {
+  const itemId = collectionId + url;
+  const existingItem = await prisma.itemModel.findFirst({
+    where: {
+      id: itemId,
+    },
+  });
+  return existingItem !== null;
+}
+
+export async function removeItem(
+  actorId: string,
+  collectionId: string,
+  url: string
+): Promise<void> {
+  console.log("removeItem: " + url);
+  const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
+  if (!mayUpdate) {
+    throw new Error("user does not have permissions");
+  }
+  const itemId = collectionId + url;
+  const existingItem = await prisma.itemModel.findFirst({
+    where: {
+      id: itemId,
+    },
+  });
+  var deleteKey = itemId;
+  if (!existingItem){
+
+    const exist2 = await prisma.itemModel.findFirst({
+      where : {
+        url: url,
+        collection: collectionId
+      }
+    });
+    if (exist2){
+      deleteKey = exist2.id;
+    } else {
+      console.log("no match");
+      return;
+    }
+  }
+  console.log("item existss...  attempt remove " + deleteKey);
+  await prisma.itemModel.delete({
+    where: {
+      id: deleteKey,
+    },
+  });
+}
 
 export async function getCollectionItems(collectonId: string): Promise<Item[]> {
   var itemModels = await prisma.itemModel.findMany({
     where: { collection: collectonId },
   });
+  itemModels.forEach(item=> {
+    console.log("have raw item: " + item.id + "  url: " + item.url);
+  })
   itemModels = itemModels.filter((item) => item.status != STATUS.REJECTED);
   return itemModels.map(itemFromItemModel);
 }
