@@ -11,6 +11,8 @@ import axios from "axios";
 import { asUndefined } from "./tsUtils";
 import { ScrapedInfo } from "./datatypes/info";
 
+const TWITTER_BEARER_TOKEN = "";
+
 const domainThrottle = new PromiseQueues();
 
 export default async function scrapePage(url: string): Promise<ScrapedInfo> {
@@ -101,20 +103,49 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       };
     }
 
-    (async () => {
-      const twitterHandle = await twitter.getTwitterHandle(root);
-      if (twitterHandle) {
-        console.log(`Twitter handle found: ${twitterHandle}`);
-        const latestTweetDate = await twitter.getLatestTweetDate(twitterHandle);
-        if (latestTweetDate) {
-          console.log(`Latest tweet date: ${latestTweetDate}`);
-        } else {
-          console.log("No tweets found.");
+    const twitterUsername = await twitter.getTwitterHandle(root);
+
+    if (twitterUsername) {
+      const options = {
+        headers: {
+          Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
         }
-      } else {
-        console.log("No Twitter handle found.");
-      }
-    })();
+      };
+      const getUserEndpoint =
+        "https://api.twitter.com/2/users/by?usernames=" + twitterUsername;
+      const getUserResponse1 = await fetch(getUserEndpoint, options);
+      const getUserData = await getUserResponse1.json();
+      const userId = getUserData.data[0].id;
+      const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?max_results=25`;
+      console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
+      const getTweetsResponse = await fetch(getTweetsEndpoint, options);
+      const getTweetsData = await getTweetsResponse.json();
+      const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
+      console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
+      console.log("LAST TWEET: ", lastTweet);
+      console.log("RETURN: ", {
+        url: url,
+        fullUrl: url,
+        hash,
+        title,
+        contentType: "twitter",
+        summary: getUserData.description,
+        authorName: getUserData.name,
+        image: getUserData.profile_image_url,
+        likes: getUserData.followers_count
+      });
+      return {
+        url: url,
+        fullUrl: url,
+        hash,
+        title,
+        contentType: "twitter",
+        summary: getTweetsData.description,
+        authorName: getTweetsData.name,
+        image: getTweetsData.profile_image_url,
+        likes: getTweetsData.followers_count
+      };
+    }
 
     return {
       url: url,
@@ -126,7 +157,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       contentType: null
     };
   } catch (error) {
-    console.log("error with scrapePageImpl:  " + error.message);
+    console.log("error with scrapePageImpl:  " + error);
     throw error;
   }
 }
