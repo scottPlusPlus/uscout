@@ -30,7 +30,7 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
     setTimeout(() => {
       console.log(`Timeout exceeded for ${sanitizedUrl}`);
       resolve(null);
-    }, 10000);
+    }, 20 * 1000);
   });
   return await Promise.race([scrapePromise, timeoutPromise]);
 }

@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
 import { actorMayUpdateCollection, getCollection, overrideCollection, updateCollection } from "~/models/collection.server";
-import { addItem, getCollectionItems, Item, ItemFront, suggestItem, updateItem } from "~/models/item.server";
+import { addItem, getCollectionItems, Item, ItemFront, removeItem, suggestItem, updateItem } from "~/models/item.server";
 import { Collection } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
@@ -41,6 +41,7 @@ const ACTIONS = {
   UPDATE_ITEM: "updateItem",
   UPDATE_COLLECTION: "collection",
   OVERRIDE_COLLECTION: "override",
+  REMOVE_ITEM: "removeItem",
 }
 
 //Remix Action
@@ -66,6 +67,9 @@ export async function action({ request, params }: ActionArgs) {
       data = await actionUpdateCollection(params.cid, userId, inputData);
     } else if (aType == ACTIONS.OVERRIDE_COLLECTION) {
       await actionOverrideCollection(params.cid, userId, inputData);
+      return redirect("/c/" + params.cid);
+    } else if (aType == ACTIONS.REMOVE_ITEM){
+      await actionRemoveItem(params.cid, userId, inputData);
       return redirect("/c/" + params.cid);
     }
     throw ("invalid action");
@@ -117,6 +121,14 @@ async function actionOverrideCollection(cid: string, actor: string | undefined, 
   }
   const collection: CollectionJson = assertValidCollection(JSON.parse(inputData));
   await overrideCollection(actor, collection);
+}
+
+async function actionRemoveItem(cid:string,  actor: string | undefined, inputData: string): Promise<void> {
+  if (actor == null) {
+    throw ("Must be logged in");
+  }
+  const itemUrl = inputData;
+  return await removeItem(actor, cid, itemUrl);
 }
 
 
@@ -185,6 +197,15 @@ function remapPriorities(items: Item[], infoMap: Map<string, ScrapedInfo>, searc
 //Main Render Function = = = = = 
 export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
+
+  const [isLoading, setLoading] = useState<Boolean>(false);
+  if (isLoading){
+    return (
+      <p>Loading...</p>
+    )
+  }
+
+
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
 
@@ -225,10 +246,6 @@ export default function CollectionDetailsPage() {
   const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
   const [admin, setAdmin] = useState(false);
-
-  if (admin && !showPending) {
-    setShowPending(true);
-  }
 
   const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
 
@@ -325,6 +342,12 @@ export default function CollectionDetailsPage() {
     setShowPending(newShowPending);
   }
 
+  if (admin && !showPending) {
+    console.log("turning on pending...");
+    handleSearchUpdate(searchTerms, true);
+  }
+
+
   const handleTagClick = (tag: string) => {
     console.log("tag clicked " + tag);
     const newTerms = [...searchTerms];
@@ -347,7 +370,12 @@ export default function CollectionDetailsPage() {
   const handleItemEdit = (item: ItemFront) => {
     console.log("handleItemEdit for " + item.url);
     submitAction(ACTIONS.UPDATE_ITEM, JSON.stringify(item));
-    //handleSearchUpdate(searchTerms, showPending);
+  }
+
+  const handleRemoveItem = (item: ItemFront) => {
+    console.log("handleRemoveItem for " + item.url);
+    submitAction(ACTIONS.REMOVE_ITEM, item.url);
+    setLoading(true);
   }
 
   const handleOverrideCollection = (data: CollectionJson) => {
@@ -396,7 +424,16 @@ export default function CollectionDetailsPage() {
       <div className="py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <ItemDisplay key={item.url} item={item} info={infoMap.get(item.url)!} onTagClick={handleTagClick} onLinkClick={handleLinkClick} admin={admin} onItemUpdate={handleItemEdit} />
+            <ItemDisplay 
+            key={item.url} 
+            item={item} 
+            info={infoMap.get(item.url)!} 
+            onTagClick={handleTagClick} 
+            onLinkClick={handleLinkClick} 
+            admin={admin} 
+            onItemUpdate={handleItemEdit}
+            onItemDelete={handleRemoveItem}
+             />
           ))}
         </div>
       </div>

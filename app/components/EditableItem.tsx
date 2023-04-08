@@ -4,10 +4,19 @@ import { Item, ItemFront } from "~/models/item.server";
 import Image3x2 from "./Image3x2";
 import { ScrapedInfo } from "~/code/datatypes/info";
 
-export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo, onSave:(arg0: ItemFront)=>void }) {
+type EditItemProps = {
+  item: ItemFront,
+  info: ScrapedInfo,
+  onSave: (arg0: ItemFront) => void,
+  onDelete: (arg0: ItemFront) => void,
+}
+
+
+export default function EditableItem(props: EditItemProps) {
 
   const [editMode, setEditMode] = useState(false);
   const [editedItem, setEditedItem] = useState(props.item);
+  const [deleted, setDeleted] = useState(false);
 
   const handleInputChange = (event: { target: { name: any; value: any; }; }) => {
     var { name, value } = event.target;
@@ -24,29 +33,51 @@ export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo,
   };
 
   const handleSave = () => {
-    console.log(editedItem);
+    if (!deleted){
+      editedItem.tags = editedItem.tags.sort();
+      console.log(editedItem);
+      props.onSave(editedItem);
+    } else {
+      props.onDelete(editedItem)
+    }
     setEditMode(false);
-    props.onSave(editedItem);
   };
 
   const handleDiscard = () => {
     setEditedItem(props.item);
+    setDeleted(false);
     setEditMode(false);
   };
 
-  return (
-    <div className="bg-gray-100 p-4 rounded-md shadow-md">
-      <div className="mb-4">
-        <a className="font-bold text-blue-700 mb-2" href={props.info.fullUrl}>{editedItem.url}</a>
-      </div>
-      <div className="mb-4">
-        <label
-          className={CSS_CLASSES.LABEL}
-          htmlFor="comment"
-        >
-          Comment
-        </label>
-        {editMode ? (
+  const handleDelete = () => {
+    setDeleted(true);
+  };
+
+
+
+  function bodySection() {
+
+    if (!editMode) {
+      return (null);
+    }
+
+    if (deleted) {
+      return (
+        <div>
+          <p>Save Item to commit deletion</p>
+        </div>
+      )
+    }
+
+    return (
+      <div>
+        <div className="mb-4">
+          <label
+            className={CSS_CLASSES.LABEL}
+            htmlFor="comment"
+          >
+            Comment
+          </label>
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -54,15 +85,12 @@ export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo,
             value={editedItem.comment}
             onChange={handleInputChange}
           />
-        ) : (
-          <p className="text-gray-700">{props.item.comment}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className={CSS_CLASSES.LABEL} htmlFor="tags">
-          Tags
-        </label>
-        {editMode ? (
+
+        </div>
+        <div className="mb-4">
+          <label className={CSS_CLASSES.LABEL} htmlFor="tags">
+            Tags
+          </label>
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -70,18 +98,14 @@ export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo,
             value={editedItem.tags.join(", ")}
             onChange={handleInputChange}
           />
-        ) : (
-          <p className="text-gray-700">{props.item.tags.join(", ")}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label
-          className={CSS_CLASSES.LABEL}
-          htmlFor="priority"
-        >
-          Priority
-        </label>
-        {editMode ? (
+        </div>
+        <div className="mb-4">
+          <label
+            className={CSS_CLASSES.LABEL}
+            htmlFor="priority"
+          >
+            Priority
+          </label>
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="number"
@@ -89,15 +113,11 @@ export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo,
             value={editedItem.priority}
             onChange={handleInputChange}
           />
-        ) : (
-          <p className="text-gray-700">{editedItem.priority}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className={CSS_CLASSES.LABEL} htmlFor="status">
-          Status
-        </label>
-        {editMode ? (
+        </div>
+        <div className="mb-4">
+          <label className={CSS_CLASSES.LABEL} htmlFor="status">
+            Status
+          </label>
           <input
             className={CSS_CLASSES.INPUT_FIELD}
             type="text"
@@ -105,23 +125,55 @@ export default function EditableItem(props: { item: ItemFront, info:ScrapedInfo,
             value={editedItem.status}
             onChange={handleInputChange}
           />
-        ) : (
-          <p className="text-gray-700">{editedItem.status}</p>
-        )}
+        </div>
       </div>
+    );
+  }
 
-      <div className="flex justify-end">
-        {editMode ? (
-          <>
-            <button
-              className={CSS_CLASSES.SUBMIT_BUTTON}
-              onClick={handleSave}>Save</button>
-            <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={handleDiscard}>Discard</button>
-          </>
-        ) : (
+
+  function footerControls() {
+    if (!editMode) {
+      return (
+        <div className="flex justify-end">
           <button className={CSS_CLASSES.SUBMIT_BUTTON} onClick={() => setEditMode(true)}>Edit</button>
-        )}
+        </div>
+      )
+    }
+    return (
+      <div className="flex justify-between">
+        <button
+          className={`${CSS_CLASSES.SUBMIT_BUTTON} mr-auto`}
+          disabled={deleted}
+          onClick={handleDelete}
+        >
+          Delete
+        </button>
+        <div>
+          <button
+            className={`${CSS_CLASSES.SUBMIT_BUTTON} ml-2`}
+            onClick={handleSave}
+          >
+            Save
+          </button>
+          <button
+            className={`${CSS_CLASSES.CANCEL_BUTTON} ml-2`}
+            onClick={handleDiscard}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  ``
+  return (
+
+    <div className="bg-gray-100 p-4 rounded-md shadow-md">
+      {bodySection()}
+
+
+      {footerControls()}
+    </div >
   );
 }

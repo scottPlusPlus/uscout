@@ -9,7 +9,8 @@ type ItemProps = {
     info: ScrapedInfo,
     onTagClick: (arg0: string) => void,
     onLinkClick?: (url: string) => void,
-    onItemUpdate: (arg0: ItemFront) => void
+    onItemUpdate: (arg0: ItemFront) => void,
+    onItemDelete: (arg0: ItemFront) => void,
     admin: boolean
 }
 
@@ -30,16 +31,23 @@ export default function ItemDisplay(props: ItemProps) {
         thisFullUrl = "??";
     }
 
+    var thisDisplayUrl = props.item.url;
+    if (thisDisplayUrl.startsWith("www.")) {
+        thisDisplayUrl = thisDisplayUrl.substring(4);
+    }
+
     return (
         <div className="border border-gray-300 rounded-lg shadow-md">
             <a onClick={handleLinkClick} href={thisFullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">
+                <a className="text-blue-700 mb-2" onClick={handleLinkClick} href={thisFullUrl} target="_blank">
+                    {thisDisplayUrl}
+                </a>
                 <h2 className="font-bold text-lg mb-2">{props.info.title}</h2>
                 <p className="text-gray-700 text-base">{props.info.summary}</p>
                 <p className="text-gray-700 text-base">- - - - - </p>
-                <p className="text-gray-700 text-base">{props.item.comment}</p>
                 {
                     props.item.status == "pending" && (
                         <button key={"pending"} className={CSS_CLASSES.ITEM_TAG}>
@@ -52,10 +60,16 @@ export default function ItemDisplay(props: ItemProps) {
                         {tag}
                     </button>
                 ))}
+                <p className="text-gray-700 text-base">{props.item.comment}</p>
             </div>
             <div>
                 {props.admin && (
-                    <EditableItem item={props.item} info={props.info} onSave={props.onItemUpdate} />
+                    <EditableItem
+                        item={props.item}
+                        info={props.info}
+                        onSave={props.onItemUpdate}
+                        onDelete={props.onItemDelete}
+                    />
                 )}
             </div>
         </div>
