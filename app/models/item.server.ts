@@ -92,6 +92,7 @@ export async function addItem(
 
   try {
     const uInfo = await requestSingle(url);
+    assert(uInfo?.info !== null);
   } catch (err: any) {
     console.log("failed to get info for " + url + ":  " + err.message);
     throw new Error("Sorry, we had an error with that url.  check server logs");

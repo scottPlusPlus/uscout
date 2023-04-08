@@ -25,12 +25,24 @@ export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   }
 }
 
+//https://scrapestack.com
+const scrapeStackApiKey = process.env.SCRAPE_STACK_API_KEY;
+
 async function fetchHtml(url: string): Promise<string> {
   try {
-    const response = await axios.get(url);
+    var response = await axios.get(url);
     return response.data;
   } catch (error: any) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
+    try {
+      if (scrapeStackApiKey){
+        const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` + url;
+        response = await axios.get(scrapeStackUrl);
+        return response.data;
+      }
+    } catch (error:any){
+      console.log("Scrape Stack could not fetch " + url);
+    }
     throw error;
   }
 }
