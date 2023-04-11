@@ -5,7 +5,7 @@ import { requestMany } from "~/code/RequestInfo";
 import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
-import { actorMayUpdateCollection, getCollection, updateCollection } from "~/models/collection.server";
+import { actorMayUpdateCollection, getCollection, overrideCollection, updateCollection } from "~/models/collection.server";
 import { addItem, getCollectionItems, Item, ItemFront, suggestItem, updateItem } from "~/models/item.server";
 import { Collection } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
@@ -24,6 +24,8 @@ import { nowHHMMSS } from "~/code/timeUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import EditCollectionData from "~/components/EditCollectionData";
 import { ScrapedInfo } from "~/code/datatypes/info";
+import CollectionJsonComponent from "~/components/CollectionJsonComponent";
+import { CollectionJson, assertValidCollection } from "~/code/datatypes/collectionJson";
 
 
 type SearchTerm = {
@@ -37,7 +39,8 @@ const ACTIONS = {
   MAKE_SUGGESTION: "suggestion",
   ADMIN_ADD_ITEM: "addItem",
   UPDATE_ITEM: "updateItem",
-  UPDATE_COLLECTION: "collection"
+  UPDATE_COLLECTION: "collection",
+  OVERRIDE_COLLECTION: "override",
 }
 
 //Remix Action
@@ -61,6 +64,9 @@ export async function action({ request, params }: ActionArgs) {
       data = await actionUpdateItem(params.cid, userId, inputData);
     } else if (aType == ACTIONS.UPDATE_COLLECTION) {
       data = await actionUpdateCollection(params.cid, userId, inputData);
+    } else if (aType == ACTIONS.OVERRIDE_COLLECTION) {
+      await actionOverrideCollection(params.cid, userId, inputData);
+      return redirect("/c/" + params.cid);
     }
     throw ("invalid action");
   } catch (error: any) {
@@ -105,6 +111,13 @@ async function actionUpdateCollection(cid: string, actor: string | undefined, in
   return await updateCollection(actor, collection);
 }
 
+async function actionOverrideCollection(cid: string, actor: string | undefined, inputData: string): Promise<void> {
+  if (actor == null) {
+    throw ("Must be logged in");
+  }
+  const collection: CollectionJson = assertValidCollection(JSON.parse(inputData));
+  await overrideCollection(actor, collection);
+}
 
 
 //Remix Loader Func
@@ -184,10 +197,10 @@ export default function CollectionDetailsPage() {
     infoMap.set(info.url, betterInfo);
   });
 
-  var loadedItems: Item[] = data.items.map(item => {
+  var allItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
   });
-  loadedItems = loadedItems.filter(item => {
+  var loadedItems = allItems.filter(item => {
     const info = infoMap.get(item.url);
     if (!info) {
       console.log("missing info for " + item.url);
@@ -213,7 +226,7 @@ export default function CollectionDetailsPage() {
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
   const [admin, setAdmin] = useState(false);
 
-  if (admin && !showPending){
+  if (admin && !showPending) {
     setShowPending(true);
   }
 
@@ -337,6 +350,12 @@ export default function CollectionDetailsPage() {
     //handleSearchUpdate(searchTerms, showPending);
   }
 
+  const handleOverrideCollection = (data: CollectionJson) => {
+    console.log("handleOverrideCollection");
+    const action = ACTIONS.OVERRIDE_COLLECTION;
+    submitAction(action, JSON.stringify(data));
+  }
+
   const hiddenItemMsg = () => {
     var count = () => {
       if (showPending) {
@@ -362,6 +381,7 @@ export default function CollectionDetailsPage() {
 
   return (
     <div>
+      <Form ref={formRef} className="invisible"></Form>
       <CollectionDataDisplay collection={collection} />
       {admin && (
         <EditCollectionData collection={collection} onSubmit={handleUpdateCollectionData} />
@@ -393,7 +413,9 @@ export default function CollectionDetailsPage() {
           </button>
         )}
       </div>
-      <Form ref={formRef} className="invisible"></Form>
+      {admin && (
+        <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
+      )}
     </div>
   );
 }
