@@ -123,28 +123,29 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
       console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
       console.log("LAST TWEET: ", lastTweet);
-      console.log("RETURN: ", {
-        url: url,
-        fullUrl: url,
-        hash,
-        title,
-        contentType: "twitter",
-        summary: getUserData.description,
-        authorName: getUserData.name,
-        image: getUserData.profile_image_url,
-        likes: getUserData.followers_count
+      twitter.getUserData(twitterUsername).then((data) => {
+        const user = data.data[0];
+        const authorName = user.name;
+        const description = user.description;
+        const profileImageUrl = user.profile_image_url;
+        const followersCount = user.public_metrics.followers_count;
+        console.log("Author name:", authorName);
+        console.log("Description:", description);
+        console.log("Profile image URL:", profileImageUrl);
+        console.log("Followers:", followersCount);
+
+        return {
+          url: url,
+          fullUrl: url,
+          hash,
+          title,
+          contentType: "twitter",
+          summary: description,
+          authorName: authorName,
+          image: profileImageUrl,
+          likes: followersCount
+        };
       });
-      return {
-        url: url,
-        fullUrl: url,
-        hash,
-        title,
-        contentType: "twitter",
-        summary: getTweetsData.description,
-        authorName: getTweetsData.name,
-        image: getTweetsData.profile_image_url,
-        likes: getTweetsData.followers_count
-      };
     }
 
     return {
