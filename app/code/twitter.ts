@@ -1,13 +1,9 @@
-const { parse } = require("node-html-parser");
-const { TwitterApi } = require("twitter-api-v2").default;
 const axios = require("axios");
 
 const TWITTER_BEARER_TOKEN = "";
 
 export const getTwitterHandle = async (root: any) => {
   try {
-    // const response = await axios.get(url);
-    // const root = parse(response.data);
     const twitterLinks = root.querySelectorAll('a[href*="twitter.com/"]');
 
     for (const link of twitterLinks) {
@@ -25,20 +21,18 @@ export const getTwitterHandle = async (root: any) => {
   return null;
 };
 
-export const getLatestTweetDate = async (handle: any) => {
-  try {
-    const client = new TwitterApi(TWITTER_BEARER_TOKEN);
-    const { data } = await client.get("users/by/username/" + handle, {
-      expansions: "pinned_tweet_id"
-    });
-
-    if (data.includes.pinned_tweet_id) {
-      const tweet = await client.v2.singleTweet(data.includes.pinned_tweet_id);
-      return new Date(tweet.data.created_at);
+export async function getUserData(username: string) {
+  const getUserEndpoint = `https://api.twitter.com/2/users/by?usernames=${username}&user.fields=profile_image_url,description,public_metrics`;
+  const config = {
+    headers: {
+      Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
     }
-  } catch (error) {
-    console.error("Error fetching latest tweet:", error);
-  }
+  };
 
-  return null;
-};
+  try {
+    const response = await axios.get(getUserEndpoint, config);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching user data: ${error.message}`);
+  }
+}
