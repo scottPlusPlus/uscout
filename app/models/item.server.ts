@@ -66,7 +66,7 @@ export async function addItem(
   collectionId: string,
   url: string
 ): Promise<Item> {
-  console.log(`addItem ${collectionId} ${url}`);
+  console.log(`ACTION: addItem ${collectionId} ${url}`);
   const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
   if (!mayUpdate) {
     throw new Error("user does not have permissions");
@@ -108,13 +108,16 @@ export async function addItem(
       status: STATUS.APPROVED,
     },
   });
-  return itemFromItemModel(x);
+  const res = itemFromItemModel(x);
+  console.log("add item success");
+  return res;
 }
 
 export async function suggestItem(
   collectionId: string,
   url: string
 ): Promise<Item> {
+  console.log("ACTION: suggest item: " + url);
   const collection = await getCollection(collectionId);
   if (!collection) {
     throw new Error("invalid collection id " + collectionId);
@@ -144,22 +147,26 @@ export async function suggestItem(
       status: STATUS.PENDING,
     },
   });
-  return itemFromItemModel(x);
+  const res =  itemFromItemModel(x);
+  console.log("suggest item success");
+  return res;
 }
 
 export async function updateItem(
   actorId: string,
   collectionId: string,
   input: ItemFront
-): Promise<Item> {
+): Promise<Item> {  
+  console.log("ACTION: Update Item: " + JSON.stringify(input));
+
   const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
   if (!mayUpdate) {
+    console.log(" - bad permissions :/");
     throw new Error("user does not have permissions");
   }
 
-  console.log("Update Item: " + JSON.stringify(input));
-
   const id = collectionId + input.url;
+  console.log(" - update item " + id);
   const x = await prisma.itemModel.update({
     where: { id: id },
     data: {
@@ -170,6 +177,7 @@ export async function updateItem(
     },
   });
   const res = itemFromItemModel(x);
+  console.log(" - update item success");
   return res;
 }
 
@@ -196,7 +204,7 @@ export async function removeItem(
   collectionId: string,
   url: string
 ): Promise<void> {
-  console.log("removeItem: " + url);
+  console.log("ACTION: removeItem: " + url);
   const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
   if (!mayUpdate) {
     throw new Error("user does not have permissions");
@@ -235,9 +243,6 @@ export async function getCollectionItems(collectonId: string): Promise<Item[]> {
   var itemModels = await prisma.itemModel.findMany({
     where: { collection: collectonId },
   });
-  itemModels.forEach(item=> {
-    console.log("have raw item: " + item.id + "  url: " + item.url);
-  })
   itemModels = itemModels.filter((item) => item.status != STATUS.REJECTED);
   return itemModels.map(itemFromItemModel);
 }

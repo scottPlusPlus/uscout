@@ -78,6 +78,7 @@ export async function action({ request, params }: ActionArgs) {
   }
 
   const now = nowHHMMSS();
+  console.log("done with action at " + now);
   return json({ action: aType, error: err, data: data, time: now });
 }
 
@@ -135,6 +136,7 @@ async function actionRemoveItem(cid:string,  actor: string | undefined, inputDat
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
   invariant(params.cid, "cid not found");
+  console.log("Remix LOADER for c/ " + params.cid);
 
   var collection = await getCollection(params.cid);
   if (collection == null) {
