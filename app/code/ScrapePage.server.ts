@@ -43,6 +43,8 @@ async function fetchHtml(url: string): Promise<string> {
         const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` + url;
         response = await axios.get(scrapeStackUrl);
         return response.data;
+      } else {
+        console.log("no scrapeStackApiKey");
       }
     } catch (error:any){
       console.log("Scrape Stack could not fetch " + url);
