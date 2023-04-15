@@ -167,18 +167,24 @@ export async function updateItem(
 
   const id = collectionId + input.url;
   console.log(" - update item " + id);
-  const x = await prisma.itemModel.update({
-    where: { id: id },
-    data: {
-      comment: input.comment,
-      tags: JSON.stringify(input.tags),
-      priority: input.priority,
-      status: input.status,
-    },
-  });
-  const res = itemFromItemModel(x);
-  console.log(" - update item success");
-  return res;
+  try {
+    const x = await prisma.itemModel.update({
+      where: { id: id },
+      data: {
+        comment: input.comment,
+        tags: JSON.stringify(input.tags),
+        priority: input.priority,
+        status: input.status,
+      },
+    });
+    const res = itemFromItemModel(x);
+    console.log(" - update item success");
+    return res;
+  } catch (e:any) {
+    console.log(" - failed to update item:");
+    console.error(e.message);
+    throw e;
+  }
 }
 
 export async function upsertItem(actorId: string, input: Item): Promise<Item> {

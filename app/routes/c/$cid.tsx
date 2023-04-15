@@ -71,10 +71,13 @@ export async function action({ request, params }: ActionArgs) {
     } else if (aType == ACTIONS.REMOVE_ITEM){
       await actionRemoveItem(params.cid, userId, inputData);
       return redirect("/c/" + params.cid);
+    } else {
+      throw ("invalid action");
     }
-    throw ("invalid action");
+   
   } catch (error: any) {
     err = error.message;
+    console.error("Action failed: " + err); 
   }
 
   const now = nowHHMMSS();
@@ -104,8 +107,12 @@ async function actionUpdateItem(cid: string, actor: string | undefined, inputDat
   if (actor == null) {
     throw ("Must be logged in");
   }
-  const itemFront: ItemFront = JSON.parse(inputData);
-  return await updateItem(actor, cid, itemFront);
+  try {
+    const itemFront: ItemFront = JSON.parse(inputData);
+    return await updateItem(actor, cid, itemFront);  
+  } catch (e:any){
+    throw e;
+  }
 }
 
 async function actionUpdateCollection(cid: string, actor: string | undefined, inputData: string): Promise<Object> {
@@ -136,7 +143,8 @@ async function actionRemoveItem(cid:string,  actor: string | undefined, inputDat
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
   invariant(params.cid, "cid not found");
-  console.log("Remix LOADER for c/ " + params.cid);
+  var now = nowHHMMSS();
+  console.log(`Remix LOADER for c/${params.cid} at ${now}`);
 
   var collection = await getCollection(params.cid);
   if (collection == null) {
@@ -147,12 +155,14 @@ export async function loader({ request, params }: LoaderArgs) {
   const urls = items.map((i) => sanitizeUrl(i.url)!);
   const infos = await requestMany(urls);
 
+  console.log(" - have infos, checking admin");
   const userId = await getUserId(request);
   var admin = false;
   if (userId) {
     admin = await actorMayUpdateCollection(userId, params.cid);
   }
 
+  console.log(" - returning json");
   return json({ collection, items, infos, userId, admin });
 }
 

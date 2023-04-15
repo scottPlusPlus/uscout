@@ -14,14 +14,14 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
 
   const existing = await UInfoModel.getInfo(sanitizedUrl);
   if (existing) {
-    console.log(sanitizedUrl + " already exists");
+    console.log(" - " + sanitizedUrl + " already exists");
     const latestStatus = existing.scrapeHistory[0];
     if (latestStatus.status == 200) {
       if (latestStatus.timestamp < twentyFourHoursAgoTimestamp()) {
-        console.log("but too old, triggering scrape");
+        console.log(" - - but too old, triggering scrape");
         scrapeAndSavePage(sanitizedUrl);
       }
-      console.log("returning cached info for " + sanitizedUrl);
+      console.log(" - - returning cached info for " + sanitizedUrl);
       return existing;
     }
   }

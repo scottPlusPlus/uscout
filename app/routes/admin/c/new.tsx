@@ -51,7 +51,7 @@ export async function action({ request }: ActionArgs) {
 
     const collection = await createCollection({ id:formId, title, description }, userId);
 
-    return redirect(`/admin/c/${collection.id}`);
+    return redirect(`/c/${collection.id}`);
 }
 
 export default function NewCollectionPage() {
