@@ -257,7 +257,13 @@ const sectionData = `{
         "tags": [
           "data"
         ]
-      }
+      }, {
+        "url": "worldometers.info",
+        "comment": "",
+        "tags": [
+          "data"
+        ]
+      }  
     ]
 }`;
 
@@ -297,16 +303,9 @@ export default function AdminPage() {
     const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
     const submit = useSubmit();
 
-    //   const handleDeleteInfo = (url:string) => {
-    //     const formData = new FormData(formRef.current || undefined)
-    //     formData.set(actionType, actionDeleteUrl);
-    //     formData.set("itemUrl", url);
-    //     submit(formData, { method: "post" });
-    //   }
-
     const cssTitle = "text-xl font-bold py-2";
     const cssLinkGreen = "text-green-500 hover:text-green-600";
-    const cssTextFaded = "text-gray-500 text-sm";
+    const cssTextFaded = "text-gray-500 text-sm py-2";
 
 
     const tableOfContents = (pageSections:Array<PageSectionT>) => {
@@ -329,6 +328,7 @@ export default function AdminPage() {
             <div>
                 <div className={cssTitle}>Empower-Kit for Activists</div>
                 <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
+                <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
                 <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
                 <p className={cssTextFaded}>Updated by hand April 2023</p>
             </div>
