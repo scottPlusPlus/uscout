@@ -32,7 +32,7 @@ export async function getUserData(username: string) {
   try {
     const response = await axios.get(getUserEndpoint, config);
     return response.data;
-  } catch (error) {
+  } catch (error:any) {
     console.error(`Error fetching user data: ${error.message}`);
   }
 }

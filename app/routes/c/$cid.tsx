@@ -162,7 +162,7 @@ export async function loader({ request, params }: LoaderArgs) {
     admin = await actorMayUpdateCollection(userId, params.cid);
   }
 
-  console.log(" - returning json");
+  console.log("Remix LOADER returning json");
   return json({ collection, items, infos, userId, admin });
 }
 
@@ -221,7 +221,8 @@ export default function CollectionDetailsPage() {
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
 
-  console.log("have actionData: " + ad);
+  console.log("have data: " + JSON.stringify(data));
+  console.log("have actionData: " + JSON.stringify(ad));
 
 
   const infoMap = new Map<string, ScrapedInfo>();

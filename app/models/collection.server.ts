@@ -90,7 +90,7 @@ export async function overrideCollection(
 
 export async function actorMayUpdateCollection(actorId:string, collectionId:string):Promise<boolean>{
   const role = await getRoleType(actorId, collectionId);
-  if (role == ROLE_TYPE.OWNER){
+  if (role?.toLocaleLowerCase() == ROLE_TYPE.OWNER.toLowerCase()){
     return true;
   }
   return false;

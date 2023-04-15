@@ -19,7 +19,7 @@ export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error) {
+  } catch (error:any) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -36,7 +36,7 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     var response = await axios.get(url);
     return response.data;
-  } catch (error) {
+  } catch (error:any) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey){
@@ -117,7 +117,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
 
     const twitterUsername = await twitter.getTwitterHandle(root);
 
-    if (twitterUsername) {
+    if (twitterUsername && TWITTER_BEARER_TOKEN.length > 0) {
       const options = {
         headers: {
           Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
