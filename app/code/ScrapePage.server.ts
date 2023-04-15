@@ -5,9 +5,13 @@ import { nowHHMMSS } from "./timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
+import * as twitter from "./twitter";
+
 import axios from "axios";
 import { asUndefined } from "./tsUtils";
 import { ScrapedInfo } from "./datatypes/info";
+
+const TWITTER_BEARER_TOKEN = "";
 
 const domainThrottle = new PromiseQueues();
 
@@ -15,7 +19,7 @@ export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error: any) {
+  } catch (error) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -32,7 +36,7 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     var response = await axios.get(url);
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey){
@@ -92,13 +96,12 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
         contentType: scrapedYoutubeContent.contentType,
         likes: scrapedYoutubeContent.likes,
         authorLink: scrapedYoutubeContent.authorLink,
-        authorName: scrapedYoutubeContent.authorName,
+        authorName: scrapedYoutubeContent.authorName
       };
     } else if (scrapedRedditContent) {
-
       return {
         url: url,
-        fullUrl:url,
+        fullUrl: url,
         hash,
         title,
         summary,
@@ -108,21 +111,66 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
         dislikes: scrapedRedditContent.dislikes,
         authorLink: scrapedRedditContent.authorLink,
         authorName: scrapedRedditContent.authorName,
-        publishTime: asUndefined(scrapedRedditContent.postCreationTime),
+        publishTime: asUndefined(scrapedRedditContent.postCreationTime)
       };
+    }
+
+    const twitterUsername = await twitter.getTwitterHandle(root);
+
+    if (twitterUsername) {
+      const options = {
+        headers: {
+          Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
+        }
+      };
+      const getUserEndpoint =
+        "https://api.twitter.com/2/users/by?usernames=" + twitterUsername;
+      const getUserResponse1 = await fetch(getUserEndpoint, options);
+      const getUserData = await getUserResponse1.json();
+      const userId = getUserData.data[0].id;
+      const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?max_results=25`;
+      console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
+      const getTweetsResponse = await fetch(getTweetsEndpoint, options);
+      const getTweetsData = await getTweetsResponse.json();
+      const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
+      console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
+      console.log("LAST TWEET: ", lastTweet);
+      twitter.getUserData(twitterUsername).then((data) => {
+        const user = data.data[0];
+        const authorName = user.name;
+        const description = user.description;
+        const profileImageUrl = user.profile_image_url;
+        const followersCount = user.public_metrics.followers_count;
+        console.log("Author name:", authorName);
+        console.log("Description:", description);
+        console.log("Profile image URL:", profileImageUrl);
+        console.log("Followers:", followersCount);
+
+        return {
+          url: url,
+          fullUrl: url,
+          hash,
+          title,
+          contentType: "twitter",
+          summary: description,
+          authorName: authorName,
+          image: profileImageUrl,
+          likes: followersCount
+        };
+      });
     }
 
     return {
       url: url,
-      fullUrl:url,
+      fullUrl: url,
       hash,
       title,
       summary,
       image,
-      contentType:null
+      contentType: null
     };
-  } catch (error: any) {
-    console.log("error with scrapePageImpl:  " + error.message);
+  } catch (error) {
+    console.log("error with scrapePageImpl:  " + error);
     throw error;
   }
 }
