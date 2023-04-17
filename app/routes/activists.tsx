@@ -1,7 +1,7 @@
 import { Form, useLoaderData, useSubmit } from "@remix-run/react";
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { nowHHMMSS } from "~/code/timeUtils";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { requestMany } from "~/code/RequestInfo";
 import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import PageSectionC from "~/components/PageSectionC";
@@ -271,80 +271,99 @@ const sectionData = `{
 const pageDataJson = `[${sectionVolunteer}, ${sectionInspire}, ${sectionDonate}, ${sectionPoverty}, ${sectionClimate}, ${sectionData}]`;
 
 export async function loader({ request, params }: LoaderArgs) {
-    console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
-    console.log(pageDataJson);
+  console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
+  console.log(pageDataJson);
 
-    const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
-    const infoUrls = new Set<string>();
-    sections.forEach(data => {
-        data.links.forEach(link => {
-            link.url = sanitizeUrl(link.url)!;
-            link.status = "approved";
-            link.priority = 0;
-            infoUrls.add(link.url);
-        });
+  const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
+  const infoUrls = new Set<string>();
+  sections.forEach(data => {
+    data.links.forEach(link => {
+      link.url = sanitizeUrl(link.url)!;
+      link.status = "approved";
+      link.priority = 0;
+      infoUrls.add(link.url);
     });
+  });
 
-    const infos = await requestMany([...infoUrls]);
-    console.log(`have ${infos.length} infos`);
-    return json({ sections, infos });
+  const infos = await requestMany([...infoUrls]);
+  console.log(`have ${infos.length} infos`);
+  return json({ sections, infos });
 };
 
 export default function AdminPage() {
 
-    const data = useLoaderData<typeof loader>();
-    const sections: Array<PageSectionT> = data.sections;
-    const uInfos: Array<ScrapedInfo> = !data ? [] : !data.infos ? [] : JSON.parse(JSON.stringify(data.infos));
-    const infoMap = new Map<string, ScrapedInfo>();
-    uInfos.forEach(info => {
-        infoMap.set(info.url, info);
-    })
+  const data = useLoaderData<typeof loader>();
+  const sections: Array<PageSectionT> = data.sections;
+  const uInfos: Array<ScrapedInfo> = !data ? [] : !data.infos ? [] : JSON.parse(JSON.stringify(data.infos));
+  const infoMap = new Map<string, ScrapedInfo>();
+  uInfos.forEach(info => {
+    infoMap.set(info.url, info);
+  })
 
-    const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
-    const submit = useSubmit();
+  const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
+  const submit = useSubmit();
 
-    const cssTitle = "text-xl font-bold py-2";
-    const cssLinkGreen = "text-green-500 hover:text-green-600";
-    const cssTextFaded = "text-gray-500 text-sm py-2";
+  const cssTitle = "text-xl font-bold py-2";
+  const cssLinkGreen = "text-green-500 hover:text-green-600";
+  const cssTextFaded = "text-gray-500 text-sm py-2";
+  const css_section_white = " py-4 px-4 lg:px-8";
+  // const css_section_bg1 = "bg-slate-100 p-4";
+  // const css_section_bg2 = "bg-teal-50 p-4";
 
+  //const css_section_bg1 = "bg-gradient-to-b from-teal-50 to-white py-4 px-4 lg:px-8";
+  const css_section_bg1 = "bg-gradient-to-b from-white to-teal-50 py-4 px-4 lg:px-8";
 
-    const tableOfContents = (pageSections:Array<PageSectionT>) => {
-        return (
-          <nav>
-            <h2 className={cssTitle}>Table of Contents</h2>
-            <ul>
-              {pageSections.map((section, index) => (
-                <li key={index}>
-                  <a href={`#${index}`} className={cssLinkGreen}>{section.title}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        );
-      };
-
+  const tableOfContents = (pageSections: Array<PageSectionT>) => {
     return (
-        <div className="p-4">
-            <div>
-                <div className={cssTitle}>Empower-Kit for Activists</div>
-                <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
-                <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
-                <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
-                <p className={cssTextFaded}>Updated by hand April 2023</p>
-            </div>
-            <hr className="m-4"></hr>
-            {tableOfContents(sections)}
-            <hr className="m-4"></hr>
-            {sections.map((section, index) => (
-                <section id={""+index} key={""+index}>
-                    <PageSectionC
-                        data={section}
-                        infoMap={infoMap}
-                    />
-                    <hr className="m-4"></hr>
-                </section>
-            ))}
-            <Form ref={formRef} className="invisible"></Form>
-        </div>
+      <nav>
+        <h2 className={cssTitle}>Table of Contents</h2>
+        <ul>
+          {pageSections.map((section, index) => (
+            <li key={index}>
+              <a href={`#s${index}`} className={cssLinkGreen}>{section.title}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
     );
+  };
+
+  return (
+    <div>
+
+      <nav className="fixed top-0 left-0 w-full bg-gray-800 py-4 z-10">
+        <div className="px-4 lg:px-8">
+          <div className="flex justify-between items-left">
+            <a href="#top" className="text-white text-xl font-semibold">Empower-Kit for Activists 🧰</a>
+            <a href="#top" className="text-white text-sm font-medium hover:text-gray-300">Back to Top</a>
+          </div>
+        </div>
+      </nav>
+      <div className="py-8"></div>
+
+
+      <div className={css_section_white}>
+        <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
+        <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
+        <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
+        <p className={cssTextFaded}>Updated by hand April 2023</p>
+      </div>
+      <div className={css_section_white}>
+        {tableOfContents(sections)}
+      </div>
+      {sections.map((section, index) => (
+        <section id={"s" + index}>
+          <div className={css_section_bg1} key={"" + index}>
+            <PageSectionC
+              data={section}
+              infoMap={infoMap}
+              titleId={""}
+            />
+          </div>
+        </section>
+      )
+      )}
+      <Form ref={formRef} className="invisible"></Form>
+    </div>
+  );
 }

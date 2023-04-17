@@ -5,7 +5,8 @@ import ItemDisplay from "./ItemDisplay";
 
 type Props = {
     data: PageSectionT;
-    infoMap: Map<string, ScrapedInfo>
+    infoMap: Map<string, ScrapedInfo>;
+    titleId:string;
 };
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
@@ -34,13 +35,14 @@ export default function PageSectionC(props: Props) {
             <h3
                 className={titleCSS}
                 onClick={handleTitleClick}
+                id={props.titleId}
             >
                 {props.data.title} {expandChar}
             </h3>
             {isExpanded && (
                 <>
                     <div className={bodyCSS}>{props.data.body}</div>
-                    <div className="py-4">
+                    <div className="py-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {links.map(item => (
                                 <ItemDisplay
