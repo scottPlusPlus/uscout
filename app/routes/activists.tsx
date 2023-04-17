@@ -311,7 +311,7 @@ export default function AdminPage() {
   // const css_section_bg2 = "bg-teal-50 p-4";
 
   //const css_section_bg1 = "bg-gradient-to-b from-teal-50 to-white py-4 px-4 lg:px-8";
-  const css_section_bg1 = "bg-gradient-to-b from-white to-teal-50 py-4 px-4 lg:px-8";
+  const css_section_bg1 = "py-4 px-4 lg:px-8";
 
   const tableOfContents = (pageSections: Array<PageSectionT>) => {
     return (
@@ -353,13 +353,14 @@ export default function AdminPage() {
       </div>
       {sections.map((section, index) => (
         <section id={"s" + index}>
-          <div className={css_section_bg1} key={"" + index}>
+          <div key={"" + index}>
             <PageSectionC
               data={section}
               infoMap={infoMap}
               titleId={""}
             />
           </div>
+          
         </section>
       )
       )}

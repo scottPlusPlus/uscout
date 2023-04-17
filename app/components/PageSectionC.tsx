@@ -10,7 +10,9 @@ type Props = {
 };
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
-const bodyCSS = "";
+const bodyCSS = "bg-gradient-to-b from-white to-teal-50";
+const cssTitlBg = "py-4 px-4 lg:px-8";
+const cssBody = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-teal-50"
 
 export default function PageSectionC(props: Props) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -31,17 +33,19 @@ export default function PageSectionC(props: Props) {
     const expandChar = isExpanded ? "-" : "+";
 
     return (
-        <div>
-            <h3
-                className={titleCSS}
-                onClick={handleTitleClick}
-                id={props.titleId}
-            >
-                {props.data.title} {expandChar}
-            </h3>
+        <div> 
+            <div className={cssTitlBg}>
+                <h3
+                    className={titleCSS}
+                    onClick={handleTitleClick}
+                    id={props.titleId}
+                >
+                    {props.data.title} {expandChar}
+                </h3>
+            </div>
             {isExpanded && (
-                <>
-                    <div className={bodyCSS}>{props.data.body}</div>
+                <div className={cssBody}>
+                    <div >{props.data.body}</div>
                     <div className="py-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {links.map(item => (
@@ -58,8 +62,9 @@ export default function PageSectionC(props: Props) {
                             ))}
                         </div>
                     </div>
-                </>
+                </div>
             )}
+            <div className="bg-teal-50 py-1"></div>
         </div>
     );
 };
