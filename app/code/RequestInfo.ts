@@ -1,6 +1,6 @@
 import UInfoModel from "~/models/uinfo.server";
 import scrapePage from "./ScrapePage.server";
-import { twentyFourHoursAgoTimestamp } from "./timeUtils";
+import { nowUnixTimestamp, twentyFourHoursAgoTimestamp } from "./timeUtils";
 
 import * as createError from "http-errors";
 import { sanitizeUrl } from "./urlUtils";
@@ -23,6 +23,12 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
       }
       console.log(" - - returning cached info for " + sanitizedUrl);
       return existing;
+    } else {
+      console.log(" - - previous scrape had an error");
+      if (latestStatus.timestamp > (nowUnixTimestamp() - 3600)) {
+        console.log(" - - error not long ago. returning null");
+        return null;
+      }
     }
   }
   const scrapePromise = scrapeAndSavePage(sanitizedUrl);
@@ -53,7 +59,18 @@ async function scrapeAndSavePage(url: string): Promise<UInfoV2 | null> {
     return await UInfoModel.setInfo(newInfo);
   } catch (error: any) {
     console.log(error.message);
-    //TODO - save that we got an error
+    console.log("saving that we got an error");
+    const newInfo: UInfoV2 = {
+      url: url,
+      info: null,
+      scrapeHistory: [
+        {
+          timestamp: now,
+          status: 400,
+        },
+      ],
+    };
+    await UInfoModel.setInfo(newInfo);
     return null;
   }
 }
