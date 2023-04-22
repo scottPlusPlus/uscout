@@ -270,6 +270,18 @@ const sectionData = `{
 
 const pageDataJson = `[${sectionVolunteer}, ${sectionInspire}, ${sectionDonate}, ${sectionPoverty}, ${sectionClimate}, ${sectionData}]`;
 
+const root_url = "https://www.empower-kit.com";
+
+export function meta() {
+  return {
+    title: "Empower-Kit",
+    "og:image": root_url+"/images/empower-kit.png",
+    "twitter:image":  root_url+"/images/empower-kit.png",
+    "og:description": "A toolkit for activists.  Removing the barriers between 'wanting to help' and 'helping'",
+    "twitter:description": "A toolkit for activists.  Removing the barriers between 'wanting to help' and 'helping'",
+  };
+}
+
 export async function loader({ request, params }: LoaderArgs) {
   console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
   console.log(pageDataJson);

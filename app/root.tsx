@@ -16,11 +16,23 @@ export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: tailwindStylesheetUrl }];
 };
 
-export const meta: MetaFunction = () => ({
-  charset: "utf-8",
-  title: "Empower-Kit",
-  viewport: "width=device-width,initial-scale=1",
-});
+export const meta: MetaFunction = () => (
+  {
+    charset: "utf-8",
+    title: "Empower-Kit",
+    viewport: "width=device-width,initial-scale=1",
+    "descrption": "A collection of resources to help you on your journey",
+
+    "og:site_name": "Empower-Kit.com",
+    "og:locale": "en_US",
+    "og:type": "website",
+    "og:title": "Empower-Kit.com",
+
+    "twitter:site": "@ScottPlusPlus",
+    "twitter:creator": "@ScottPlusPlus",
+    "twitter:description": "A collection of resources to help you on your journey",
+  });
+
 
 export async function loader({ request }: LoaderArgs) {
   return json({
