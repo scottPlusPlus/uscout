@@ -7,6 +7,7 @@ import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import PageSectionC from "~/components/PageSectionC";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
+import sendAnalyticEvent from "~/code/front/analyticUtils";
 
 
 
@@ -315,6 +316,23 @@ export default function AdminPage() {
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
+  
+  useEffect(() => {
+    //on first load
+    console.log("on first load...");
+    const url = new URL(window.location.href);
+    var ref = document.referrer;
+    if (ref.length > 0){
+      ref = " ref= " + ref;
+    }
+    console.log("ref = " + ref);
+    sendAnalyticEvent("visit", url.toString() + ref);
+  }, []);
+
+  const handleLinkClick = (linkUrl: string) => {
+    sendAnalyticEvent("link", linkUrl);
+  }
+
   const cssTitle = "text-xl font-bold py-2";
   const cssLinkGreen = "text-green-500 hover:text-green-600";
   const cssTextFaded = "text-gray-500 text-sm py-2";
@@ -370,6 +388,7 @@ export default function AdminPage() {
               data={section}
               infoMap={infoMap}
               titleId={""}
+              handleLinkClick={handleLinkClick}
             />
           </div>
           

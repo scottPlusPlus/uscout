@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import ItemDisplay from "./ItemDisplay";
+import Observer from "./Observer";
 
 type Props = {
     data: PageSectionT;
     infoMap: Map<string, ScrapedInfo>;
     titleId:string;
+    handleLinkClick:(arg0:string)=>void;
 };
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
@@ -45,6 +47,7 @@ export default function PageSectionC(props: Props) {
             </div>
             {isExpanded && (
                 <div className={cssBody}>
+                    <Observer name={props.data.title}/>
                     <div >{props.data.body}</div>
                     <div className="py-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -54,7 +57,7 @@ export default function PageSectionC(props: Props) {
                                     item={item}
                                     info={infoMap.get(item.url)!}
                                     onTagClick={doNothing}
-                                    onLinkClick={doNothing}
+                                    onLinkClick={props.handleLinkClick}
                                     admin={false}
                                     onItemUpdate={doNothing}
                                     onItemDelete={doNothing}

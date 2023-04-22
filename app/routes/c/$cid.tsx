@@ -277,6 +277,11 @@ export default function CollectionDetailsPage() {
     if (initialSearchParams.length == 0) {
       initialSearchParams.push({ term: "", priority: 100 });
     }
+    var ref = document.referrer;
+    if (ref.length > 0){
+      ref = " ref= " + ref;
+    }
+    sendAnalyticEvent("visit", url.toString()+ref);
     setSearchTerms(initialSearchParams);
     handleSearchUpdate(initialSearchParams, showPending);
   }, [loadedItemUrls]);

@@ -1,5 +1,5 @@
 export default function sendAnalyticEvent(event: string, data: string) {
-  console.log("sendAnalyticEvent: " + data);
+  //console.log("sendAnalyticEvent: " + data);
   return postEvent(event, data);
 }
 

@@ -3,13 +3,16 @@ import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { getRecentEvents } from "~/models/analyticEvent.server";
+import { getAnalyticsDataLast7Days, getRecentEvents } from "~/models/analyticEvent.server";
 import { requireUserId } from "~/session.server";
 
 export async function loader({ request, params }: LoaderArgs) {
     const _ = await requireUserId(request);
+
+    const summary = await getAnalyticsDataLast7Days();
+
     const events = await getRecentEvents();
-    return json({ events });
+    return json({ events , summary});
 };
 
 export default function AdminPage() {
@@ -60,6 +63,13 @@ export default function AdminPage() {
     <div>
     <h3 className="text-2xl font-bold">Admin</h3>
     <div className="flex flex-col">
+       <h2 className="text-2xl font-bold mb-4">Summary</h2>
+       <div>
+        {data.summary.map(item => (
+          <p>{item.count} . {item.event} . {item.data}</p>
+            ))}
+       </div>
+
       <h2 className="text-2xl font-bold mb-4">Analytic Table</h2>
       <table className="table-auto">
         <thead>
