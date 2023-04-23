@@ -12,18 +12,18 @@ generator client {
 }
 
 model UInfo {
-  url           String  @id
-  fullUrl       String  @default("")
-  hash          String
-  title         String
-  summary       String
-  image         String
-  contentType   String?
-  duration      Int?
-  likes         Int?
+  url         String  @id
+  fullUrl     String  @default("")
+  hash        String
+  title       String
+  summary     String
+  image       String
+  contentType String?
+  duration    Int?
+  likes       Int?
   //dislikes      Int?
-  authorName    String?
-  authorLink    String?
+  authorName  String?
+  authorLink  String?
   //publishedTime Int?
 
   created DateTime @default(now())
@@ -32,9 +32,9 @@ model UInfo {
 }
 
 model UInfoDb {
-  url String @id
+  url      String   @id
   dataJson String
-   updated DateTime @updatedAt
+  updated  DateTime @updatedAt
 }
 
 model ItemModel {
@@ -100,4 +100,14 @@ model AnalyticEvent {
   ip    String
   event String
   data  String
+}
+
+model Feedback {
+  id       Int      @id @default(autoincrement())
+  ts       DateTime @default(now())
+  ip       String
+  context  String
+  feedback String
+  email    String
+  status   String
 }

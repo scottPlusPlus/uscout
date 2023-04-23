@@ -10,5 +10,5 @@ export async function loader() {
     return redirect("/me");
   }
 
-  return redirect("/c/startup");
+  return redirect("/activists");
 }
