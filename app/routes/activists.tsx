@@ -276,8 +276,8 @@ const root_url = "https://www.empower-kit.com";
 export function meta() {
   return {
     title: "Empower-Kit",
-    "og:image": root_url+"/images/empower-kit.png",
-    "twitter:image":  root_url+"/images/empower-kit.png",
+    "og:image": root_url + "/images/empower-kit.png",
+    "twitter:image": root_url + "/images/empower-kit.png",
     "og:description": "A toolkit for activists.  Removing the barriers between 'wanting to help' and 'helping'",
     "twitter:description": "A toolkit for activists.  Removing the barriers between 'wanting to help' and 'helping'",
   };
@@ -316,13 +316,13 @@ export default function AdminPage() {
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
-  
+
   useEffect(() => {
     //on first load
     console.log("on first load...");
     const url = new URL(window.location.href);
     var ref = document.referrer;
-    if (ref.length > 0){
+    if (ref.length > 0) {
       ref = " ref= " + ref;
     }
     console.log("ref = " + ref);
@@ -358,19 +358,22 @@ export default function AdminPage() {
     );
   };
 
+  const cssNavButton = "text-white text-sm font-medium hover:text-gray-300 px-4";
+
   return (
     <div>
-
       <nav className="fixed top-0 left-0 w-full bg-gray-800 py-4 z-10">
-        <div className="px-4 lg:px-8">
-          <div className="flex justify-between items-left">
+        <div className="px-4 lg:px-8 flex justify-between">
+          <div className="flex items-left">
             <a href="#top" className="text-white text-xl font-semibold">Empower-Kit for Activists 🧰</a>
-            <a href="#top" className="text-white text-sm font-medium hover:text-gray-300">Back to Top</a>
+          </div>
+          <div className="flex items-center">
+            <a href="./feedback?r=activists" className={cssNavButton}>Feedback</a>
+            <a href="#top" className={cssNavButton}>Back to Top</a>
           </div>
         </div>
       </nav>
       <div className="py-8"></div>
-
 
       <div className={css_section_white}>
         <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
@@ -391,7 +394,7 @@ export default function AdminPage() {
               handleLinkClick={handleLinkClick}
             />
           </div>
-          
+
         </section>
       )
       )}

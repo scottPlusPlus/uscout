@@ -3,6 +3,8 @@ import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/server-runtim
 import { useRef, useState } from "react";
 import { CSS_CLASSES } from "~/code/CssClasses";
 import { getStringOrFallback, getStringOrThrow } from "~/code/formUtils";
+import { getIpAddress } from "~/code/ipUtils";
+import { addFeedback } from "~/models/feedback.server";
 
 
 export async function action({ request, params }: ActionArgs) {
@@ -15,6 +17,9 @@ export async function action({ request, params }: ActionArgs) {
     const feedback = getStringOrThrow(formData, "feedback");
     const email = getStringOrFallback(formData, "email", "");
     console.log(`feedback sumbitted: ${email}:  ${feedback}`);
+
+    const ip = getIpAddress(request);
+    addFeedback(ip, r ?? "", feedback, email);
 
     var destination = "./";
     if (r!= null){
