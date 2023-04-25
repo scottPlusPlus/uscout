@@ -1,7 +1,6 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useSubmit } from "@remix-run/react";
-import { requestMany } from "~/code/RequestInfo";
 import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
@@ -26,6 +25,7 @@ import EditCollectionData from "~/components/EditCollectionData";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import CollectionJsonComponent from "~/components/CollectionJsonComponent";
 import { CollectionJson, assertValidCollection } from "~/code/datatypes/collectionJson";
+import { requestMany } from "~/code/scout/RequestInfo";
 
 
 type SearchTerm = {

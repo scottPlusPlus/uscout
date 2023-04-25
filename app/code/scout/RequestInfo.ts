@@ -1,10 +1,10 @@
 import UInfoModel from "~/models/uinfo.server";
 import scrapePage from "./ScrapePage.server";
-import { nowUnixTimestamp, twentyFourHoursAgoTimestamp } from "./timeUtils";
+import { nowUnixTimestamp, twentyFourHoursAgoTimestamp } from "../timeUtils";
 
 import * as createError from "http-errors";
-import { sanitizeUrl } from "./urlUtils";
-import { ScrapedInfo, UInfoV2 } from "./datatypes/info";
+import { sanitizeUrl } from "../urlUtils";
+import { ScrapedInfo, UInfoV2 } from "../datatypes/info";
 
 export async function requestSingle(url: string): Promise<UInfoV2 | null> {
   const sanitizedUrl = sanitizeUrl(url);

@@ -1,15 +1,15 @@
 import { parse } from "node-html-parser";
 import { createHash } from "crypto";
-import { PromiseQueues } from "./PromiseQueue.server";
-import { nowHHMMSS } from "./timeUtils";
+import { PromiseQueues } from "../PromiseQueue.server";
+import { nowHHMMSS } from "../timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
 
 import axios from "axios";
-import { asUndefined } from "./tsUtils";
-import { ScrapedInfo } from "./datatypes/info";
+import { asUndefined } from "../tsUtils";
+import { ScrapedInfo } from "../datatypes/info";
 
 const TWITTER_BEARER_TOKEN = "";
 

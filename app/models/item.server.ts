@@ -1,5 +1,5 @@
 import type { ItemModel } from "@prisma/client";
-import { requestSingle } from "~/code/RequestInfo";
+import { requestSingle } from "~/code/scout/RequestInfo";
 import { sanitizeUrl } from "~/code/urlUtils";
 
 import { prisma } from "~/db.server";
