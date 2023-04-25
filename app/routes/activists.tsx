@@ -11,6 +11,7 @@ import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { requestMany } from "~/code/scout/RequestInfo";
 import { getIpAddress, ipAsNumber } from "~/code/ipUtils";
 import { asInt } from "~/code/tsUtils";
+import { ExpandableSection } from "~/components/ExpandableSection";
 
 
 
@@ -356,16 +357,17 @@ export default function AdminPage() {
 
   const tableOfContents = (pageSections: Array<PageSectionT>) => {
     return (
-      <nav>
-        <h2 className={cssTitle}>Table of Contents</h2>
-        <ul>
-          {pageSections.map((section, index) => (
-            <li key={index}>
-              <a href={`#s${index}`} className={cssLinkGreen}>{section.title}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <ExpandableSection title={"Contents"} titleId={"contents"} ipab={data.ipab}>
+        <nav>
+          <ul>
+            {pageSections.map((section, index) => (
+              <li key={index}>
+                <a href={`#s${index}`} className={cssLinkGreen}>{section.title}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </ExpandableSection>
     );
   };
 
@@ -392,12 +394,12 @@ export default function AdminPage() {
         <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
         <p className={cssTextFaded}>Updated by hand April 2023</p>
       </div>
-      <div className={css_section_white}>
-        {tableOfContents(sections)}
-      </div>
+      {tableOfContents(sections)}
+
       {sections.map((section, index) => (
         <section id={"s" + index}>
           <div key={"" + index}>
+          <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab}>
             <PageSectionC
               data={section}
               infoMap={infoMap}
@@ -405,6 +407,7 @@ export default function AdminPage() {
               handleLinkClick={handleLinkClick}
               ipab={data.ipab}
             />
+          </ExpandableSection>
           </div>
 
         </section>
