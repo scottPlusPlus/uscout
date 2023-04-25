@@ -9,6 +9,8 @@ import { ScrapedInfo } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { requestMany } from "~/code/scout/RequestInfo";
+import { getIpAddress, ipAsNumber } from "~/code/ipUtils";
+import { asInt } from "~/code/tsUtils";
 
 
 
@@ -288,6 +290,14 @@ export async function loader({ request, params }: LoaderArgs) {
   console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
   console.log(pageDataJson);
 
+  const searchParams = new URLSearchParams(request.url.split('?')[1]);
+  const ab = searchParams.get("ab");
+  var ipab = asInt(ab, -1);
+  if (ipab < 0){
+    const ip = getIpAddress(request);
+    ipab = ipAsNumber(ip) % 10;
+  }
+
   const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
   const infoUrls = new Set<string>();
   sections.forEach(data => {
@@ -301,7 +311,7 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const infos = await requestMany([...infoUrls]);
   console.log(`have ${infos.length} infos`);
-  return json({ sections, infos });
+  return json({ sections, infos, ipab });
 };
 
 export default function AdminPage() {
@@ -393,6 +403,7 @@ export default function AdminPage() {
               infoMap={infoMap}
               titleId={""}
               handleLinkClick={handleLinkClick}
+              ipab={data.ipab}
             />
           </div>
 

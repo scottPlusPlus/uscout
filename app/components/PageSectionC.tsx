@@ -9,15 +9,22 @@ type Props = {
     infoMap: Map<string, ScrapedInfo>;
     titleId:string;
     handleLinkClick:(arg0:string)=>void;
+    ipab:number;
 };
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
-const bodyCSS = "bg-gradient-to-b from-white to-teal-50";
 const cssTitlBg = "py-4 px-4 lg:px-8";
-const cssBody = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-teal-50"
+const cssBodyA = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-teal-50";
+const cssBodyB = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-purple-200";
+const cssEndA = "bg-teal-50 py-1";
+const cssEndB = "bg-purple-200 py-1";
 
 export default function PageSectionC(props: Props) {
     const [isExpanded, setIsExpanded] = useState(true);
+
+    const ab = props.ipab % 2 == 0;
+    const cssBody = ab ? cssBodyA : cssBodyB;
+    const cssEnd = ab ? cssEndA : cssEndB;
 
     const infoMap = props.infoMap;
     const links = props.data.links.filter(link => {
@@ -67,7 +74,7 @@ export default function PageSectionC(props: Props) {
                     </div>
                 </div>
             )}
-            <div className="bg-teal-50 py-1"></div>
+            <div className={cssEnd}></div>
         </div>
     );
 };
