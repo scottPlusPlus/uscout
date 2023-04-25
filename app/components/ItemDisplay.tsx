@@ -1,4 +1,4 @@
-import { CSS_CLASSES } from "~/code/CssClasses";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 import { ItemFront } from "~/models/item.server";
 import EditableItem from "./EditableItem";
 import Image3x2 from "./Image3x2";

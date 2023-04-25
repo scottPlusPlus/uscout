@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CSS_CLASSES } from "~/code/CssClasses";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 
 interface FormInputProps {
     name: string;

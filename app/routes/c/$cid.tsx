@@ -15,7 +15,7 @@ import CollectionDataDisplay from "~/components/CollectionDataDisplay";
 import { cleanCollectionType } from "~/code/modelUtils";
 import SingleFieldForm from "~/components/SingleFieldForm";
 import { getStringOrThrow } from "~/code/formUtils";
-import { CSS_CLASSES } from "~/code/CssClasses";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { useOptionalUser } from "~/utils";

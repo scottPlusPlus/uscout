@@ -1,4 +1,4 @@
-import { CSS_CLASSES } from '~/code/CssClasses';
+import { CSS_CLASSES } from '~/code/front/CssClasses';
 import { Item } from '~/models/item.server';
 
 
