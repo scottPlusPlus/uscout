@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AB_FLAGS, getAbFlag } from "~/code/abUtils";
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
 const cssTitlBg = "py-4 px-4 lg:px-8";
@@ -10,10 +11,10 @@ const cssEndB = "bg-purple-200 py-1";
 
 export function ExpandableSection(props: { children: React.ReactNode, title: string, titleId: string, ipab: number, }) {
     const [isExpanded, setIsExpanded] = useState(true);
-    const expandChar = isExpanded ? "-" : "+";
+    const expandChar = isExpanded ? "" : "...";
 
 
-    const ab = props.ipab % 2 == 0;
+    const ab = getAbFlag(props.ipab, AB_FLAGS.COLOR);
     const cssBody = ab ? cssBodyA : cssBodyB;
     const cssEnd = ab ? cssEndA : cssEndB;
 

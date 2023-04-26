@@ -13,8 +13,10 @@ import tailwindStylesheetUrl from "./styles/tailwind.css";
 import { getUser } from "./session.server";
 
 export const links: LinksFunction = () => {
-  return [{ rel: "stylesheet", href: tailwindStylesheetUrl }];
+  return [{ rel: "stylesheet", href: tailwindStylesheetUrl }, 
+  { rel: "stylesheet", href: "https://fonts.googleapis.com/css?family=Roboto&display=swap" }];
 };
+
 
 export const meta: MetaFunction = () => (
   {

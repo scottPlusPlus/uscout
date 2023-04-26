@@ -12,6 +12,7 @@ import { requestMany } from "~/code/scout/RequestInfo";
 import { getIpAddress, ipAsNumber } from "~/code/ipUtils";
 import { asInt } from "~/code/tsUtils";
 import { ExpandableSection } from "~/components/ExpandableSection";
+import { ipAsMask } from "~/code/abUtils";
 
 
 
@@ -296,7 +297,7 @@ export async function loader({ request, params }: LoaderArgs) {
   var ipab = asInt(ab, -1);
   if (ipab < 0){
     const ip = getIpAddress(request);
-    ipab = ipAsNumber(ip) % 10;
+    ipab = ipAsMask(ip);
   }
 
   const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
