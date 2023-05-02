@@ -6,6 +6,7 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
+import * as archive from "./archive";
 
 import axios from "axios";
 import { asUndefined } from "./tsUtils";
@@ -19,7 +20,7 @@ export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error:any) {
+  } catch (error: any) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -36,17 +37,19 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     var response = await axios.get(url);
     return response.data;
-  } catch (error:any) {
+  } catch (error: any) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
-      if (scrapeStackApiKey){
-        const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` + url;
+      if (scrapeStackApiKey) {
+        const scrapeStackUrl =
+          `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` +
+          url;
         response = await axios.get(scrapeStackUrl);
         return response.data;
       } else {
         console.log("no scrapeStackApiKey");
       }
-    } catch (error:any){
+    } catch (error: any) {
       console.log("Scrape Stack could not fetch " + url);
     }
     throw error;
@@ -55,6 +58,8 @@ async function fetchHtml(url: string): Promise<string> {
 
 async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
   try {
+    // const identifier = await archive.getArchiveOrgIdentifier(urlStr);
+    // console.log("Identifier: ", identifier);
     const urlObj = new URL(urlStr);
     const domain = urlObj.hostname;
     console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
@@ -136,7 +141,6 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       const getTweetsData = await getTweetsResponse.json();
       const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
       console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
-      console.log("LAST TWEET: ", lastTweet);
       twitter.getUserData(twitterUsername).then((data) => {
         const user = data.data[0];
         const authorName = user.name;
@@ -161,6 +165,9 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
         };
       });
     }
+
+    const lastModifiedDate = await archive.getLatestSnapshot(domain);
+    console.log("Last Modified Date: ", lastModifiedDate);
 
     return {
       url: url,
