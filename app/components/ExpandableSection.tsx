@@ -16,7 +16,6 @@ export function ExpandableSection(props: { children: React.ReactNode, title: str
 
     const ab = getAbFlag(props.ipab, AB_FLAGS.COLOR);
     const cssBody = ab ? cssBodyA : cssBodyB;
-    const cssEnd = ab ? cssEndA : cssEndB;
 
     const handleTitleClick = () => {
         setIsExpanded(!isExpanded);
@@ -38,7 +37,6 @@ export function ExpandableSection(props: { children: React.ReactNode, title: str
                     {props.children}
                 </div>
             )}
-            <div className={cssEnd}></div>
         </div>
     );
 }
