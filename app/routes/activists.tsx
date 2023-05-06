@@ -14,6 +14,8 @@ import { asInt } from "~/code/tsUtils";
 import { ExpandableSection } from "~/components/ExpandableSection";
 import { ipAsMask } from "~/code/abUtils";
 
+import heroImage from "../assets/empower_hero.png"
+
 
 
 // export async function action({ request, params }: ActionArgs) {
@@ -295,7 +297,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const searchParams = new URLSearchParams(request.url.split('?')[1]);
   const ab = searchParams.get("ab");
   var ipab = asInt(ab, -1);
-  if (ipab < 0){
+  if (ipab < 0) {
     const ip = getIpAddress(request);
     ipab = ipAsMask(ip);
   }
@@ -348,6 +350,7 @@ export default function AdminPage() {
 
   const cssTitle = "text-xl font-bold py-2";
   const cssLinkGreen = "text-green-500 hover:text-green-600";
+  const cssContentsLink = "text-lg text-green-500 hover:text-green-600";
   const cssTextFaded = "text-gray-500 text-sm py-2";
   const css_section_white = " py-4 px-4 lg:px-8";
   // const css_section_bg1 = "bg-slate-100 p-4";
@@ -373,6 +376,7 @@ export default function AdminPage() {
   };
 
   const cssNavButton = "text-white text-sm font-medium hover:text-gray-300 px-4";
+  console.log("image src = " + heroImage);
 
   return (
     <div>
@@ -389,26 +393,46 @@ export default function AdminPage() {
       </nav>
       <div className="py-8"></div>
 
-      <div className={css_section_white}>
-        <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
-        <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
-        <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
-        <p className={cssTextFaded}>Updated by hand April 2023</p>
+      <div className="flex flex-col lg:flex-row">
+        <div className="w-full lg:max-w-max">
+          <div className={css_section_white}>
+            <div className="border shadow-md bg-white p-4 px-8">
+              <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
+              <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
+              <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
+              <p className={cssTextFaded}>Updated by hand April 2023</p>
+            </div>
+            <div className="py-4"></div>
+            <h3 className={cssTitle}>Contents:</h3>
+            <ul>
+              {sections.map((section, index) => (
+                <li key={index}>
+                  <a href={`#s${index}`} className={cssContentsLink}>{section.title}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="lg:block hidden bg-slate-100 justify-center items-center ">
+          <img src={heroImage} className="object-contain"></img>
+        </div>
       </div>
-      {tableOfContents(sections)}
+
+
+
 
       {sections.map((section, index) => (
         <section id={"s" + index}>
           <div key={"" + index}>
-          <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab}>
-            <PageSectionC
-              data={section}
-              infoMap={infoMap}
-              titleId={""}
-              handleLinkClick={handleLinkClick}
-              ipab={data.ipab}
-            />
-          </ExpandableSection>
+            <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab}>
+              <PageSectionC
+                data={section}
+                infoMap={infoMap}
+                titleId={""}
+                handleLinkClick={handleLinkClick}
+                ipab={data.ipab}
+              />
+            </ExpandableSection>
           </div>
 
         </section>
