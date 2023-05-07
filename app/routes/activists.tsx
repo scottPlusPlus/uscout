@@ -9,13 +9,18 @@ import { ScrapedInfo } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { requestMany } from "~/code/scout/RequestInfo";
-import { getIpAddress, ipAsNumber } from "~/code/ipUtils";
+import { getIpAddress } from "~/code/ipUtils";
 import { asInt } from "~/code/tsUtils";
 import { ExpandableSection } from "~/components/ExpandableSection";
-import { AB_FLAGS, getAbFlag, ipAsMask } from "~/code/abUtils";
+import { ipAsMask } from "~/code/abUtils";
 
 import heroImage from "../assets/empower_hero.png"
 import { activistPageDataJson } from "~/code/activistData";
+import ActivistNavHeader from "~/components/ActivistNavHeader";
+import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
+import SearchableItemDisplay from "~/components/SearchableItemDisplay";
+import { Item, getCollectionItems } from "~/models/item.server";
+import { itemsFromRemixData } from "~/code/front/itemUtils";
 
 
 // export async function action({ request, params }: ActionArgs) {
@@ -59,9 +64,13 @@ export async function loader({ request, params }: LoaderArgs) {
     });
   });
 
+  const collectionItems = await getCollectionItems("activist");
+  collectionItems.forEach(item => {
+    infoUrls.add(item.url);
+  });
   const infos = await requestMany([...infoUrls]);
   console.log(`have ${infos.length} infos`);
-  return json({ sections, infos, ipab });
+  return json({ sections, infos, ipab, collectionItems });
 };
 
 export default function AdminPage() {
@@ -94,74 +103,38 @@ export default function AdminPage() {
     sendAnalyticEvent("link", linkUrl);
   }
 
-  
-  const colorAB = getAbFlag(data.ipab, AB_FLAGS.COLOR);
-  const cssSectionFooter = (colorAB ? "bg-teal-50" : "bg-purple-200")+" py-1";
+  const fakeSubmitAction = (action: string, actionData: string) => {
+    return;
+  }
+  const setLoading = (loading: boolean) => {
+    return;
+  }
 
-  const cssTitle = "text-xl font-bold py-2";
-  const cssLinkGreen = "text-green-500 hover:text-green-600";
-  const cssContentsLink = "text-lg text-green-500 hover:text-green-600";
-  const cssTextFaded = "text-gray-500 text-sm py-2";
-  const css_section_white = " py-4 px-4 lg:px-8";
-  // const css_section_bg1 = "bg-slate-100 p-4";
-  // const css_section_bg2 = "bg-teal-50 p-4";
+  const myCss = CSS_ACTIVIST_CLASSES(data.ipab);
 
-  const cssNavColor = colorAB ? "bg-teal-700" : "bg-purple-800";// "bg-gray-800";
-
-  //const css_section_bg1 = "bg-gradient-to-b from-teal-50 to-white py-4 px-4 lg:px-8";
-  const css_section_bg1 = "py-4 px-4 lg:px-8";
-
-  const tableOfContents = (pageSections: Array<PageSectionT>) => {
-    return (
-      <ExpandableSection title={"Contents"} titleId={"contents"} ipab={data.ipab}>
-        <nav>
-          <ul>
-            {pageSections.map((section, index) => (
-              <li key={index}>
-                <a href={`#s${index}`} className={cssLinkGreen}>{section.title}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </ExpandableSection>
-    );
-  };
-
-  const cssNavButton = "text-white text-sm font-semibold hover:text-gray-300 px-4";
   console.log("image src = " + heroImage);
 
-
+  const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
 
   return (
     <div>
-      <nav className={"fixed top-0 left-0 w-full py-4 z-10 "+cssNavColor}>
-        <div className="px-4 lg:px-8 flex justify-between">
-          <div className="flex items-left">
-            <a href="#top" className="text-white text-xl font-semibold">Empower-Kit for Activists 🧰</a>
-          </div>
-          <div className="flex items-center">
-            <a href="./feedback?r=activists" className={cssNavButton}>Feedback</a>
-            <a href="#top" className={cssNavButton}>Back to Top</a>
-          </div>
-        </div>
-      </nav>
-      <div className="py-8"></div>
+      <ActivistNavHeader ipab={data.ipab} />
 
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:max-w-max">
-          <div className={css_section_white}>
+          <div className={myCss.sectionWhite}>
             <div className="border shadow-md bg-white p-4 px-6">
               <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
-              <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
-              <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
-              <p className={cssTextFaded}>Updated by hand May 2023</p>
+              <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={myCss.linkNormal}>please let me know</a>.  I want to help. </p>
+              <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={myCss.linkNormal}>get in touch</a></p>
+              <p className={myCss.textFaded}>Updated by hand May 2023</p>
             </div>
             <div className="py-4"></div>
-            <h3 className={cssTitle}>Contents:</h3>
+            <h3 className={myCss.title}>Contents:</h3>
             <ul>
               {sections.map((section, index) => (
                 <li key={index}>
-                  <a href={`#s${index}`} className={cssContentsLink}>{section.title}</a>
+                  <a href={`#s${index}`} className={myCss.contentsLink}>{section.title}</a>
                 </li>
               ))}
             </ul>
@@ -171,7 +144,7 @@ export default function AdminPage() {
           <img src={heroImage} className="object-contain max-h-[26rem]"></img>
         </div>
       </div>
-      <div className={cssSectionFooter}></div>
+      <div className={myCss.sectionFooter}></div>
       {sections.map((section, index) => (
         <section id={"s" + index}>
           <div key={"" + index}>
@@ -184,12 +157,22 @@ export default function AdminPage() {
                 ipab={data.ipab}
               />
             </ExpandableSection>
-            <div className={cssSectionFooter}></div>
+            <div className={myCss.sectionFooter}></div>
           </div>
 
         </section>
       )
       )}
+      <ExpandableSection title="Even More" titleId="secEvenMore" ipab={data.ipab}>
+        <SearchableItemDisplay
+          loadedItems={loadedItems}
+          infoMap={infoMap}
+          admin={false}
+          submitAction={fakeSubmitAction}
+          setLoading={setLoading}
+        />
+      </ExpandableSection>
+      <div className={myCss.sectionFooter}></div>
       <Form ref={formRef} className="invisible"></Form>
     </div>
   );

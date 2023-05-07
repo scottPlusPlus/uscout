@@ -4,8 +4,8 @@ import { Form, useActionData, useLoaderData, useSubmit } from "@remix-run/react"
 import { debounce } from 'lodash';
 
 import invariant from "tiny-invariant";
-import { actorMayUpdateCollection, getCollection, overrideCollection, updateCollection } from "~/models/collection.server";
-import { addItem, getCollectionItems, Item, ItemFront, removeItem, suggestItem, updateItem } from "~/models/item.server";
+import { actorMayUpdateCollection, getCollection } from "~/models/collection.server";
+import { getCollectionItems, Item, ItemFront } from "~/models/item.server";
 import { Collection } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
@@ -17,31 +17,24 @@ import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/front/CssClasses";
 import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
-import { useOptionalUser } from "~/utils";
+
 import { getUserId } from "~/session.server";
 import { nowHHMMSS } from "~/code/timeUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import EditCollectionData from "~/components/EditCollectionData";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import CollectionJsonComponent from "~/components/CollectionJsonComponent";
-import { CollectionJson, assertValidCollection } from "~/code/datatypes/collectionJson";
+import { CollectionJson } from "~/code/datatypes/collectionJson";
 import { requestMany } from "~/code/scout/RequestInfo";
+import { ACTION_TYPES, collectionAction } from "~/code/actions";
+import { SearchTermT } from "~/code/datatypes/SearchTermT";
+import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
+import { info } from "console";
 
-
-type SearchTerm = {
-  term: string,
-  priority: number
-}
 
 const ACTIONS = {
   TYPE_FIELD: "a",
   DATA_FIELD: "aData",
-  MAKE_SUGGESTION: "suggestion",
-  ADMIN_ADD_ITEM: "addItem",
-  UPDATE_ITEM: "updateItem",
-  UPDATE_COLLECTION: "collection",
-  OVERRIDE_COLLECTION: "override",
-  REMOVE_ITEM: "removeItem",
 }
 
 //Remix Action
@@ -52,91 +45,16 @@ export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
   const aType = getStringOrThrow(formData, ACTIONS.TYPE_FIELD);
   const userId = await getUserId(request);
+  const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
 
-  var err: string | null = null;
-  var data: Object | null = null;
-  try {
-    const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
-    if (aType == ACTIONS.MAKE_SUGGESTION) {
-      data = await actionAddSubmission(params.cid, inputData);
-    } else if (aType == ACTIONS.ADMIN_ADD_ITEM) {
-      data = await actionAdminAddItem(params.cid, userId, inputData);
-    } else if (aType == ACTIONS.UPDATE_ITEM) {
-      data = await actionUpdateItem(params.cid, userId, inputData);
-    } else if (aType == ACTIONS.UPDATE_COLLECTION) {
-      data = await actionUpdateCollection(params.cid, userId, inputData);
-    } else if (aType == ACTIONS.OVERRIDE_COLLECTION) {
-      await actionOverrideCollection(params.cid, userId, inputData);
-      return redirect("/c/" + params.cid);
-    } else if (aType == ACTIONS.REMOVE_ITEM){
-      await actionRemoveItem(params.cid, userId, inputData);
-      return redirect("/c/" + params.cid);
-    } else {
-      throw ("invalid action");
-    }
-   
-  } catch (error: any) {
-    err = error.message;
-    console.error("Action failed: " + err); 
-  }
-
+  const actionResult = await collectionAction(userId, params.cid, aType, inputData);
   const now = nowHHMMSS();
   console.log("done with action at " + now);
-  return json({ action: aType, error: err, data: data, time: now });
-}
 
-async function actionAddSubmission(cid: string, inputData: string): Promise<Object | null> {
-  try {
-    await suggestItem(cid, inputData);
-    return null;
-  } catch (err: any) {
-    const errMsg = err.message ? err.message : "Error ¯\_(¬_¬)_/¯";
-    throw (errMsg);
+  if (actionResult.redirect) {
+    redirect(actionResult.redirect);
   }
-}
-
-async function actionAdminAddItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
-  if (actor == null) {
-    throw ("Must be logged in");
-  }
-  await addItem(actor, cid, inputData);
-  return null;
-}
-
-async function actionUpdateItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
-  if (actor == null) {
-    throw ("Must be logged in");
-  }
-  try {
-    const itemFront: ItemFront = JSON.parse(inputData);
-    return await updateItem(actor, cid, itemFront);  
-  } catch (e:any){
-    throw e;
-  }
-}
-
-async function actionUpdateCollection(cid: string, actor: string | undefined, inputData: string): Promise<Object> {
-  if (actor == null) {
-    throw ("Must be logged in");
-  }
-  const collection: Collection = JSON.parse(inputData);
-  return await updateCollection(actor, collection);
-}
-
-async function actionOverrideCollection(cid: string, actor: string | undefined, inputData: string): Promise<void> {
-  if (actor == null) {
-    throw ("Must be logged in");
-  }
-  const collection: CollectionJson = assertValidCollection(JSON.parse(inputData));
-  await overrideCollection(actor, collection);
-}
-
-async function actionRemoveItem(cid:string,  actor: string | undefined, inputData: string): Promise<void> {
-  if (actor == null) {
-    throw ("Must be logged in");
-  }
-  const itemUrl = inputData;
-  return await removeItem(actor, cid, itemUrl);
+  return json({ action: aType, error: actionResult.err, data: actionResult.data, time: now });
 }
 
 
@@ -167,51 +85,12 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-function remapPriorities(items: Item[], infoMap: Map<string, ScrapedInfo>, searchParams: SearchTerm[], caseSensitive: Boolean = false): Item[] {
-
-  const includes = (strA: string, strB: string) => {
-    return strA.toLowerCase().includes(strB.toLowerCase());
-  }
-
-  const prioritizedItems = items.map((item) => {
-    searchParams.forEach(search => {
-      if (search.term.length == 0) {
-        return;
-      }
-
-      item.tags.forEach(tag => {
-        if (includes(tag, search.term)) {
-          item.priority += (search.priority * 5);
-        }
-      });
-
-      if (includes(item.comment, search.term)) {
-        item.priority += search.priority
-      }
-      if (includes(item.url, search.term)) {
-        item.priority += search.priority;
-      }
-
-      const info = infoMap.get(item.url)!;
-      if (includes(info.title, search.term)) {
-        item.priority += search.priority;
-      }
-      if (includes(info.summary, search.term)) {
-        item.priority += search.priority;
-      }
-    });
-    //console.log(`${item.url} priority now ${item.priority}`);
-    return item;
-  });
-  return prioritizedItems;
-}
-
 //Main Render Function = = = = = 
 export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
 
   const [isLoading, setLoading] = useState<Boolean>(false);
-  if (isLoading){
+  if (isLoading) {
     return (
       <p>Loading...</p>
     )
@@ -234,14 +113,7 @@ export default function CollectionDetailsPage() {
   var allItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
   });
-  var loadedItems = allItems.filter(item => {
-    const info = infoMap.get(item.url);
-    if (!info) {
-      console.log("missing info for " + item.url);
-      return false;
-    }
-    return true;
-  });
+  var loadedItems = itemsFromRemixData(data.items, infoMap);
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
 
@@ -256,7 +128,7 @@ export default function CollectionDetailsPage() {
   const submit = useSubmit();
 
   const [showPending, setShowPending] = useState<Boolean>(false);
-  const [searchTerms, setSearchTerms] = useState<SearchTerm[]>([]);
+  const [searchTerms, setSearchTerms] = useState<SearchTermT[]>([]);
   const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
   const [admin, setAdmin] = useState(false);
 
@@ -267,7 +139,7 @@ export default function CollectionDetailsPage() {
     console.log("on first load...");
     const url = new URL(window.location.href);
     console.log("got first url");
-    const initialSearchParams: SearchTerm[] = [];
+    const initialSearchParams: SearchTermT[] = [];
     url.searchParams.forEach((value, key) => {
       const valAsNum = Number(value);
       if (!isNaN(valAsNum)) {
@@ -278,10 +150,10 @@ export default function CollectionDetailsPage() {
       initialSearchParams.push({ term: "", priority: 100 });
     }
     var ref = document.referrer;
-    if (ref.length > 0){
+    if (ref.length > 0) {
       ref = " ref= " + ref;
     }
-    sendAnalyticEvent("visit", url.toString()+ref);
+    sendAnalyticEvent("visit", url.toString() + ref);
     setSearchTerms(initialSearchParams);
     handleSearchUpdate(initialSearchParams, showPending);
   }, [loadedItemUrls]);
@@ -289,13 +161,13 @@ export default function CollectionDetailsPage() {
   useEffect(() => {
     //on an action...
     console.log("handling action: " + JSON.stringify(ad));
-    if (ad?.action == ACTIONS.UPDATE_ITEM) {
+    if (ad?.action == ACTION_TYPES.UPDATE_ITEM) {
       const actionItem: Item = ad?.data as Item;
       const index = loadedItems.findIndex(item => item.url === actionItem.url);
       console.log(`replaced ${actionItem.url} into index ${index}`);
       loadedItems[index] = actionItem;
       handleSearchUpdate(searchTerms, showPending);
-    } else if (ad?.action == ACTIONS.ADMIN_ADD_ITEM) {
+    } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
       handleSearchUpdate(searchTerms, showPending);
     }
   }, [ad?.time]);
@@ -314,7 +186,7 @@ export default function CollectionDetailsPage() {
       sendAnalyticEvent("search", newUrl);
     }, 500, { trailing: true }), []);
 
-  const handleSearchUpdate = (newTerms: SearchTerm[], newShowPending: Boolean) => {
+  const handleSearchUpdate = (newTerms: SearchTermT[], newShowPending: Boolean) => {
     console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
     const url = new URL(window.location.href);
@@ -347,7 +219,7 @@ export default function CollectionDetailsPage() {
     const validTerms = newTerms.filter(term => {
       return term.term.length > 0
     });
-    const prioritizedItems = remapPriorities(shownItems, infoMap, validTerms)
+    const prioritizedItems = remapItemPriorities(shownItems, infoMap, validTerms)
     var sorted = prioritizedItems.sort((a, b) => {
       return b.priority - a.priority;
     });
@@ -380,25 +252,25 @@ export default function CollectionDetailsPage() {
 
   const handleAddItem = (newUrl: string) => {
     console.log("handleAddItem for " + newUrl);
-    const action = admin ? ACTIONS.ADMIN_ADD_ITEM : ACTIONS.MAKE_SUGGESTION;
+    const action = admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
     submitAction(action, newUrl);
   }
 
 
   const handleItemEdit = (item: ItemFront) => {
     console.log("handleItemEdit for " + item.url);
-    submitAction(ACTIONS.UPDATE_ITEM, JSON.stringify(item));
+    submitAction(ACTION_TYPES.UPDATE_ITEM, JSON.stringify(item));
   }
 
   const handleRemoveItem = (item: ItemFront) => {
     console.log("handleRemoveItem for " + item.url);
-    submitAction(ACTIONS.REMOVE_ITEM, item.url);
+    submitAction(ACTION_TYPES.REMOVE_ITEM, item.url);
     setLoading(true);
   }
 
   const handleOverrideCollection = (data: CollectionJson) => {
     console.log("handleOverrideCollection");
-    const action = ACTIONS.OVERRIDE_COLLECTION;
+    const action = ACTION_TYPES.OVERRIDE_COLLECTION;
     submitAction(action, JSON.stringify(data));
   }
 
@@ -418,12 +290,35 @@ export default function CollectionDetailsPage() {
   const handleUpdateCollectionData = (collection: Collection) => {
     const collectionStr = JSON.stringify(collection);
     console.log("updating collection: " + collectionStr);
-    submitAction(ACTIONS.UPDATE_COLLECTION, collectionStr);
+    submitAction(ACTION_TYPES.UPDATE_COLLECTION, collectionStr);
   }
 
-  const submitLabel = admin ? "Add Item" : "Suggest a Url";
-  const submitError = ad?.error ? ad?.error : undefined;
   const collection = cleanCollectionType(data.collection);
+
+  function footer() {
+    const toggleText = admin ? "Toggle Admin Off" : "Toggle Admin On";
+    const submitError = ad?.error ? ad?.error : undefined;
+    if (!data.admin) {
+      return null;
+    }
+    return (
+      <div>
+        <button
+          className={CSS_CLASSES.SUBMIT_BUTTON}
+          type="submit"
+          onClick={() => { setAdmin(!admin) }}
+        >
+          {toggleText}
+        </button>
+        {admin && (
+          <div>
+            <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} />
+            <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -442,35 +337,23 @@ export default function CollectionDetailsPage() {
       <div className="py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <ItemDisplay 
-            key={item.url} 
-            item={item} 
-            info={infoMap.get(item.url)!} 
-            onTagClick={handleTagClick} 
-            onLinkClick={handleLinkClick} 
-            admin={admin} 
-            onItemUpdate={handleItemEdit}
-            onItemDelete={handleRemoveItem}
-             />
+            <ItemDisplay
+              key={item.url}
+              item={item}
+              info={infoMap.get(item.url)!}
+              onTagClick={handleTagClick}
+              onLinkClick={handleLinkClick}
+              admin={admin}
+              onItemUpdate={handleItemEdit}
+              onItemDelete={handleRemoveItem}
+            />
           ))}
         </div>
       </div>
 
       <div className={CSS_CLASSES.SECTION_BG}>
-        <SingleFieldForm name={submitLabel} errors={submitError} onSubmit={handleAddItem} />
-        {data.admin && (
-          <button
-            className={CSS_CLASSES.SUBMIT_BUTTON}
-            type="submit"
-            onClick={() => { setAdmin(!admin) }}
-          >
-            Toggle Admin
-          </button>
-        )}
+        {footer()}
       </div>
-      {admin && (
-        <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
-      )}
     </div>
   );
 }

@@ -1,21 +1,14 @@
 import { useState } from "react";
-import { AB_FLAGS, getAbFlag } from "~/code/abUtils";
+import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
 
 const titleCSS = "text-xl font-bold cursor-pointer py-2";
 const cssTitlBg = "py-4 px-4 lg:px-8";
-const cssBodyA = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-teal-50";
-const cssBodyB = "py-4 px-4 lg:px-8 bg-gradient-to-b from-white to-purple-200";
-const cssEndA = "bg-teal-50 py-1";
-const cssEndB = "bg-purple-200 py-1";
-
 
 export function ExpandableSection(props: { children: React.ReactNode, title: string, titleId: string, ipab: number, }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const expandChar = isExpanded ? "" : "...";
 
-
-    const ab = getAbFlag(props.ipab, AB_FLAGS.COLOR);
-    const cssBody = ab ? cssBodyA : cssBodyB;
+    const myCss = CSS_ACTIVIST_CLASSES(props.ipab);
 
     const handleTitleClick = () => {
         setIsExpanded(!isExpanded);
@@ -33,7 +26,7 @@ export function ExpandableSection(props: { children: React.ReactNode, title: str
                 </h3>
             </div>
             {isExpanded && (
-                <div className={cssBody}>
+                <div className={myCss.sectionBody}>
                     {props.children}
                 </div>
             )}
