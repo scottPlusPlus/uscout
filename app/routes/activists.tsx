@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderArgs) {
     });
   });
 
-  const collectionItems = await getCollectionItems("activist");
+  const collectionItems = await getCollectionItems("activists");
   collectionItems.forEach(item => {
     infoUrls.add(item.url);
   });
