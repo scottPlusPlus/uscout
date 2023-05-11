@@ -1,5 +1,5 @@
 import { Form, useLoaderData, useSubmit } from "@remix-run/react";
-import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
+import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
 import { nowHHMMSS } from "~/code/timeUtils";
 import { useEffect, useRef } from "react";
 
@@ -52,6 +52,7 @@ export async function loader({ request, params }: LoaderArgs) {
   if (ipab < 0) {
     const ip = getIpAddress(request);
     ipab = ipAsMask(ip);
+    return redirect("/activists?ab="+ipab);
   }
 
   const pageDataJson = activistPageDataJson;
