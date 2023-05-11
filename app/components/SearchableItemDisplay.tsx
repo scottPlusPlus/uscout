@@ -117,7 +117,7 @@ export default function SearchableItemDisplay(props: Props) {
             </div>
 
             <div className="py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className={CSS_CLASSES.ITEM_GRID_COLS}>
                     {sortedItems.map(item => (
                         <ItemDisplay
                             key={item.url}

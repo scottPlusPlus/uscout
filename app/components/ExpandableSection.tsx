@@ -20,7 +20,6 @@ export function ExpandableSection(props: { children: React.ReactNode, title: str
                 <h3
                     className={titleCSS}
                     onClick={handleTitleClick}
-                    id={props.titleId}
                 >
                     {props.title} {expandChar}
                 </h3>

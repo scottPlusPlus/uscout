@@ -2,6 +2,7 @@ import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import ItemDisplay from "./ItemDisplay";
 import Observer from "./Observer";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 
 type Props = {
     data: PageSectionT;
@@ -27,7 +28,7 @@ export default function PageSectionC(props: Props) {
             <Observer name={props.data.title} />
             <div >{props.data.body}</div>
             <div className="py-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className={CSS_CLASSES.ITEM_GRID_COLS}>
                     {links.map(item => (
                         <ItemDisplay
                             key={item.url}

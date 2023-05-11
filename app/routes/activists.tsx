@@ -12,9 +12,12 @@ import { requestMany } from "~/code/scout/RequestInfo";
 import { getIpAddress } from "~/code/ipUtils";
 import { asInt } from "~/code/tsUtils";
 import { ExpandableSection } from "~/components/ExpandableSection";
-import { ipAsMask } from "~/code/abUtils";
+import { AB_FLAGS, combineFlags, getAbFlag, ipAsMask } from "~/code/abUtils";
 
-import heroImage from "../assets/empower_hero.png"
+import heroImage0 from "../assets/empower_hero.png"
+import heroImage1 from "../assets/empower_hero_2.png"
+import heroImage2 from "../assets/empower_hero_3.png"
+import heroImage3 from "../assets/empower_hero_4.png"
 import { activistPageDataJson } from "~/code/activistData";
 import ActivistNavHeader from "~/components/ActivistNavHeader";
 import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
@@ -42,8 +45,6 @@ export function meta() {
 
 export async function loader({ request, params }: LoaderArgs) {
   console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
-  const pageDataJson = activistPageDataJson;
-  console.log(pageDataJson);
 
   const searchParams = new URLSearchParams(request.url.split('?')[1]);
   const ab = searchParams.get("ab");
@@ -52,6 +53,8 @@ export async function loader({ request, params }: LoaderArgs) {
     const ip = getIpAddress(request);
     ipab = ipAsMask(ip);
   }
+
+  const pageDataJson = activistPageDataJson;
 
   const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
   const infoUrls = new Set<string>();
@@ -110,8 +113,36 @@ export default function AdminPage() {
     return;
   }
 
-  const myCss = CSS_ACTIVIST_CLASSES(data.ipab);
+  const tableofContents = ()=> {
 
+    const cssSmall = myCss.linkNormal;
+    const cssBig = "text-xl " + myCss.linkNormal;
+
+    const sectionCss = (section:PageSectionT) => {
+      if (section.size != null && section.size == 1){
+        return cssSmall;
+      }
+      return cssBig;
+    }
+
+    return(
+      <ul>
+      {sections.map((section, index) => (
+        <li key={index} className="mb-2">
+          <a href={`#s${index}`} className={sectionCss(section)}>{section.title}</a>
+        </li>
+      ))}
+      <li key={"more"}>
+      <a href={`#sMore`} className={cssBig}>Everything And More !!</a>
+      </li>
+    </ul>
+    )
+  }
+
+  const myCss = CSS_ACTIVIST_CLASSES(data.ipab);
+  const heroImageIndex = combineFlags(getAbFlag(data.ipab, AB_FLAGS.HERO_1), getAbFlag(data.ipab, AB_FLAGS.HERO_2));
+  const heroImages = [heroImage0, heroImage1, heroImage2, heroImage3];
+  const heroImage = heroImages[heroImageIndex];
   console.log("image src = " + heroImage);
 
   const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
@@ -131,13 +162,8 @@ export default function AdminPage() {
             </div>
             <div className="py-4"></div>
             <h3 className={myCss.title}>Contents:</h3>
-            <ul>
-              {sections.map((section, index) => (
-                <li key={index}>
-                  <a href={`#s${index}`} className={myCss.contentsLink}>{section.title}</a>
-                </li>
-              ))}
-            </ul>
+            {tableofContents()}
+            <div className="py-2"></div>
           </div>
         </div>
         <div className="lg:block hidden justify-center items-center">
@@ -163,7 +189,10 @@ export default function AdminPage() {
         </section>
       )
       )}
-      <ExpandableSection title="Even More" titleId="secEvenMore" ipab={data.ipab}>
+       <section id={"sMore"}>
+      <ExpandableSection title="Everything and More" titleId="sMore" ipab={data.ipab}>
+        <div >Here you can search through everything in the above sections, and even more cool stuff that didn't necessarily fit anywhere else.</div>
+        <div className="py-4"></div>
         <SearchableItemDisplay
           loadedItems={loadedItems}
           infoMap={infoMap}
@@ -173,6 +202,9 @@ export default function AdminPage() {
         />
       </ExpandableSection>
       <div className={myCss.sectionFooter}></div>
+      </section>
+
+
       <Form ref={formRef} className="invisible"></Form>
     </div>
   );
