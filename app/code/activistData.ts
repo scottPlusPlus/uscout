@@ -1,5 +1,5 @@
 const sectionVolunteer = `{
-    "title": "Where can I volunteer?",
+    "title": "Where can I find places to volunteer?",
     "body" : "If you're passionate about making a difference in your community but don't know where to start, finding the right volunteer opportunity can be a challenge. Fortunately, there are many online resources available that can help you connect with local organizations and causes that align with your interests and skills.",
     "links" : [ 
        {
@@ -23,14 +23,22 @@ const sectionVolunteer = `{
 }`;
 
 const sectionPolitics = `{
-  "title": "How Can I Get More Involved With Political Activism?",
-  "body" : "If you want to make big change, a great approach is through political activism.  Here are some links to help you connect with others and get started.",
+  "title": "What can I do to tackle problems at their root cause?",
+  "body" : "If you want to make big change, a great approach is through political activism.  The great news is you are not alone!  Here are some links to help you connect with others and get started.",
   "links" : [ 
      {
       "url": "https://indivisible.org",
       "comment": "Find local or virtual groups to participate in contacting your representatives and general activism.",
       "tags": []
     }, {
+      "url": "https://represent.us/",
+      "comment": "",
+      "tags": []
+    }, {
+      "url": "www.starvoting.org",
+      "comment": "Organization working to give voters more power by updating our voting system beyond 'choose-one' voting.",
+      "tags": []
+    } , {
       "url": "https://medium.com/swlh/this-is-how-you-find-protests-in-your-city-cfcbf9d48c8f",
       "comment": "An article describing how to find local protests through social media.",
       "tags": []
@@ -43,8 +51,8 @@ const sectionPolitics = `{
       "comment": "An article describes how to format your letters or calls to your representatives.",
       "tags": []
     }, {
-      "url": "www.starvoting.org",
-      "comment": "Organization working to give voters more power by updating our voting system beyond 'choose-one' voting.",
+      "url" : "https://democracy.io",
+      "comment" : "Tool that lets you easily write to your representatives",
       "tags": []
     }
   ]
@@ -178,8 +186,48 @@ const sectionData = `{
         "url": "worldometers.info",
         "comment": "",
         "tags": []
-      }  
+      }, {
+        "url" : "https://www.wikidata.org",
+        "comment": "",
+        "tags": []
+      }
     ]
+}`;
+
+const sectionTalents = `{
+  "title": "How can I contribute my talents in engineering / design / etc to an important cause?",
+  "body" : "some text coming soon...",
+  "size" : 1,
+  "links" : [{
+      "url": "https://taprootfoundation.org",
+      "comment": "",
+      "tags": []
+    }, {
+      "url": "https://www.catchafire.org",
+      "comment": "",
+      "tags": []
+    }, {
+      "url": "https://movingworlds.org/transform/professionals",
+      "comment": "",
+      "tags": []
+    }
+  ]
+}`;
+
+const sectionHour = `{
+  "title": "I have 1 hour. What can I do to help right now?",
+  "body" : "Seriously, go contact your representitive.  But yeah, more coming soon.  If you think of something please let us know.",
+  "size" : 1,
+  "links" : [{
+      "url": "https://democracy.io",
+      "comment": "",
+      "tags": []
+    }, {
+      "url": "https://www.270towin.com/elected-officials/",
+      "comment": "",
+      "tags": []
+    }
+  ]
 }`;
 
 export const activistPageDataJson = `[${sectionVolunteer},
@@ -187,4 +235,6 @@ export const activistPageDataJson = `[${sectionVolunteer},
   ${sectionDonate},
   ${sectionClimate},
   ${sectionInspire},
+  ${sectionTalents},
+  ${sectionHour},
   ${sectionData}]`;
