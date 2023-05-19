@@ -11,6 +11,8 @@ export const ACTION_TYPES = {
     UPDATE_COLLECTION: "collection",
     OVERRIDE_COLLECTION: "override",
     REMOVE_ITEM: "removeItem",
+    CREATE_BLOB: "createBlob",
+    UPDATE_BLOB: "updateBlob",
 }
 
 export async function collectionAction(actor: string | undefined, collectionId: string, actionType:string, inputData:string){

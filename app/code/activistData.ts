@@ -238,3 +238,17 @@ export const activistPageDataJson = `[${sectionVolunteer},
   ${sectionTalents},
   ${sectionHour},
   ${sectionData}]`;
+
+export const activistDataFallback = `{
+    "intro" : "A curated toolkit of resources for activists and other heroes looking to make a difference\\n\\nIf there's something you're looking for you can't find here, [please let me know](https://about.me/scottplusplus).  I want to help.\\n\\nIf you have anything to add or want to make a suggestion, [get in touch](https://about.me/scottplusplus)",
+    "updated" : "Updated by hand May 2023",
+    "sections": [${sectionVolunteer},
+      ${sectionPolitics}, 
+      ${sectionDonate},
+      ${sectionClimate},
+      ${sectionInspire},
+      ${sectionTalents},
+      ${sectionHour},
+      ${sectionData}],
+      "collectionKey" : "activists"
+}`;

@@ -111,3 +111,8 @@ model Feedback {
   email    String
   status   String
 }
+
+model Blobs {
+  key   String @id
+  value String
+}
