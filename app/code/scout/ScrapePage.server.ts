@@ -40,8 +40,10 @@ async function fetchHtml(url: string): Promise<string> {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey){
+        console.log(`attempting to scrape ${url} via scrapestack`);
         const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` + url;
         response = await axios.get(scrapeStackUrl);
+        console.log(`scrapestack got response from ${url}`);
         return response.data;
       } else {
         console.log("no scrapeStackApiKey");
@@ -61,6 +63,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     await domainThrottle.enqueue(domain);
     console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
     const html = await fetchHtml(urlStr);
+    console.log(`${urlStr}: process repsonse ${nowHHMMSS()}`);
 
     const hash = createHash("sha256").update(html).digest("hex");
 
