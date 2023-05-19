@@ -18,11 +18,11 @@ import heroImage0 from "../assets/empower_hero.png"
 import heroImage1 from "../assets/empower_hero_2.png"
 import heroImage2 from "../assets/empower_hero_3.png"
 import heroImage3 from "../assets/empower_hero_4.png"
-import { activistDataFallback, activistPageDataJson } from "~/code/activistData";
+import { activistDataFallback } from "~/code/activistData";
 import ActivistNavHeader from "~/components/ActivistNavHeader";
 import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
 import SearchableItemDisplay from "~/components/SearchableItemDisplay";
-import { Item, getCollectionItems } from "~/models/item.server";
+import { getCollectionItems } from "~/models/item.server";
 import { itemsFromRemixData } from "~/code/front/itemUtils";
 import { getBlob } from "~/models/blobs.server";
 import { parseJson } from "~/code/jsonUtils";
