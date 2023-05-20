@@ -1,7 +1,6 @@
 import { useLoaderData } from "@remix-run/react";
 import { LoaderArgs, redirect, json } from "@remix-run/server-runtime";
 import { ipAsMask } from "~/code/abUtils";
-import { activistPageDataJson } from "~/code/activistData";
 import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import { itemsFromRemixData } from "~/code/front/itemUtils";
@@ -12,7 +11,16 @@ import { asInt } from "~/code/tsUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import PageWithSections from "~/components/PageWithSections";
 import { getCollectionItems } from "~/models/item.server";
+import * as dataFallback from "~/code/activistDataJson.json";
 
+type PageDataT = {
+  intro: string,
+  updated: string,
+  sections: Array<PageSectionT>,
+  collectionKey: string,
+}
+
+const fallbackPageData = dataFallback as PageDataT;
 const root_url = "https://www.empower-kit.com";
 
 export function meta() {
@@ -37,9 +45,9 @@ export async function loader({ request, params }: LoaderArgs) {
     return redirect("/activists2?ab="+ipab);
   }
 
-  const pageDataJson = activistPageDataJson;
+  const pageData = fallbackPageData;
 
-  const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
+  const sections: Array<PageSectionT> = pageData.sections;
   const infoUrls = new Set<string>();
   sections.forEach(data => {
     data.links.forEach(link => {
@@ -59,7 +67,7 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({ sections, infos, ipab, collectionItems });
 };
 
-export default function AdminPage() {
+export default function ActivistsPage() {
 
   const data = useLoaderData<typeof loader>();
   const sections: Array<PageSectionT> = data.sections;

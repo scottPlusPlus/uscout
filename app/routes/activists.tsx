@@ -18,7 +18,8 @@ import heroImage0 from "../assets/empower_hero.png"
 import heroImage1 from "../assets/empower_hero_2.png"
 import heroImage2 from "../assets/empower_hero_3.png"
 import heroImage3 from "../assets/empower_hero_4.png"
-import { activistDataFallback } from "~/code/activistData";
+import * as dataFallback from "~/code/activistDataJson.json";
+
 import ActivistNavHeader from "~/components/ActivistNavHeader";
 import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
 import SearchableItemDisplay from "~/components/SearchableItemDisplay";
@@ -40,6 +41,8 @@ type PageDataT = {
   sections: Array<PageSectionT>,
   collectionKey: string,
 }
+
+const fallbackPageData = dataFallback as PageDataT;
 
 const root_url = "https://www.empower-kit.com";
 
@@ -66,15 +69,13 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 
   const blob = await getBlob("pageActivists");
-  const newPageDataJson = blob ? blob.value : activistDataFallback;
+  const newPageDataJson = blob ? blob.value : "";
 
   var parseErrs = new Array<string>;
   var pageData = parseJson<PageDataT>(newPageDataJson, parseErrs);
   if (!pageData) {
     console.log("no / invalid pageData: " + JSON.stringify(parseErrs));
-    parseErrs = [];
-    pageData = parseJson<PageDataT>(activistDataFallback, parseErrs);
-    console.log("Fallback parse errors: " + JSON.stringify(parseErrs));
+    pageData = fallbackPageData;
   }
   pageData = pageData!;
   console.log("pageData = " + JSON.stringify(pageData));
