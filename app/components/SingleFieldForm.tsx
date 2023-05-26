@@ -7,6 +7,7 @@ interface FormInputProps {
     inputType?: React.InputHTMLAttributes<HTMLInputElement>['type'];
     errors?: string;
     onSubmit: (value: string) => void;
+    disabled?: boolean;
 }
 
 export default function SingleFieldForm(props: FormInputProps) {
@@ -21,6 +22,8 @@ export default function SingleFieldForm(props: FormInputProps) {
         props.onSubmit(value);
         setValue(props.initialValue || "");
     };
+    
+    const buttonClass = props.disabled ? CSS_CLASSES.BUTTON_DISABLED : CSS_CLASSES.SUBMIT_BUTTON;
 
     return (
         <form>
@@ -37,9 +40,10 @@ export default function SingleFieldForm(props: FormInputProps) {
             />
             {props.errors && <p className={CSS_CLASSES.ERROR_CLASS}>{props.errors}</p>}
             <button
-                className={CSS_CLASSES.SUBMIT_BUTTON}
+                className={buttonClass}
                 type="submit"
                 onClick={handleSubmit}
+                disabled={props.disabled == true}
             >
                 Submit
             </button>

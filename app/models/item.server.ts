@@ -4,6 +4,8 @@ import { sanitizeUrl } from "~/code/urlUtils";
 
 import { prisma } from "~/db.server";
 import { actorMayUpdateCollection, getCollection } from "./collection.server";
+import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
+import { ROLE_TYPE, getRoleType } from "./role.server";
 
 const STATUS = {
   APPROVED: "approved",
@@ -62,20 +64,29 @@ function itemModelFromItem(input: Item): ItemModel {
 }
 
 export async function addItem(
-  actorId: string,
+  actorId: string|null,
   collectionId: string,
   url: string
 ): Promise<Item> {
   console.log(`ACTION: addItem ${collectionId} ${url}`);
-  const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
-  if (!mayUpdate) {
-    throw new Error("user does not have permissions");
-  }
 
   const collection = await getCollection(collectionId);
   if (!collection) {
     throw new Error("invalid collection id " + collectionId);
   }
+
+  const settings = collectionSettings(collection);
+  console.log("Add Item setttings = " + settings.addItemSettings);
+  if (settings.addItemSettings == ADD_ITEM_SETTING.OPEN_SUGGEST){
+    return suggestItem(collectionId, url);
+  }
+  if (settings.addItemSettings == ADD_ITEM_SETTING.ADMINS){
+    const role = await getRoleType(actorId, collectionId);
+    if (role?.toLocaleLowerCase() != ROLE_TYPE.OWNER.toLowerCase()){
+      throw new Error("user does not have permissions");
+    }
+  }
+
   const sanitizedUrl = sanitizeUrl(url);
   if (!sanitizedUrl) {
     throw new Error("invalid url " + sanitizedUrl);
@@ -127,9 +138,10 @@ export async function suggestItem(
     throw new Error("invalid url " + url);
   }
   const itemId = collectionId + sanitizedUrl;
-  const e = await exists(collectionId, sanitizedUrl);
-  if (e) {
-    throw new Error("Item already exists " + sanitizedUrl);
+  const ex = await getCollectionItem(collectionId, sanitizedUrl);
+  if (ex) {
+    console.log("Item already exists " + sanitizedUrl);
+    return ex;
   }
 
   try {
@@ -203,6 +215,19 @@ async function exists(collectionId: string, url: string): Promise<boolean> {
     },
   });
   return existingItem !== null;
+}
+
+async function getCollectionItem(collectionId: string, url: string): Promise<Item|null> {
+  const itemId = collectionId + url;
+  const existingItem = await prisma.itemModel.findFirst({
+    where: {
+      id: itemId,
+    },
+  });
+  if (!existingItem){
+    return null;
+  }
+  return itemFromItemModel(existingItem);
 }
 
 export async function removeItem(

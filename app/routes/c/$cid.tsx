@@ -29,7 +29,7 @@ import { requestMany } from "~/code/scout/RequestInfo";
 import { ACTION_TYPES, collectionAction } from "~/code/actions";
 import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
-import { info } from "console";
+import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
 
 
 const ACTIONS = {
@@ -96,13 +96,11 @@ export default function CollectionDetailsPage() {
     )
   }
 
-
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
 
-  console.log("have data: " + JSON.stringify(data));
+  // console.log("have data: " + JSON.stringify(data));
   console.log("have actionData: " + JSON.stringify(ad));
-
 
   const infoMap = new Map<string, ScrapedInfo>();
   data.infos.forEach(info => {
@@ -117,25 +115,19 @@ export default function CollectionDetailsPage() {
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
 
-  const userId = data.userId;
-
-
-  // console.log(`Have ${loadedItems.length} loaded items`);
-  // console.log("loadedUrls: " + loadedItemUrls);
-
-
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
   const [showPending, setShowPending] = useState<Boolean>(false);
   const [searchTerms, setSearchTerms] = useState<SearchTermT[]>([]);
-  const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
+  const [sortedItems, setSortedItems] = useState<Item[]>([]);
   const [admin, setAdmin] = useState(false);
+  const [addItemPending, setAddItemPending] = useState(false);
 
   const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
 
   useEffect(() => {
-    //on first load
+    //on load items
     console.log("on first load...");
     const url = new URL(window.location.href);
     console.log("got first url");
@@ -149,14 +141,19 @@ export default function CollectionDetailsPage() {
     if (initialSearchParams.length == 0) {
       initialSearchParams.push({ term: "", priority: 100 });
     }
+    setSearchTerms(initialSearchParams);
+    handleSearchUpdate(initialSearchParams, showPending);
+  }, [loadedItemUrls]);
+
+  //on first load
+  useEffect(()=> {
+    const url = new URL(window.location.href);
     var ref = document.referrer;
     if (ref.length > 0) {
       ref = " ref= " + ref;
     }
     sendAnalyticEvent("visit", url.toString() + ref);
-    setSearchTerms(initialSearchParams);
-    handleSearchUpdate(initialSearchParams, showPending);
-  }, [loadedItemUrls]);
+  }, []);
 
   useEffect(() => {
     //on an action...
@@ -168,7 +165,8 @@ export default function CollectionDetailsPage() {
       loadedItems[index] = actionItem;
       handleSearchUpdate(searchTerms, showPending);
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
-      handleSearchUpdate(searchTerms, showPending);
+      setAddItemPending(false);
+      handleSearchUpdate(searchTerms, showPending);      
     }
   }, [ad?.time]);
 
@@ -236,6 +234,10 @@ export default function CollectionDetailsPage() {
     console.log("turning on pending...");
     handleSearchUpdate(searchTerms, true);
   }
+  if (!admin && showPending) {
+    console.log("turning off pending...");
+    handleSearchUpdate(searchTerms, false);
+  }
 
 
   const handleTagClick = (tag: string) => {
@@ -252,7 +254,8 @@ export default function CollectionDetailsPage() {
 
   const handleAddItem = (newUrl: string) => {
     console.log("handleAddItem for " + newUrl);
-    const action = admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
+    const action = ACTION_TYPES.ADMIN_ADD_ITEM; //admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
+    setAddItemPending(true);
     submitAction(action, newUrl);
   }
 
@@ -298,26 +301,53 @@ export default function CollectionDetailsPage() {
   function footer() {
     const toggleText = admin ? "Toggle Admin Off" : "Toggle Admin On";
     const submitError = ad?.error ? ad?.error : undefined;
-    if (!data.admin) {
+
+    const addItemField = () => {
+      return (
+        <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} disabled={addItemPending} />
+      )
+    }
+
+    if (data.admin) {
+      return (
+        <>
+          <div className="flex justify-between">
+            {addItemField()}
+            <div className="justify-end">
+              <br></br>
+              <button
+                className={CSS_CLASSES.SUBMIT_BUTTON}
+                type="submit"
+                onClick={() => { 
+                  setAdmin(!admin);
+                }}
+              >
+                {toggleText}
+              </button>
+            </div>
+          </div>
+
+          {admin && (
+            <div>
+              <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
+            </div>
+          )}
+        </>
+      );
+    }
+
+    const settings = collectionSettings(collection);
+    if (settings.addItemSettings == ADD_ITEM_SETTING.ADMINS) {
       return null;
     }
+
     return (
       <div>
-        <button
-          className={CSS_CLASSES.SUBMIT_BUTTON}
-          type="submit"
-          onClick={() => { setAdmin(!admin) }}
-        >
-          {toggleText}
-        </button>
-        {admin && (
-          <div>
-            <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} />
-            <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
-          </div>
-        )}
+        {addItemField()}
       </div>
     )
+
+
   }
 
   return (
