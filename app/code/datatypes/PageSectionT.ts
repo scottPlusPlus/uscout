@@ -5,4 +5,5 @@ export type PageSectionT  = {
     size?: number;
     body: string;
     links: Array<ItemFront>
+    addSeparator?:boolean;
 }

@@ -14,7 +14,7 @@ export const CSS_CLASSES = {
   ITEM_TAG:
     "inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mt-2",
   SECTION_BG: "bg-gray-100 shadow-md p-4",
-  ITEM_GRID_COLS: "grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
+  ITEM_GRID_COLS: "grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6",
 };
 
 export function CSS_ACTIVIST_CLASSES(ipab: number) {
@@ -25,13 +25,18 @@ export function CSS_ACTIVIST_CLASSES(ipab: number) {
   return {
     navButton: "text-white text-sm font-semibold hover:text-gray-300 px-4",
     title: "text-xl font-bold py-2",
-    navColor: colorAB ? "bg-teal-700" : "bg-purple-800", // "bg-gray-800";
+    navColor: colorAB ? `bg-navG` : `bg-navP`, // "bg-gray-800";
 
+    standardPadding: "py-4 px-4 lg:px-8",
     linkNormal: linkColor,
     contentsLink: "text-lg " + linkColor,
     textFaded: "text-gray-500 text-sm py-2",
-    sectionWhite: " py-4 px-4 lg:px-8",
-    sectionFooter: (colorAB ? "bg-teal-50" : "bg-purple-200") + " py-1",
-    sectionBody: "py-4 px-4 lg:px-8 bg-gradient-to-b from-white " + (colorAB ? "to-teal-50" : "to-purple-200")
+    sectionIntroQuote: "py-4 px-4 lg:px-8",
+    sectionFooter: (colorAB ? `bg-mainG` : `bg-mainP`) + " py-1",
+    sectionColorGrad: "bg-gradient-to-b from-stone-50 " + (colorAB ? `to-mainG` : `to-mainP`),
+    defaultBg: "bg-stone-50",
+    sectionColorDark: colorAB ? `bg-mainG` : `bg-mainP`,
+    sectionColorLight: `bg-stone-50`,
+    sectionTitle: "text-2xl font-bold py-2 text-center",
   };
 }

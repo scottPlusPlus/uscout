@@ -1,7 +1,7 @@
 import { Form, useLoaderData, useSubmit } from "@remix-run/react";
 import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
 import { nowHHMMSS } from "~/code/timeUtils";
-import { lazy, useEffect, useRef } from "react";
+import { lazy, useEffect, useRef, useState } from "react";
 
 import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import PageSectionC from "~/components/PageSectionC";
@@ -14,10 +14,14 @@ import { asInt } from "~/code/tsUtils";
 import { ExpandableSection } from "~/components/ExpandableSection";
 import { AB_FLAGS, combineFlags, getAbFlag, ipAsMask } from "~/code/abUtils";
 
-import heroImage0 from "../assets/empower_hero.png"
-import heroImage1 from "../assets/empower_hero_2.png"
-import heroImage2 from "../assets/empower_hero_3.png"
-import heroImage3 from "../assets/empower_hero_4.png"
+import heroImage0 from "../assets/empower_hero.png";
+import heroImage1 from "../assets/empower_hero_2.png";
+import heroImage2 from "../assets/empower_hero_3.png";
+import heroImage3 from "../assets/empower_hero_4.png";
+import titleImageG from "../assets/top-image_g.png";
+import titleImageP from "../assets/top-image_p.png";
+import titleLogo from "../assets/title_box_logo.png";
+
 import * as dataFallback from "~/code/activistDataJson.json";
 
 import ActivistNavHeader from "~/components/ActivistNavHeader";
@@ -27,6 +31,8 @@ import { getCollectionItems } from "~/models/item.server";
 import { itemsFromRemixData } from "~/code/front/itemUtils";
 import { getBlob } from "~/models/blobs.server";
 import { parseJson } from "~/code/jsonUtils";
+import React from "react";
+import FixedCenterColumn from "~/components/FixedCenterColumn";
 const ReactMarkdown = lazy(() => import('react-markdown'));
 
 
@@ -103,7 +109,7 @@ export async function loader({ request, params }: LoaderArgs) {
 export default function ActivistsPage() {
 
   const data = useLoaderData<typeof loader>();
-  const pageData:PageDataT = data.pageData;
+  const pageData: PageDataT = data.pageData;
   console.log("render ActivistsPage with pageData: " + JSON.stringify(pageData));
 
   const sections: Array<PageSectionT> = pageData.sections;
@@ -116,6 +122,7 @@ export default function ActivistsPage() {
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
+  const [clickD, setClickD] = useState({ count: 0, data: "" });
 
   useEffect(() => {
     //on first load
@@ -140,29 +147,51 @@ export default function ActivistsPage() {
     return;
   }
 
-  const tableofContents = () => {
+  function tableofContents() {
 
-    const cssSmall = myCss.linkNormal;
-    const cssBig = "text-xl " + myCss.linkNormal;
+    const cssLink = "text-xl " + myCss.linkNormal;
+    const cssLi = "mb-2 list-disc text-gray-700";
 
-    const sectionCss = (section: PageSectionT) => {
-      if (section.size != null && section.size == 1) {
-        return cssSmall;
-      }
-      return cssBig;
-    }
+    const handleContentsClick = (index: number) => {
+      setClickD({ count: clickD.count + 1, data: `${index}` });
+    };
 
     return (
       <ul>
-        {sections.map((section, index) => (
-          <li key={index} className="mb-2">
-            <a href={`#s${index}`} className={sectionCss(section)}>{section.title}</a>
-          </li>
+        {sections.map((section: PageSectionT, index) => (
+          <>
+            <li key={index} className={cssLi}>
+              <a href={`#s${index}`} className={cssLink} onClick={() => handleContentsClick(index)}>{section.title}</a>
+            </li>
+            {section.addSeparator && (
+              <hr className="my-4 border-gray-300" />
+            )}
+          </>
         ))}
-        <li key={"more"}>
-          <a href={`#sMore`} className={cssBig}>Everything And More !!</a>
+        <hr className="my-4 border-gray-300" />
+        <li key={"more"} className={cssLi}>
+          <a href={`#sMore`} className={cssLink} onClick={() => handleContentsClick(sections.length)}>Everything And More !!</a>
         </li>
       </ul>
+    )
+  }
+
+  function introQuote() {
+    return (
+      <div className="border shadow-md bg-white p-4 px-6 ">
+        <ReactMarkdown
+          components={{
+            a: ({ children, href }) => (
+              <a href={href} className={myCss.linkNormal}>
+                {children}
+              </a>
+            ),
+          }}
+        >
+          {data.pageData.intro}
+        </ReactMarkdown>
+        <p className={myCss.textFaded}>{data.pageData.updated}</p>
+      </div>
     )
   }
 
@@ -170,46 +199,30 @@ export default function ActivistsPage() {
   const heroImageIndex = combineFlags(getAbFlag(data.ipab, AB_FLAGS.HERO_1), getAbFlag(data.ipab, AB_FLAGS.HERO_2));
   const heroImages = [heroImage0, heroImage1, heroImage2, heroImage3];
   const heroImage = heroImages[heroImageIndex];
+
+  const topImage = getAbFlag(data.ipab, AB_FLAGS.COLOR) ? titleImageP : titleImageG;
+  const addFooters = getAbFlag(data.ipab, AB_FLAGS.GRAD_OR_ALT);
   console.log("image src = " + heroImage);
 
   const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
 
   return (
-    <div>
+    <div className={myCss.defaultBg}>
       <ActivistNavHeader ipab={data.ipab} />
 
-      <div className="flex flex-col lg:flex-row">
-        <div className="w-full lg:max-w-max">
-          <div className={myCss.sectionWhite}>
-            <div className="border shadow-md bg-white p-4 px-6">
-              <ReactMarkdown
-                components={{
-                  a: ({ children, href }) => (
-                    <a href={href} className={myCss.linkNormal}>
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {data.pageData.intro}
-              </ReactMarkdown>
-              <p className={myCss.textFaded}>{data.pageData.updated}</p>
-            </div>
-            <div className="py-4"></div>
-            <h3 className={myCss.title}>Contents:</h3>
-            {tableofContents()}
-            <div className="py-2"></div>
-          </div>
-        </div>
-        <div className="lg:block hidden justify-center items-center">
-          <img src={heroImage} className="object-contain max-h-[26rem]"></img>
-        </div>
-      </div>
-      <div className={myCss.sectionFooter}></div>
+      <FixedCenterColumn>
+        <h3 className={myCss.title}>Contents:</h3>
+        {tableofContents()}
+        <div className="py-2"></div>
+        {introQuote()}
+        <div className="py-4"></div>
+      </FixedCenterColumn>
+
+      {addFooters && (<div className={myCss.sectionFooter}></div>)}
       {sections.map((section, index) => (
         <section id={"s" + index}>
           <div key={"" + index}>
-            <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab}>
+            <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab} startOpen={index == 0} index={index} click={clickD}>
               <PageSectionC
                 data={section}
                 infoMap={infoMap}
@@ -218,14 +231,36 @@ export default function ActivistsPage() {
                 ipab={data.ipab}
               />
             </ExpandableSection>
-            <div className={myCss.sectionFooter}></div>
+            {addFooters && (<div className={myCss.sectionFooter}></div>)}
           </div>
 
         </section>
       )
       )}
+
+      <div className={myCss.sectionFooter}></div>
       <section id={"sMore"}>
-        <ExpandableSection title="Everything and More" titleId="sMore" ipab={data.ipab}>
+        <div className={myCss.sectionColorGrad + " text-black " + myCss.standardPadding}>
+          <h3 className={myCss.sectionTitle}>
+            Everything and More
+          </h3>
+          <FixedCenterColumn>
+            <div >Here you can search through everything in the above sections, and even more cool stuff that didn't necessarily fit anywhere else.</div>
+          </FixedCenterColumn>
+
+          <div className="py-4"></div>
+          <SearchableItemDisplay
+            loadedItems={loadedItems}
+            infoMap={infoMap}
+            admin={false}
+            submitAction={fakeSubmitAction}
+            setLoading={setLoading}
+          />
+        </div>
+      </section>
+
+      {/* <section id={"sMore"}>
+        <ExpandableSection title="Everything and More" titleId="sMore" ipab={data.ipab} index={sections.length} click={clickD}>
           <div >Here you can search through everything in the above sections, and even more cool stuff that didn't necessarily fit anywhere else.</div>
           <div className="py-4"></div>
           <SearchableItemDisplay
@@ -237,7 +272,7 @@ export default function ActivistsPage() {
           />
         </ExpandableSection>
         <div className={myCss.sectionFooter}></div>
-      </section>
+      </section> */}
 
 
       <Form ref={formRef} className="invisible"></Form>
