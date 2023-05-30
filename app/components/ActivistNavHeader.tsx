@@ -63,7 +63,7 @@ export default function ActivistNavHeader(props: { ipab: number }) {
                 <div className={"flex justify-center"}>
                     <div className="py-32"> </div>
                     <div className="flex">
-                        <img src={topImage} className="h-[12rem] self-center"></img>
+                        <img src={topImage} className="max-h-[12rem] self-center"></img>
                     </div>
                 </div>
             </div>

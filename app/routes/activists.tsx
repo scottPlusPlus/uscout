@@ -157,7 +157,7 @@ export default function ActivistsPage() {
     };
 
     return (
-      <ul>
+      <ul className="pl-4">
         {sections.map((section: PageSectionT, index) => (
           <>
             <li key={index} className={cssLi}>
@@ -209,14 +209,15 @@ export default function ActivistsPage() {
   return (
     <div className={myCss.defaultBg}>
       <ActivistNavHeader ipab={data.ipab} />
-
-      <FixedCenterColumn>
-        <h3 className={myCss.title}>Contents:</h3>
-        {tableofContents()}
-        <div className="py-2"></div>
-        {introQuote()}
-        <div className="py-4"></div>
-      </FixedCenterColumn>
+      <div className={myCss.standardPadding}>
+        <FixedCenterColumn>
+          <h3 className={myCss.title}>Contents:</h3>
+          {tableofContents()}
+          <div className="py-2"></div>
+          {introQuote()}
+          <div className="py-4"></div>
+        </FixedCenterColumn>
+      </div>
 
       {addFooters && (<div className={myCss.sectionFooter}></div>)}
       {sections.map((section, index) => (
