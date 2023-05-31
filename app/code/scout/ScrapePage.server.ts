@@ -6,7 +6,7 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
-import * as archive from "./archive";
+import * as archive from "../archive";
 
 import axios from "axios";
 import { asUndefined } from "../tsUtils";
