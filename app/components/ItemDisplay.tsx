@@ -1,4 +1,4 @@
-import { CSS_CLASSES } from "~/code/CssClasses";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 import { ItemFront } from "~/models/item.server";
 import EditableItem from "./EditableItem";
 import Image3x2 from "./Image3x2";
@@ -35,6 +35,9 @@ export default function ItemDisplay(props: ItemProps) {
     if (thisDisplayUrl.startsWith("www.")) {
         thisDisplayUrl = thisDisplayUrl.substring(4);
     }
+    if (thisDisplayUrl.length > 32){
+        thisDisplayUrl = thisDisplayUrl.substring(0,30) + "...";
+    }
 
     return (
         <div className="border shadow-md bg-white">
@@ -42,10 +45,10 @@ export default function ItemDisplay(props: ItemProps) {
                 <Image3x2 src={props.info.image} />
             </a>
             <div className="p-4">
-                <a className="text-blue-700 mb-2" onClick={handleLinkClick} href={thisFullUrl} target="_blank">
+                <a className="text-blue-700 mb-2 text-sm" onClick={handleLinkClick} href={thisFullUrl} target="_blank">
                     {thisDisplayUrl}
                 </a>
-                <h2 className="font-bold text-lg mb-2">{props.info.title}</h2>
+                <h2 className="font-bold mb-2">{props.info.title}</h2>
                 <p className="text-gray-700 text-base">{props.info.summary}</p>
                 <p className="text-gray-700 text-base">- - - - - </p>
                 {

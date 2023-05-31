@@ -1,7 +1,7 @@
 import { useLoaderData, useSubmit, Form } from "@remix-run/react";
 import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/server-runtime";
 import { useRef, useState } from "react";
-import { CSS_CLASSES } from "~/code/CssClasses";
+import { CSS_CLASSES } from "~/code/front/CssClasses";
 import { getStringOrFallback, getStringOrThrow } from "~/code/formUtils";
 import { getIpAddress } from "~/code/ipUtils";
 import { addFeedback } from "~/models/feedback.server";

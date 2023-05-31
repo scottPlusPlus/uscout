@@ -3,7 +3,7 @@ import { Collection } from '@prisma/client';
 import React, { lazy, Suspense } from 'react';
 import { Item } from '~/models/item.server';
 import { assertValidCollection, CollectionJson } from '~/code/datatypes/collectionJson';
-import { CSS_CLASSES } from '~/code/CssClasses';
+import { CSS_CLASSES } from '~/code/front/CssClasses';
 
 export default function CollectionJsonComponent(props: { collection: Collection, items: Item[], onSave:(arg0:CollectionJson)=>void }) {
 

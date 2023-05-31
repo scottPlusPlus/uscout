@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { UInfo } from "@prisma/client";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { CSS_CLASSES } from '~/code/CssClasses';
+import { CSS_CLASSES } from '~/code/front/CssClasses';
 import { UInfoV2, hashOrF, imageOrF, titleOrF, updatedTime } from '~/code/datatypes/info';
 dayjs.extend(relativeTime);
 

@@ -1,6 +1,6 @@
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node"; // or cloudflare/deno
 import invariant from "tiny-invariant";
-import { requestMany } from "~/code/RequestInfo";
+import { requestMany } from "~/code/scout/RequestInfo";
 
 export const loader = async ({ request }: LoaderArgs) => {
     // handle "OPTIONS" request

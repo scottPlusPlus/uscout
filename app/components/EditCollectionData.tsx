@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Collection } from "@prisma/client";
-import { CSS_CLASSES } from '~/code/CssClasses';
+import { CSS_CLASSES } from '~/code/front/CssClasses';
 
 interface EditCollectionProps {
   collection: Collection;

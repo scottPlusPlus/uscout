@@ -1,14 +1,33 @@
 import { Form, useLoaderData, useSubmit } from "@remix-run/react";
-import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
+import { ActionArgs, json, LoaderArgs, redirect } from "@remix-run/node";
 import { nowHHMMSS } from "~/code/timeUtils";
-import { useEffect, useRef } from "react";
-import { requestMany } from "~/code/RequestInfo";
+import { lazy, useEffect, useRef } from "react";
+
 import { PageSectionT } from "~/code/datatypes/PageSectionT";
 import PageSectionC from "~/components/PageSectionC";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import { sanitizeUrl } from "~/code/urlUtils";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
+import { requestMany } from "~/code/scout/RequestInfo";
+import { getIpAddress } from "~/code/ipUtils";
+import { asInt } from "~/code/tsUtils";
+import { ExpandableSection } from "~/components/ExpandableSection";
+import { AB_FLAGS, combineFlags, getAbFlag, ipAsMask } from "~/code/abUtils";
 
+import heroImage0 from "../assets/empower_hero.png"
+import heroImage1 from "../assets/empower_hero_2.png"
+import heroImage2 from "../assets/empower_hero_3.png"
+import heroImage3 from "../assets/empower_hero_4.png"
+import * as dataFallback from "~/code/activistDataJson.json";
+
+import ActivistNavHeader from "~/components/ActivistNavHeader";
+import { CSS_ACTIVIST_CLASSES } from "~/code/front/CssClasses";
+import SearchableItemDisplay from "~/components/SearchableItemDisplay";
+import { getCollectionItems } from "~/models/item.server";
+import { itemsFromRemixData } from "~/code/front/itemUtils";
+import { getBlob } from "~/models/blobs.server";
+import { parseJson } from "~/code/jsonUtils";
+const ReactMarkdown = lazy(() => import('react-markdown'));
 
 
 // export async function action({ request, params }: ActionArgs) {
@@ -16,260 +35,14 @@ import sendAnalyticEvent from "~/code/front/analyticUtils";
 //   return null;
 // }
 
-const sectionVolunteer = `{
-    "title": "Where can I volunteer?",
-    "body" : "If you're passionate about making a difference in your community but don't know where to start, finding the right volunteer opportunity can be a challenge. Fortunately, there are many online resources available that can help you connect with local organizations and causes that align with your interests and skills.",
-    "links" : [ 
-        {
-            "url": "idealist.org",
-            "comment": "A website that helps people find volunteer opportunities based on their interests and skills",
-            "tags": [
-              "find-volunteers",
-              "volunteer"
-            ]
-    }, {
-        "url": "volunteermatch.org",
-        "comment": "",
-        "tags": [
-          "find-volunteers",
-          "volunteer"
-        ]
-      },{
-        "url": "meaningfulcode.org",
-        "comment": "",
-        "tags": [
-          "volunteer"
-        ]
-      }, {
-        "url": "www.dosomething.org/us",
-        "comment": "Geared towards young people and provides resources for taking action on various social issues.",
-        "tags": [
-          "politics",
-          "take-action",
-          "volunteer"
-        ]
-      }
-    ]
-}`;
+type PageDataT = {
+  intro: string,
+  updated: string,
+  sections: Array<PageSectionT>,
+  collectionKey: string,
+}
 
-const sectionInspire = `{
-    "title": "What are some cool social-good projects to inspire me?",
-    "body" : "There are lots of amazing people working on amazing projects to make the world a better place.  Here are just a handful!",
-    "links" : [{
-        "url": "www.gapminder.org/dollar-street",
-        "comment": "",
-        "tags": [
-          "project"
-        ]
-      }, {
-        "url": "ncase.me/polygons",
-        "comment": "",
-        "tags": [
-          "politics",
-          "project"
-        ]
-      }, {
-        "url": "ncase.me/ballot",
-        "comment": "",
-        "tags": [
-          "politics",
-          "project"
-        ]
-      }, {
-        "url": "www.starvoting.org",
-        "comment": "",
-        "tags": [
-          "contribute",
-          "politics",
-          "project"
-        ]
-      }, {
-        "url": "www.youtube.com/watch?v=DOWDNBu9DkU",
-        "comment": "",
-        "tags": [
-          "project",
-          "video"
-        ]
-      }
-    ]
-}`;
-
-const sectionDonate = `{
-    "title": "Where can I find the most impactful places to donate?",
-    "body" : "Deciding where to donate your money can be a difficult decision, especially if you want to ensure that your donation has the greatest impact possible. Fortunately, there are several online resources that can help you evaluate different charities and determine which ones are most effective and efficient.",
-    "links" : [{
-        "url": "givewell.org",
-        "comment": "",
-        "tags": [
-          "donate"
-        ]
-      }, {
-        "url": "charitynavigator.org",
-        "comment": "",
-        "tags": [
-          "donate"
-        ]
-      }, {
-        "url": "charitywatch.org",
-        "comment": "",
-        "tags": [
-          "donate"
-        ]
-      }, {
-        "url": "www.starvoting.org",
-        "comment": "",
-        "tags": [
-          "contribute",
-          "politics",
-          "project"
-        ]
-      }
-    ]
-}`;
-
-const sectionPoverty = `{
-    "title": "What's the most efficient / effective way to solve poverty?",
-    "body" : "Solving poverty is a complex and multifaceted challenge that requires a combination of short-term and long-term solutions. While there is no single answer to this question, there are several evidence-based approaches that have been shown to be effective in reducing poverty and improving the lives of those who are struggling. Some of the most promising strategies include investing in education and job training, providing access to financial services and resources, implementing progressive tax policies, and promoting inclusive economic growth.",
-    "links" : [{
-        "url": "worldbank.org/en/topic/poverty/publication/poverty-and-equity-briefs",
-        "comment": "",
-        "tags": [
-          "poverty"
-        ]
-      }, {
-        "url": "un.org/en/global-issues/ending-poverty",
-        "comment": "",
-        "tags": [
-          "poverty"
-        ]
-      }, {
-        "url": "https://poverty.umich.edu/",
-        "comment": "",
-        "tags": [
-          "donate"
-        ]
-      }
-    ]
-}`;
-
-const sectionClimate = `{
-    "title": "What's the most efficient / effective way to solve the climate crisis?",
-    "body" : "The climate crisis is one of the most pressing challenges facing our planet today, and requires urgent action to reduce greenhouse gas emissions and mitigate the impacts of climate change. While there is no single solution to this complex problem, there are several evidence-based strategies that have been shown to be effective in addressing climate change and promoting sustainable development",
-    "links" : [
-        {
-            "url": "climaterealityproject.org",
-            "comment": "",
-            "tags": [
-                "climate"
-            ]
-        }, {
-            "url": "earthguardians.org",
-            "comment": "",
-            "tags": [
-                "climate"
-            ]
-        }, {
-            "url": "climatevisuals.org",
-            "comment": "",
-            "tags": [
-                "climate"
-            ]
-        }, {    
-            "url": "climatekids.nasa.gov",
-            "comment": "",
-            "tags": [
-                "climate"
-            ]
-        }, {
-        "url": "ipcc.ch",
-        "comment": "",
-        "tags": [
-            "climate",
-            "governmental"
-        ]
-      }, {
-        "url": "un.org/sustainabledevelopment/climate-action",
-        "comment": "",
-        "tags": [
-            "climate",
-            "governmental"
-        ]
-      }, {
-        "url": "wri.org/climate",
-        "comment": "",
-        "tags": [
-            "climate",
-            "governmental"
-        ]
-    }, {
-        "url": "thesolutionsproject.org/what-we-do",
-        "comment": "",
-        "tags": [
-            "climate"
-        ]
-    }, {
-        "url": "thecarbonalmanac.org",
-        "comment": "",
-        "tags": [
-          "climate"
-        ]
-      }
-    ]
-}`;
-
-
-const sectionData = `{
-    "title": "Where can I find good DATA about big problems?",
-    "body" : "Access to reliable and up-to-date data is essential for understanding and addressing the world's biggest challenges, from poverty and inequality to climate change and public health. Fortunately, there are many online resources available that provide access to high-quality data and analysis on a range of global issues.",
-    "links" : [
-    {
-        "url": "ourworldindata.org",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-      },{
-        "url": "gapminder.org",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-        },{
-        "url": "data.gov",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-      }, {
-        "url": "hdr.undp.org",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-      }, {
-        "url": "healthdata.org/data-tools-practices",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-    }, {
-        "url": "ballotpedia.org",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-      }, {
-        "url": "worldometers.info",
-        "comment": "",
-        "tags": [
-          "data"
-        ]
-      }  
-    ]
-}`;
-
-
-const pageDataJson = `[${sectionVolunteer}, ${sectionInspire}, ${sectionDonate}, ${sectionPoverty}, ${sectionClimate}, ${sectionData}]`;
+const fallbackPageData = dataFallback as PageDataT;
 
 const root_url = "https://www.empower-kit.com";
 
@@ -285,11 +58,31 @@ export function meta() {
 
 export async function loader({ request, params }: LoaderArgs) {
   console.log(`Remix LOADER activists at ${nowHHMMSS()}`);
-  console.log(pageDataJson);
 
-  const sections: Array<PageSectionT> = JSON.parse(pageDataJson);
+  const searchParams = new URLSearchParams(request.url.split('?')[1]);
+  const ab = searchParams.get("ab");
+  var ipab = asInt(ab, -1);
+  if (ipab < 0) {
+    const ip = getIpAddress(request);
+    ipab = ipAsMask(ip);
+    return redirect("/activists?ab=" + ipab);
+  }
+
+  const blob = await getBlob("pageActivists");
+  const newPageDataJson = blob ? blob.value : "";
+
+  var parseErrs = new Array<string>;
+  var pageData = parseJson<PageDataT>(newPageDataJson, parseErrs);
+  if (!pageData) {
+    console.log("no / invalid pageData: " + JSON.stringify(parseErrs));
+    pageData = fallbackPageData;
+  }
+  pageData = pageData!;
+  console.log("pageData = " + JSON.stringify(pageData));
+
   const infoUrls = new Set<string>();
-  sections.forEach(data => {
+  //sanitize the sections and ensure we have the info
+  pageData.sections.forEach(data => {
     data.links.forEach(link => {
       link.url = sanitizeUrl(link.url)!;
       link.status = "approved";
@@ -298,20 +91,27 @@ export async function loader({ request, params }: LoaderArgs) {
     });
   });
 
+  const collectionItems = await getCollectionItems(pageData.collectionKey);
+  collectionItems.forEach(item => {
+    infoUrls.add(item.url);
+  });
   const infos = await requestMany([...infoUrls]);
   console.log(`have ${infos.length} infos`);
-  return json({ sections, infos });
+  return json({ infos, ipab, collectionItems, pageData });
 };
 
-export default function AdminPage() {
+export default function ActivistsPage() {
 
   const data = useLoaderData<typeof loader>();
-  const sections: Array<PageSectionT> = data.sections;
+  const pageData:PageDataT = data.pageData;
+  console.log("render ActivistsPage with pageData: " + JSON.stringify(pageData));
+
+  const sections: Array<PageSectionT> = pageData.sections;
   const uInfos: Array<ScrapedInfo> = !data ? [] : !data.infos ? [] : JSON.parse(JSON.stringify(data.infos));
   const infoMap = new Map<string, ScrapedInfo>();
   uInfos.forEach(info => {
     infoMap.set(info.url, info);
-  })
+  });
 
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
@@ -333,71 +133,113 @@ export default function AdminPage() {
     sendAnalyticEvent("link", linkUrl);
   }
 
-  const cssTitle = "text-xl font-bold py-2";
-  const cssLinkGreen = "text-green-500 hover:text-green-600";
-  const cssTextFaded = "text-gray-500 text-sm py-2";
-  const css_section_white = " py-4 px-4 lg:px-8";
-  // const css_section_bg1 = "bg-slate-100 p-4";
-  // const css_section_bg2 = "bg-teal-50 p-4";
+  const fakeSubmitAction = (action: string, actionData: string) => {
+    return;
+  }
+  const setLoading = (loading: boolean) => {
+    return;
+  }
 
-  //const css_section_bg1 = "bg-gradient-to-b from-teal-50 to-white py-4 px-4 lg:px-8";
-  const css_section_bg1 = "py-4 px-4 lg:px-8";
+  const tableofContents = () => {
 
-  const tableOfContents = (pageSections: Array<PageSectionT>) => {
+    const cssSmall = myCss.linkNormal;
+    const cssBig = "text-xl " + myCss.linkNormal;
+
+    const sectionCss = (section: PageSectionT) => {
+      if (section.size != null && section.size == 1) {
+        return cssSmall;
+      }
+      return cssBig;
+    }
+
     return (
-      <nav>
-        <h2 className={cssTitle}>Table of Contents</h2>
-        <ul>
-          {pageSections.map((section, index) => (
-            <li key={index}>
-              <a href={`#s${index}`} className={cssLinkGreen}>{section.title}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    );
-  };
+      <ul>
+        {sections.map((section, index) => (
+          <li key={index} className="mb-2">
+            <a href={`#s${index}`} className={sectionCss(section)}>{section.title}</a>
+          </li>
+        ))}
+        <li key={"more"}>
+          <a href={`#sMore`} className={cssBig}>Everything And More !!</a>
+        </li>
+      </ul>
+    )
+  }
 
-  const cssNavButton = "text-white text-sm font-medium hover:text-gray-300 px-4";
+  const myCss = CSS_ACTIVIST_CLASSES(data.ipab);
+  const heroImageIndex = combineFlags(getAbFlag(data.ipab, AB_FLAGS.HERO_1), getAbFlag(data.ipab, AB_FLAGS.HERO_2));
+  const heroImages = [heroImage0, heroImage1, heroImage2, heroImage3];
+  const heroImage = heroImages[heroImageIndex];
+  console.log("image src = " + heroImage);
+
+  const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
 
   return (
     <div>
-      <nav className="fixed top-0 left-0 w-full bg-gray-800 py-4 z-10">
-        <div className="px-4 lg:px-8 flex justify-between">
-          <div className="flex items-left">
-            <a href="#top" className="text-white text-xl font-semibold">Empower-Kit for Activists 🧰</a>
-          </div>
-          <div className="flex items-center">
-            <a href="./feedback?r=activists" className={cssNavButton}>Feedback</a>
-            <a href="#top" className={cssNavButton}>Back to Top</a>
+      <ActivistNavHeader ipab={data.ipab} />
+
+      <div className="flex flex-col lg:flex-row">
+        <div className="w-full lg:max-w-max">
+          <div className={myCss.sectionWhite}>
+            <div className="border shadow-md bg-white p-4 px-6">
+              <ReactMarkdown
+                components={{
+                  a: ({ children, href }) => (
+                    <a href={href} className={myCss.linkNormal}>
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {data.pageData.intro}
+              </ReactMarkdown>
+              <p className={myCss.textFaded}>{data.pageData.updated}</p>
+            </div>
+            <div className="py-4"></div>
+            <h3 className={myCss.title}>Contents:</h3>
+            {tableofContents()}
+            <div className="py-2"></div>
           </div>
         </div>
-      </nav>
-      <div className="py-8"></div>
-
-      <div className={css_section_white}>
-        <p>A curated toolkit of resources for activists and other heroes looking to make a difference</p>
-        <p>If there's something you're looking for you can't find here, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>please let me know</a>.  I want to help. </p>
-        <p>If you have anything to add or want to make a suggestion, <a href="https://about.me/scottplusplus" className={cssLinkGreen}>get in touch</a></p>
-        <p className={cssTextFaded}>Updated by hand April 2023</p>
+        <div className="lg:block hidden justify-center items-center">
+          <img src={heroImage} className="object-contain max-h-[26rem]"></img>
+        </div>
       </div>
-      <div className={css_section_white}>
-        {tableOfContents(sections)}
-      </div>
+      <div className={myCss.sectionFooter}></div>
       {sections.map((section, index) => (
         <section id={"s" + index}>
           <div key={"" + index}>
-            <PageSectionC
-              data={section}
-              infoMap={infoMap}
-              titleId={""}
-              handleLinkClick={handleLinkClick}
-            />
+            <ExpandableSection title={section.title} titleId={section.title} ipab={data.ipab}>
+              <PageSectionC
+                data={section}
+                infoMap={infoMap}
+                titleId={""}
+                handleLinkClick={handleLinkClick}
+                ipab={data.ipab}
+              />
+            </ExpandableSection>
+            <div className={myCss.sectionFooter}></div>
           </div>
 
         </section>
       )
       )}
+      <section id={"sMore"}>
+        <ExpandableSection title="Everything and More" titleId="sMore" ipab={data.ipab}>
+          <div >Here you can search through everything in the above sections, and even more cool stuff that didn't necessarily fit anywhere else.</div>
+          <div className="py-4"></div>
+          <SearchableItemDisplay
+            loadedItems={loadedItems}
+            infoMap={infoMap}
+            admin={false}
+            submitAction={fakeSubmitAction}
+            setLoading={setLoading}
+          />
+        </ExpandableSection>
+        <div className={myCss.sectionFooter}></div>
+      </section>
+
+
       <Form ref={formRef} className="invisible"></Form>
     </div>
   );

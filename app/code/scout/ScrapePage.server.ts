@@ -1,7 +1,7 @@
 import { parse } from "node-html-parser";
 import { createHash } from "crypto";
-import { PromiseQueues } from "./PromiseQueue.server";
-import { nowHHMMSS } from "./timeUtils";
+import { PromiseQueues } from "../PromiseQueue.server";
+import { nowHHMMSS } from "../timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
@@ -9,8 +9,8 @@ import * as twitter from "./twitter";
 import * as archive from "./archive";
 
 import axios from "axios";
-import { asUndefined } from "./tsUtils";
-import { ScrapedInfo } from "./datatypes/info";
+import { asUndefined } from "../tsUtils";
+import { ScrapedInfo } from "../datatypes/info";
 
 const TWITTER_BEARER_TOKEN = "";
 
@@ -41,10 +41,14 @@ async function fetchHtml(url: string): Promise<string> {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey) {
+        console.log(`attempting to scrape ${url} via scrapestack`);
         const scrapeStackUrl =
           `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` +
           url;
         response = await axios.get(scrapeStackUrl);
+        console.log(
+          `scrapestack got response from ${url} with status ${response.status}`
+        );
         return response.data;
       } else {
         console.log("no scrapeStackApiKey");
@@ -66,6 +70,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     await domainThrottle.enqueue(domain);
     console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
     const html = await fetchHtml(urlStr);
+    console.log(`${urlStr}: process repsonse ${nowHHMMSS()}`);
 
     const hash = createHash("sha256").update(html).digest("hex");
 
