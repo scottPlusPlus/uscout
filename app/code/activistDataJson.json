@@ -1,5 +1,6 @@
 {
-    "intro": "A curated toolkit of resources for activists and other heroes looking to make a difference\n\nIf there's something you're looking for you can't find here, [please let me know](https://about.me/scottplusplus).  I want to help.\n\nIf you have anything to add or want to make a suggestion, [get in touch](https://about.me/scottplusplus)",
+    "intro1":"A curated toolkit of resources for activists and others looking to make a difference",
+    "intro2": "If there's something you're looking for you can't find here, [please let me know](https://about.me/scottplusplus).  I want to help.\n\nIf you have anything to add or want to make a suggestion, [get in touch](https://about.me/scottplusplus)",
     "updated": "Updated by hand May 2023",
     "sections": [
         {
@@ -30,6 +31,26 @@
                 {
                     "url": "meaningfulcode.org",
                     "comment": "Write code for impactful projects that help the world.",
+                    "tags": [],
+                    "status": "approved",
+                    "priority": 0
+                }
+            ]
+        },
+        {
+            "title": "Where can I find the most impactful places to donate?",
+            "body": "Deciding where to donate your money can be a difficult decision, especially if you want to ensure that your donation has the greatest impact possible. Fortunately, there are several online resources that can help you evaluate different charities and determine which ones are most effective and efficient.",
+            "links": [
+                {
+                    "url": "givewell.org",
+                    "comment": "The top rated charities that yield the most impact per dollar to save or improve lives.",
+                    "tags": [],
+                    "status": "approved",
+                    "priority": 0
+                },
+                {
+                    "url": "charitynavigator.org",
+                    "comment": "A website that ranks charities based on their transparency and tax documents. ",
                     "tags": [],
                     "status": "approved",
                     "priority": 0
@@ -92,19 +113,20 @@
             ]
         },
         {
-            "title": "Where can I find the most impactful places to donate?",
-            "body": "Deciding where to donate your money can be a difficult decision, especially if you want to ensure that your donation has the greatest impact possible. Fortunately, there are several online resources that can help you evaluate different charities and determine which ones are most effective and efficient.",
+            "title": "I have 1 hour. What can I do to help right now?",
+            "body": "Seriously, go contact your representitive.  But yeah, more coming soon.  If you think of something please let us know.",
+            "addSeparator": true,
             "links": [
                 {
-                    "url": "givewell.org",
-                    "comment": "The top rated charities that yield the most impact per dollar to save or improve lives.",
+                    "url": "democracy.io",
+                    "comment": "",
                     "tags": [],
                     "status": "approved",
                     "priority": 0
                 },
                 {
-                    "url": "charitynavigator.org",
-                    "comment": "A website that ranks charities based on their transparency and tax documents. ",
+                    "url": "www.270towin.com/elected-officials",
+                    "comment": "",
                     "tags": [],
                     "status": "approved",
                     "priority": 0
@@ -159,7 +181,6 @@
         {
             "title": "How can I help Ukraine?",
             "body": "Ukraine is bravely standing for all of us on the front line against Russia's terrorism.  Donations are the simplest way to help, but there are also volunteer opportunities, you can sponsor refugees, join a boycott, organize your own fundraiser, and more.",
-            "size": 1,
             "links": [
                 {
                     "url": "novaukraine.org/get-involved",
@@ -201,7 +222,6 @@
         {
             "title": "How can I contribute my talents in engineering / design / etc to an important cause?",
             "body": "some text coming soon...",
-            "size": 1,
             "links": [
                 {
                     "url": "taprootfoundation.org",
@@ -227,30 +247,8 @@
             ]
         },
         {
-            "title": "I have 1 hour. What can I do to help right now?",
-            "body": "Seriously, go contact your representitive.  But yeah, more coming soon.  If you think of something please let us know.",
-            "size": 1,
-            "links": [
-                {
-                    "url": "democracy.io",
-                    "comment": "",
-                    "tags": [],
-                    "status": "approved",
-                    "priority": 0
-                },
-                {
-                    "url": "www.270towin.com/elected-officials",
-                    "comment": "",
-                    "tags": [],
-                    "status": "approved",
-                    "priority": 0
-                }
-            ]
-        },
-        {
             "title": "Where can I find good DATA about big problems?",
             "body": "Access to reliable and up-to-date data is essential for understanding and addressing the world's biggest challenges, from poverty and inequality to climate change and public health. Fortunately, there are many online resources available that provide access to high-quality data and analysis on a range of global issues.",
-            "size": 1,
             "links": [
                 {
                     "url": "ourworldindata.org",
@@ -312,7 +310,6 @@
         },
         {
             "title": "Some cool social-good projects to inspire me?",
-            "size": 1,
             "body": "There are lots of amazing people working on amazing projects to make the world a better place.  Here are just a handful!",
             "links": [
                 {

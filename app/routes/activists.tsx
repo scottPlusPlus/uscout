@@ -42,7 +42,8 @@ const ReactMarkdown = lazy(() => import('react-markdown'));
 // }
 
 type PageDataT = {
-  intro: string,
+  intro1: string,
+  intro2: string,
   updated: string,
   sections: Array<PageSectionT>,
   collectionKey: string,
@@ -188,7 +189,7 @@ export default function ActivistsPage() {
             ),
           }}
         >
-          {data.pageData.intro}
+          {data.pageData.intro2}
         </ReactMarkdown>
         <p className={myCss.textFaded}>{data.pageData.updated}</p>
       </div>
@@ -211,6 +212,8 @@ export default function ActivistsPage() {
       <ActivistNavHeader ipab={data.ipab} />
       <div className={myCss.standardPadding}>
         <FixedCenterColumn>
+          <p>{data.pageData.intro1}</p>
+          <div className="py-2"></div>
           <h3 className={myCss.title}>Contents:</h3>
           {tableofContents()}
           <div className="py-2"></div>
@@ -259,22 +262,6 @@ export default function ActivistsPage() {
           />
         </div>
       </section>
-
-      {/* <section id={"sMore"}>
-        <ExpandableSection title="Everything and More" titleId="sMore" ipab={data.ipab} index={sections.length} click={clickD}>
-          <div >Here you can search through everything in the above sections, and even more cool stuff that didn't necessarily fit anywhere else.</div>
-          <div className="py-4"></div>
-          <SearchableItemDisplay
-            loadedItems={loadedItems}
-            infoMap={infoMap}
-            admin={false}
-            submitAction={fakeSubmitAction}
-            setLoading={setLoading}
-          />
-        </ExpandableSection>
-        <div className={myCss.sectionFooter}></div>
-      </section> */}
-
 
       <Form ref={formRef} className="invisible"></Form>
     </div>

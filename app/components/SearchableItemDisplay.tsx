@@ -2,7 +2,7 @@ import { CSS_CLASSES } from "~/code/front/CssClasses"
 import DynamicInputFields from "./DynamicInputFields"
 import ItemDisplay from "./ItemDisplay"
 import TagCloud from "./TagCloud"
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { remapItemPriorities } from "~/code/front/itemUtils";
 import { Item, ItemFront } from "~/models/item.server";
@@ -25,6 +25,11 @@ export default function SearchableItemDisplay(props: Props) {
 
     const [searchTerms, setSearchTerms] = useState<SearchTermT[]>(initialSearchParams);
     const [sortedItems, setSortedItems] = useState<Item[]>(props.loadedItems);
+
+    useEffect(() => {
+        handleSearchUpdate(searchTerms);
+      }, [props.loadedItems]);
+
 
     const handleSearchUpdate = (newTerms: SearchTermT[]) => {
         console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
@@ -72,7 +77,12 @@ export default function SearchableItemDisplay(props: Props) {
     const handleTagClick = (tag: string) => {
         console.log("tag clicked " + tag);
         const newTerms = [...searchTerms];
-        newTerms.push({ term: tag, priority: 100 });
+        const newTerm = { term: tag, priority: 100 };
+        if (newTerms[0].term.length == 0){
+            newTerms[0] = newTerm;
+        } else {
+            newTerms.push({ term: tag, priority: 100 });
+        }
         handleSearchUpdate(newTerms);
     }
 

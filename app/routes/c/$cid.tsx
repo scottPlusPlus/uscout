@@ -30,6 +30,7 @@ import { ACTION_TYPES, collectionAction } from "~/code/actions";
 import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
 import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
+import SearchableItemDisplay from "~/components/SearchableItemDisplay";
 
 
 const ACTIONS = {
@@ -108,10 +109,20 @@ export default function CollectionDetailsPage() {
     infoMap.set(info.url, betterInfo);
   });
 
+
+
   var allItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
   });
   var loadedItems = itemsFromRemixData(data.items, infoMap);
+
+  if (ad?.action == "updateItem"){
+    const adddd = JSON.parse(JSON.stringify(ad));
+    const loadedItem = loadedItems.find(item => { return item.url == adddd.data.url});
+    console.log("have loaded item: " + JSON.stringify(loadedItem));
+  }
+
+
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
   const pendingCount = loadedItems.filter(item => item.status == "pending").length;
 
@@ -146,7 +157,7 @@ export default function CollectionDetailsPage() {
   }, [loadedItemUrls]);
 
   //on first load
-  useEffect(()=> {
+  useEffect(() => {
     const url = new URL(window.location.href);
     var ref = document.referrer;
     if (ref.length > 0) {
@@ -166,7 +177,7 @@ export default function CollectionDetailsPage() {
       handleSearchUpdate(searchTerms, showPending);
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
       setAddItemPending(false);
-      handleSearchUpdate(searchTerms, showPending);      
+      handleSearchUpdate(searchTerms, showPending);
     }
   }, [ad?.time]);
 
@@ -318,7 +329,7 @@ export default function CollectionDetailsPage() {
               <button
                 className={CSS_CLASSES.SUBMIT_BUTTON}
                 type="submit"
-                onClick={() => { 
+                onClick={() => {
                   setAdmin(!admin);
                 }}
               >
@@ -358,7 +369,15 @@ export default function CollectionDetailsPage() {
         <EditCollectionData collection={collection} onSubmit={handleUpdateCollectionData} />
       )}
 
-      <div className={CSS_CLASSES.SECTION_BG}>
+      <SearchableItemDisplay
+        loadedItems={loadedItems}
+        infoMap={infoMap}
+        admin={admin}
+        submitAction={submitAction}
+        setLoading={setLoading}
+      />
+
+      {/* <div className={CSS_CLASSES.SECTION_BG}>
         <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
         <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
         {hiddenItemMsg()}
@@ -379,7 +398,7 @@ export default function CollectionDetailsPage() {
             />
           ))}
         </div>
-      </div>
+      </div> */}
 
       <div className={CSS_CLASSES.SECTION_BG}>
         {footer()}
