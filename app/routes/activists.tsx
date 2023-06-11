@@ -255,6 +255,7 @@ export default function ActivistsPage() {
           <div className="py-4"></div>
           <SearchableItemDisplay
             loadedItems={loadedItems}
+            initialTerms={[]}
             infoMap={infoMap}
             admin={false}
             submitAction={fakeSubmitAction}

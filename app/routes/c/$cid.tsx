@@ -116,45 +116,52 @@ export default function CollectionDetailsPage() {
   });
   var loadedItems = itemsFromRemixData(data.items, infoMap);
 
-  if (ad?.action == "updateItem"){
+  if (ad?.action == "updateItem") {
     const adddd = JSON.parse(JSON.stringify(ad));
-    const loadedItem = loadedItems.find(item => { return item.url == adddd.data.url});
+    const loadedItem = loadedItems.find(item => { return item.url == adddd.data.url });
     console.log("have loaded item: " + JSON.stringify(loadedItem));
   }
 
 
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
-  const pendingCount = loadedItems.filter(item => item.status == "pending").length;
-
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
-  const [showPending, setShowPending] = useState<Boolean>(false);
-  const [searchTerms, setSearchTerms] = useState<SearchTermT[]>([]);
-  const [sortedItems, setSortedItems] = useState<Item[]>([]);
+  const [showPending, setShowPending] = useState<boolean>(false);
+  const [initialSearchTerms, setInitialSearchTerms] = useState<SearchTermT[]>([]);
   const [admin, setAdmin] = useState(false);
   const [addItemPending, setAddItemPending] = useState(false);
+  const [searchBarRenderCounter, setSearchBarRenderCounter] = useState("");
+  const [itemsToView, setItemsToView] = useState<Item[]>([]);
 
-  const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+
+  function refreshItemsWithNewPending(newShowPending: boolean) {
+    //console.log("refresh items with pending");
+    const newItemsToView = newShowPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+    setShowPending(newShowPending);
+    setItemsToView(newItemsToView);
+  }
 
   useEffect(() => {
     //on load items
     console.log("on first load...");
     const url = new URL(window.location.href);
     console.log("got first url");
-    const initialSearchParams: SearchTermT[] = [];
+    const initialTems: SearchTermT[] = [];
     url.searchParams.forEach((value, key) => {
       const valAsNum = Number(value);
       if (!isNaN(valAsNum)) {
-        initialSearchParams.push({ term: key, priority: valAsNum });
+        initialTems.push({ term: key, priority: valAsNum });
       }
     });
-    if (initialSearchParams.length == 0) {
-      initialSearchParams.push({ term: "", priority: 100 });
-    }
-    setSearchTerms(initialSearchParams);
-    handleSearchUpdate(initialSearchParams, showPending);
+    refreshItemsWithNewPending(showPending);
+    setInitialSearchTerms(initialTems);
+    //refreshSearch();
   }, [loadedItemUrls]);
+
+  function refreshSearch() {
+    setSearchBarRenderCounter(searchBarRenderCounter + 1);
+  }
 
   //on first load
   useEffect(() => {
@@ -164,6 +171,7 @@ export default function CollectionDetailsPage() {
       ref = " ref= " + ref;
     }
     sendAnalyticEvent("visit", url.toString() + ref);
+    refreshItemsWithNewPending(showPending);
   }, []);
 
   useEffect(() => {
@@ -174,12 +182,15 @@ export default function CollectionDetailsPage() {
       const index = loadedItems.findIndex(item => item.url === actionItem.url);
       console.log(`replaced ${actionItem.url} into index ${index}`);
       loadedItems[index] = actionItem;
-      handleSearchUpdate(searchTerms, showPending);
+      refreshItemsWithNewPending(showPending);
+      refreshSearch();
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
       setAddItemPending(false);
-      handleSearchUpdate(searchTerms, showPending);
+      refreshSearch();
     }
   }, [ad?.time]);
+
+
 
   const submitAction = (action: string, actionData: string) => {
     console.log(`submitAction:  ${action},  ${actionData}`);
@@ -195,71 +206,42 @@ export default function CollectionDetailsPage() {
       sendAnalyticEvent("search", newUrl);
     }, 500, { trailing: true }), []);
 
-  const handleSearchUpdate = (newTerms: SearchTermT[], newShowPending: Boolean) => {
-    console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
-    const url = new URL(window.location.href);
-    url.searchParams.forEach((value, key) => {
-      const valAsNum = Number(value);
-      if (!isNaN(valAsNum)) {
-        url.searchParams.delete(key);
-      }
-    });
+  if (admin && !showPending) {
+    console.log("turning on pending...");
+    refreshItemsWithNewPending(true);
+  }
+  if (!admin && showPending) {
+    console.log("turning off pending...");
+    refreshItemsWithNewPending(false);
+  }
+
+  const handleSearchTermsUpdated = (newTerms: SearchTermT[], oldTerms?: SearchTermT[]) => {
+    //console.log("cid: handleSearchTermsUpdated: " + JSON.stringify(newTerms));
+    //console.log("current url = " + window.location.href);
+    const newUrl = new URL(window.location.href);
+    if (oldTerms) {
+      oldTerms.forEach(term => {
+        newUrl.searchParams.delete(term.term);
+      });
+    }
+
     newTerms.forEach(term => {
       if (term.term.length == 0 || term.priority == 0) {
         return
       }
-      url.searchParams.set(term.term, term.priority.toString());
+      newUrl.searchParams.set(term.term, term.priority.toString());
     });
-    const newUrl = `${url.origin}${url.pathname}${url.search}`;
+    const newUrlStr = newUrl.toString();
     if (window.history.replaceState) {
-      window.history.replaceState({ path: newUrl }, document.title, newUrl);
+      const newerUrl = new URL(newUrl);
+      //console.log("replace state: " + newerUrl);
+      window.history.replaceState({ path: newUrlStr }, document.title, newUrlStr);
     } else {
-      window.history.pushState({}, '', newUrl);
+      //console.log("push state: " + newUrl);
+      window.history.pushState({}, '', newUrlStr);
     }
-    var shownItems = loadedItems;
-    if (!newShowPending) {
-      shownItems = shownItems.filter(item => item.status != "pending");
-    }
-
-    //send analytic event if no change in 1/2 second
-    debouncedOnChange(`${url.pathname}${url.search}`);
-
-    const validTerms = newTerms.filter(term => {
-      return term.term.length > 0
-    });
-    const prioritizedItems = remapItemPriorities(shownItems, infoMap, validTerms)
-    var sorted = prioritizedItems.sort((a, b) => {
-      return b.priority - a.priority;
-    });
-    if (sorted.length > 0 && validTerms.length > 0) {
-      sorted = sorted.filter(i => i.priority > 50);
-    }
-
-    setSortedItems(sorted);
-    setSearchTerms(newTerms);
-    setShowPending(newShowPending);
-  }
-
-  if (admin && !showPending) {
-    console.log("turning on pending...");
-    handleSearchUpdate(searchTerms, true);
-  }
-  if (!admin && showPending) {
-    console.log("turning off pending...");
-    handleSearchUpdate(searchTerms, false);
-  }
-
-
-  const handleTagClick = (tag: string) => {
-    console.log("tag clicked " + tag);
-    const newTerms = [...searchTerms];
-    newTerms.push({ term: tag, priority: 100 });
-    handleSearchUpdate(newTerms, showPending);
-  }
-
-  const handleLinkClick = (linkUrl: string) => {
-    sendAnalyticEvent("link", linkUrl);
+    debouncedOnChange(`${newUrl.pathname}${newUrl.search}`);
   }
 
 
@@ -271,34 +253,10 @@ export default function CollectionDetailsPage() {
   }
 
 
-  const handleItemEdit = (item: ItemFront) => {
-    console.log("handleItemEdit for " + item.url);
-    submitAction(ACTION_TYPES.UPDATE_ITEM, JSON.stringify(item));
-  }
-
-  const handleRemoveItem = (item: ItemFront) => {
-    console.log("handleRemoveItem for " + item.url);
-    submitAction(ACTION_TYPES.REMOVE_ITEM, item.url);
-    setLoading(true);
-  }
-
   const handleOverrideCollection = (data: CollectionJson) => {
     console.log("handleOverrideCollection");
     const action = ACTION_TYPES.OVERRIDE_COLLECTION;
     submitAction(action, JSON.stringify(data));
-  }
-
-  const hiddenItemMsg = () => {
-    var count = () => {
-      if (showPending) {
-        return loadedItems.length - sortedItems.length;
-      }
-      return (loadedItems.length - pendingCount) - sortedItems.length;
-    }
-    if (count() <= 0) {
-      return null;
-    }
-    return (<p>{count()} Hidden Items</p>)
   }
 
   const handleUpdateCollectionData = (collection: Collection) => {
@@ -357,8 +315,6 @@ export default function CollectionDetailsPage() {
         {addItemField()}
       </div>
     )
-
-
   }
 
   return (
@@ -370,35 +326,14 @@ export default function CollectionDetailsPage() {
       )}
 
       <SearchableItemDisplay
-        loadedItems={loadedItems}
+        loadedItems={itemsToView}
+        initialTerms={initialSearchTerms}
         infoMap={infoMap}
         admin={admin}
         submitAction={submitAction}
         setLoading={setLoading}
+        searchTermsUpdatedHandler={handleSearchTermsUpdated}
       />
-
-      {/* <div className={CSS_CLASSES.SECTION_BG}>
-        <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
-        <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
-        {hiddenItemMsg()}
-      </div>
-
-      <div className="py-4">
-        <div className={CSS_CLASSES.ITEM_GRID_COLS}>
-          {sortedItems.map(item => (
-            <ItemDisplay
-              key={item.url}
-              item={item}
-              info={infoMap.get(item.url)!}
-              onTagClick={handleTagClick}
-              onLinkClick={handleLinkClick}
-              admin={admin}
-              onItemUpdate={handleItemEdit}
-              onItemDelete={handleRemoveItem}
-            />
-          ))}
-        </div>
-      </div> */}
 
       <div className={CSS_CLASSES.SECTION_BG}>
         {footer()}

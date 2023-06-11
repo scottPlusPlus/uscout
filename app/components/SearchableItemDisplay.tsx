@@ -8,61 +8,47 @@ import { remapItemPriorities } from "~/code/front/itemUtils";
 import { Item, ItemFront } from "~/models/item.server";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
-import { debounce } from "lodash";
 import { ACTION_TYPES } from "~/code/actions";
+import { deepCopyArray } from "~/code/arrayUtils";
 
 type Props = {
     loadedItems: Item[],
+    initialTerms: SearchTermT[],
     infoMap: Map<string, ScrapedInfo>,
     admin: boolean,
     submitAction: (action: string, actionData: string) => void
     setLoading: (loading: boolean) => void,
+    searchTermsUpdatedHandler?: (newTerms: SearchTermT[], oldTerms?:SearchTermT[]) => void,
+    forceRenderCounter?: number,
 }
 
 export default function SearchableItemDisplay(props: Props) {
 
-    const initialSearchParams = [{ term: "", priority: 100 }];
-
-    const [searchTerms, setSearchTerms] = useState<SearchTermT[]>(initialSearchParams);
+    const [searchTerms, setSearchTerms] = useState<SearchTermT[]>(props.initialTerms);
     const [sortedItems, setSortedItems] = useState<Item[]>(props.loadedItems);
 
     useEffect(() => {
+        // console.log("SearchableItemDisplay useEffect");
+        // console.log("current search terms: " + JSON.stringify(searchTerms));
         handleSearchUpdate(searchTerms);
-      }, [props.loadedItems]);
+        // console.log("done with searchableItemDisplay useEffect");
+      }, [props.loadedItems, props.forceRenderCounter ?? 0]);
 
+    useEffect(() => {
+        // console.log("SID: initial search terms updated");
+        handleSearchUpdate(props.initialTerms);
+    }, [props.initialTerms]);
 
     const handleSearchUpdate = (newTerms: SearchTermT[]) => {
-        console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
-
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.forEach((value, key) => {
-            const valAsNum = Number(value);
-            if (!isNaN(valAsNum)) {
-                newUrl.searchParams.delete(key);
-            }
-        });
-        newTerms.forEach(term => {
-            if (term.term.length == 0 || term.priority == 0) {
-                return
-            }
-            newUrl.searchParams.set(term.term, term.priority.toString());
-        });
-
-        // if (window.history.replaceState) {
-        //     window.history.replaceState({ path: newUrl }, document.title, newUrl);
-        // } else {
-        //     window.history.pushState({}, '', newUrl);
-        // }
-        var shownItems = props.loadedItems;
-        shownItems = shownItems.filter(item => item.status != "pending");
-
-        //send analytic event if no change in 1/2 second
-        debouncedOnChange(`${newUrl.pathname}${newUrl.search}`);
+        //console.log("SID: handleSearchUpdate: " + JSON.stringify(newTerms));
+        const oldTerms = [...searchTerms];
+        const oldTermsStr = JSON.stringify(oldTerms);
+        //console.log("SID: current terms = " + oldTermsStr);
 
         const validTerms = newTerms.filter(term => {
             return term.term.length > 0
         });
-        const prioritizedItems = remapItemPriorities(shownItems, props.infoMap, validTerms)
+        const prioritizedItems = remapItemPriorities(props.loadedItems, props.infoMap, validTerms)
         var sorted = prioritizedItems.sort((a, b) => {
             return b.priority - a.priority;
         });
@@ -70,6 +56,14 @@ export default function SearchableItemDisplay(props: Props) {
             sorted = sorted.filter(i => i.priority > 50);
         }
 
+        const newTermsStr = JSON.stringify(newTerms);
+        if (oldTermsStr != newTermsStr){
+            if (props.searchTermsUpdatedHandler != null){
+                props.searchTermsUpdatedHandler(validTerms, oldTerms);
+            }
+        } else {
+            console.log(`old terms ${oldTermsStr} == new terms ${newTermsStr}`);
+        }
         setSortedItems(sorted);
         setSearchTerms(newTerms);
     }
@@ -78,11 +72,7 @@ export default function SearchableItemDisplay(props: Props) {
         console.log("tag clicked " + tag);
         const newTerms = [...searchTerms];
         const newTerm = { term: tag, priority: 100 };
-        if (newTerms[0].term.length == 0){
-            newTerms[0] = newTerm;
-        } else {
-            newTerms.push({ term: tag, priority: 100 });
-        }
+        newTerms.push(newTerm);
         handleSearchUpdate(newTerms);
     }
 
@@ -92,8 +82,7 @@ export default function SearchableItemDisplay(props: Props) {
 
     const hiddenItemMsg = () => {
         var count = () => {
-            var pendingCount = props.loadedItems.filter(item => item.status == "pending").length;
-            return (props.loadedItems.length - pendingCount) - sortedItems.length;
+            return props.loadedItems.length - sortedItems.length;
         }
         if (count() <= 0) {
             return null;
@@ -112,16 +101,10 @@ export default function SearchableItemDisplay(props: Props) {
         props.setLoading(true);
     }
 
-    const debouncedOnChange = useCallback(
-        debounce((newUrl) => {
-            sendAnalyticEvent("search", newUrl);
-        }, 500, { trailing: true }), []);
-
-
     return (
         <>
             <div className={CSS_CLASSES.SECTION_BG}>
-                <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x) }} />
+                <DynamicInputFields searchTerms={deepCopyArray(searchTerms)} onChange={(x) => { handleSearchUpdate(x) }} />
                 <TagCloud items={props.loadedItems} onTagClick={handleTagClick} />
                 {hiddenItemMsg()}
             </div>

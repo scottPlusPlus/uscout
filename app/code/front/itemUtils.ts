@@ -13,6 +13,7 @@ export function remapItemPriorities(
   };
 
   const prioritizedItems = items.map((item) => {
+    item.priority = 0;
     searchParams.forEach((search) => {
       if (search.term.length == 0) {
         return;
