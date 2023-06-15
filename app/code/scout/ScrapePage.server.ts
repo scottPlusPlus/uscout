@@ -189,7 +189,8 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       title,
       summary,
       image,
-      contentType: null
+      contentType: null,
+      timeUpdated: lastModifiedDataUnixTimeStamp
     };
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error);
