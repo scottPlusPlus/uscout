@@ -70,7 +70,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     await domainThrottle.enqueue(domain);
     console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
     const html = await fetchHtml(urlStr);
-    console.log(`${urlStr}: process repsonse ${nowHHMMSS()}`);
+    console.log(`${urlStr}: process response ${nowHHMMSS()}`);
 
     const hash = createHash("sha256").update(html).digest("hex");
 
@@ -145,6 +145,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       const getTweetsResponse = await fetch(getTweetsEndpoint, options);
       const getTweetsData = await getTweetsResponse.json();
       const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
+      console.log("Last Tweet: ", lastTweet);
       console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
       twitter.getUserData(twitterUsername).then((data) => {
         const user = data.data[0];
@@ -166,13 +167,20 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
           summary: description,
           authorName: authorName,
           image: profileImageUrl,
-          likes: followersCount
+          likes: followersCount,
+          timeUpdated: lastTweet
         };
       });
     }
 
-    const lastModifiedDate = await archive.getLatestSnapshot(domain);
-    console.log("Last Modified Date: ", lastModifiedDate);
+    const lastModifiedDateGmtTimeStamp = await archive.getLatestSnapshot(
+      domain
+    );
+    const lastModifiedDataUnixTimeStamp = archive.getUnixTimeStamp(
+      lastModifiedDateGmtTimeStamp
+    );
+
+    console.log("Last Modified Date: ", lastModifiedDataUnixTimeStamp);
 
     return {
       url: url,
