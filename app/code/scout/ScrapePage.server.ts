@@ -12,8 +12,6 @@ import axios from "axios";
 import { asUndefined } from "../tsUtils";
 import { ScrapedInfo } from "../datatypes/info";
 
-const TWITTER_BEARER_TOKEN = "";
-
 const domainThrottle = new PromiseQueues();
 
 export default async function scrapePage(url: string): Promise<ScrapedInfo> {
@@ -129,46 +127,19 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
 
     const twitterUsername = await twitter.getTwitterHandle(root);
 
-    if (twitterUsername && TWITTER_BEARER_TOKEN.length > 0) {
-      const options = {
-        headers: {
-          Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
-        }
-      };
-      const getUserEndpoint =
-        "https://api.twitter.com/2/users/by?usernames=" + twitterUsername;
-      const getUserResponse1 = await fetch(getUserEndpoint, options);
-      const getUserData = await getUserResponse1.json();
-      const userId = getUserData.data[0].id;
-      const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?max_results=25`;
-      console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
-      const getTweetsResponse = await fetch(getTweetsEndpoint, options);
-      const getTweetsData = await getTweetsResponse.json();
-      const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
-      console.log("Last Tweet: ", lastTweet);
-      console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
-      twitter.getUserData(twitterUsername).then((data) => {
-        const user = data.data[0];
-        const authorName = user.name;
-        const description = user.description;
-        const profileImageUrl = user.profile_image_url;
-        const followersCount = user.public_metrics.followers_count;
-        console.log("Author name:", authorName);
-        console.log("Description:", description);
-        console.log("Profile image URL:", profileImageUrl);
-        console.log("Followers:", followersCount);
-
+    if (twitterUsername) {
+      twitter.fetchTwitterData(twitterUsername).then((data) => {
         return {
           url: url,
           fullUrl: url,
           hash,
           title,
           contentType: "twitter",
-          summary: description,
-          authorName: authorName,
-          image: profileImageUrl,
-          likes: followersCount,
-          timeUpdated: lastTweet
+          summary: data.description,
+          authorName: data.authorName,
+          image: data.profileImageUrl,
+          likes: data.followersCount,
+          timeUpdated: data.lastTweet
         };
       });
     }
