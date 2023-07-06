@@ -128,20 +128,14 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     const twitterUsername = await twitter.getTwitterHandle(root);
 
     if (twitterUsername) {
-      twitter.fetchTwitterData(twitterUsername).then((data) => {
-        return {
-          url: url,
-          fullUrl: url,
-          hash,
-          title,
-          contentType: "twitter",
-          summary: data.description,
-          authorName: data.authorName,
-          image: data.profileImageUrl,
-          likes: data.followersCount,
-          timeUpdated: data.lastTweet
-        };
-      });
+      let twitterObject;
+      try {
+        twitterObject = await twitter.fetchTwitterData(twitterUsername);
+      } catch (error) {
+        console.error("Failed to fetch Twitter data: ", error);
+      }
+      console.log("TWITTER OBJECT: ", twitterObject);
+      return twitterObject;
     }
 
     const lastModifiedDateGmtTimeStamp = await archive.getLatestSnapshot(
@@ -161,7 +155,8 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       summary,
       image,
       contentType: null,
-      timeUpdated: lastModifiedDataUnixTimeStamp
+      timeUpdated: lastModifiedDataUnixTimeStamp,
+      timeUpdatedSource: "archive.org"
     };
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error);

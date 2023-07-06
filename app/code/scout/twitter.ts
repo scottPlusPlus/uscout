@@ -48,14 +48,14 @@ export async function fetchTwitterData(twitterUsername: string): Promise<any> {
   const getUserResponse1 = await fetch(getUserEndpoint, options);
   const getUserResponseJson = await getUserResponse1.json();
   const userId = getUserResponseJson.data[0].id;
-  const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?max_results=25`;
+  const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?tweet.fields=created_at&max_results=5`;
   console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
   const getTweetsResponse = await fetch(getTweetsEndpoint, options);
   const getTweetsData = await getTweetsResponse.json();
   const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
   console.log("Last Tweet: ", lastTweet);
   console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
-
+  const twitterUnixTimestamp = Date.parse(lastTweet.created_at) / 1000;
   const userData = await getUserData(twitterUsername);
   const user = userData.data[0];
   const authorName = user.name;
@@ -73,6 +73,6 @@ export async function fetchTwitterData(twitterUsername: string): Promise<any> {
     authorName: authorName,
     image: profileImageUrl,
     likes: followersCount,
-    timeUpdated: lastTweet
+    timeUpdated: twitterUnixTimestamp
   };
 }
