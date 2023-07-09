@@ -59,6 +59,26 @@ export default function AdminPage() {
     ));
   };
 
+  const countEvents = (events) => {
+    return events.reduce((counts, event) => {
+      counts[event.event] = (counts[event.event] || 0) + 1;
+      return counts;
+    }, {});
+  };
+
+  const renderRows2 = () => {
+    console.log("render rows...");
+    const eventCounts = countEvents(sortedEvents());
+    return sortedEvents().map((aEvent) => (
+      <tr key={aEvent.id}>
+        <td className="px-4 py-2">{dayjs(aEvent.ts).format('YYYY-MM-DD HH:mm:ss')}</td>
+        <td className="px-4 py-2">{aEvent.event}</td>
+        <td className="px-4 py-2">{aEvent.data}</td>
+        <td className="px-4 py-2">{eventCounts[aEvent.event]}</td>
+      </tr>
+    ));
+  };
+
   return (
     <div>
     <h3 className="text-2xl font-bold">Admin</h3>
@@ -102,6 +122,39 @@ export default function AdminPage() {
         </thead>
         <tbody>{renderRows()}</tbody>
       </table>
+      <h2 className="text-2xl font-bold mb-4">Analytic Table 2</h2>
+      <table className="table-auto">
+        <thead>
+          <tr>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortBy('time')}
+            >
+              Time
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortBy('event')}
+            >
+              Event
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortBy('data')}
+            >
+              Data
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortBy('ip')}
+            >
+              Count
+            </th>
+          </tr>
+        </thead>
+        <tbody>{renderRows2()}</tbody>
+      </table>
+
     </div>
     </div>
   );
