@@ -1,56 +1,57 @@
-import { faker } from "@faker-js/faker";
-
-describe("smoke tests", () => {
-  afterEach(() => {
-    //no user to checkout for now...
-    //cy.cleanupUser();
+describe("getLatestSnapshot", () => {
+  beforeEach(() => {
+    cy.visit("http://localhost:3000/scout");
   });
 
-  it("should at least load main page", () => {
-    cy.visitAndCheck("/");
+  it('should display "Last Updated and Time Updated Source from wayback machine " with the correct data when the request is successful', () => {
+    const identifier = "youtube.com";
+
+    cy.get('input[name="url"]', { timeout: 5000 })
+      .should("be.visible")
+      .then(($input) => {
+        $input.val(identifier);
+      });
+
+    cy.get('button[type="submit"]', { timeout: 5000 })
+      .should("exist")
+      .should("be.visible")
+      .click({ force: true });
+
+    cy.get('[data-test="jsonDisplay"]')
+      .should("exist")
+      .invoke("text")
+      .then((jsonText) => {
+        const jsonData = JSON.parse(jsonText);
+        expect(jsonData.info.timeUpdatedSource).to.equal("archive.org");
+        const timeStampDate = new Date(jsonData.info.timeUpdated * 1000);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        expect(timeStampDate >= twentyFourHoursAgo).to.be.true;
+      });
   });
 
-  // it("should allow you to register and login", () => {
-  //   // const loginForm = {
-  //   //   email: `${faker.internet.userName()}@example.com`,
-  //   //   password: faker.internet.password(),
-  //   // };
+  it('should display "Last Updated and Time Updated Source from twitters " with the correct data when the request is successful', () => {
+    const identifier = "espn.com";
 
-  //   // cy.then(() => ({ email: loginForm.email })).as("user");
+    cy.get('input[name="url"]', { timeout: 5000 })
+      .should("be.visible")
+      .then(($input) => {
+        $input.val(identifier);
+      });
 
-  //   cy.visitAndCheck("/");
+    cy.get('button[type="submit"]', { timeout: 5000 })
+      .should("exist")
+      .should("be.visible")
+      .click({ force: true });
 
-  //   // cy.findByRole("link", { name: /sign up/i }).click();
-
-  //   // cy.findByRole("textbox", { name: /email/i }).type(loginForm.email);
-  //   // cy.findByLabelText(/password/i).type(loginForm.password);
-  //   // cy.findByRole("button", { name: /create account/i }).click();
-
-  //   // cy.findByRole("link", { name: /notes/i }).click();
-  //   // cy.findByRole("button", { name: /logout/i }).click();
-  //   // cy.findByRole("link", { name: /log in/i });
-  // });
-
-  // it("should allow you to make a note", () => {
-  //   const testNote = {
-  //     title: faker.lorem.words(1),
-  //     body: faker.lorem.sentences(1),
-  //   };
-  //   cy.login();
-
-  //   cy.visitAndCheck("/");
-
-  //   cy.findByRole("link", { name: /notes/i }).click();
-  //   cy.findByText("No notes yet");
-
-  //   cy.findByRole("link", { name: /\+ new note/i }).click();
-
-  //   cy.findByRole("textbox", { name: /title/i }).type(testNote.title);
-  //   cy.findByRole("textbox", { name: /body/i }).type(testNote.body);
-  //   cy.findByRole("button", { name: /save/i }).click();
-
-  //   cy.findByRole("button", { name: /delete/i }).click();
-
-  //   cy.findByText("No notes yet");
-  // });
+    cy.get('[data-test="jsonDisplay"]')
+      .should("exist")
+      .invoke("text")
+      .then((jsonText) => {
+        const jsonData = JSON.parse(jsonText);
+        expect(jsonData.info.timeUpdatedSource).to.equal("twitter.com");
+        const timeStampDate = new Date(jsonData.info.timeUpdated * 1000);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        expect(timeStampDate >= twentyFourHoursAgo).to.be.true;
+      });
+  });
 });
