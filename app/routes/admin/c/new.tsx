@@ -71,6 +71,7 @@ export default function NewCollectionPage() {
     return (
         <Form
             method="post"
+            action="/admin/c/new"
             style={{
                 display: "flex",
                 flexDirection: "column",
