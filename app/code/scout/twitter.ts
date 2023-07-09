@@ -73,6 +73,7 @@ export async function fetchTwitterData(twitterUsername: string): Promise<any> {
     authorName: authorName,
     image: profileImageUrl,
     likes: followersCount,
-    timeUpdated: twitterUnixTimestamp
+    timeUpdated: twitterUnixTimestamp,
+    timeUpdatedSource: "twitter.com"
   };
 }
