@@ -87,7 +87,7 @@ export default function UScout() {
                         <h2 className="text-lg font-medium leading-6 text-gray-900">
                             Result
                         </h2>
-                        <div className="mt-1 text-sm text-gray-600"><JSONViewer dataObj={info}/></div>
+                        <div data-test="jsonDisplay" className="mt-1 text-sm text-gray-600"><JSONViewer dataObj={info}/></div>
                     </>
                 ) : null}
                 {infoImage ? (
