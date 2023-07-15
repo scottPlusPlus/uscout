@@ -6,7 +6,7 @@ type SearchTerm = {
 }
 type HandleChangeFunction = (terms: SearchTerm[]) => void;
 
-export default function DynamicInputFields(props: { searchTerms: SearchTerm[], onChange: HandleChangeFunction }) {
+export const DynamicInputFields = (props: { searchTerms: SearchTerm[], onChange: HandleChangeFunction }) => {
 
   const localTerms = [...props.searchTerms];
   localTerms.push({ term: "", priority: 100 });
