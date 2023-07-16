@@ -31,7 +31,7 @@ import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
 import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
 import SearchableItemDisplay from "~/components/SearchableItemDisplay";
-import Spinner from '../../styled-components/Spinner';
+import Spinner from '../../components/Spinner';
 
 
 const ACTIONS = {
