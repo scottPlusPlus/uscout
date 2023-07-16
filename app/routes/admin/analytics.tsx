@@ -71,7 +71,7 @@ export default function AdminPage() {
     const eventCounts = countEvents(sortedEvents());
     return sortedEvents().map((aEvent) => (
       <tr key={aEvent.id}>
-        <td className="px-4 py-2">{dayjs(aEvent.ts).format('YYYY-MM-DD HH:mm:ss')}</td>
+        <td className="px-4 py-2">{dayjs(aEvent.ts).format('YYYY-MM-DD')}</td>
         <td className="px-4 py-2">{aEvent.event}</td>
         <td className="px-4 py-2">{aEvent.data}</td>
         <td className="px-4 py-2">{eventCounts[aEvent.event]}</td>
