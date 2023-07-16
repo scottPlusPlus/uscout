@@ -92,6 +92,11 @@ export default function NewCollectionPage() {
                         }
                     />
                 </label>
+                {actionData?.errors?.id && (
+                    <div className="pt-1 text-red-700" id="id-error">
+                        {actionData.errors.id}
+                    </div>
+                )}
 
                 <label className="flex w-full flex-col gap-1">
                     <span>Title: </span>
