@@ -130,7 +130,7 @@ export default function AdminPage() {
               className="px-4 py-2 cursor-pointer"
               onClick={() => setSortBy('time')}
             >
-              Time
+              Day
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
