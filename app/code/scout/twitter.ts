@@ -41,7 +41,9 @@ export async function getUserData(username: string) {
   }
 }
 
-export async function fetchTwitterData(twitterUsername: string): Promise<any> {
+export async function fetchTwitterData(
+  twitterUsername: string
+): Promise<object | null> {
   if (!TWITTER_BEARER_TOKEN) {
     console.warn("Warning: Bearer token does not exist.");
     return null;

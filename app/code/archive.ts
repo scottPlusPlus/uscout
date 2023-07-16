@@ -2,7 +2,7 @@ const axios = require("axios");
 
 export async function getLatestSnapshotTime(
   url: string
-): Promise<number | null | undefined> {
+): Promise<number | null> {
   console.log("Identifier: ", url);
   const requestUrl = `https://archive.org/wayback/available?url=${url}`;
 
@@ -21,7 +21,7 @@ export async function getLatestSnapshotTime(
       );
       return lastModifiedTime;
     } else {
-      return undefined;
+      return null;
     }
   } catch (error) {
     console.log("Error:", error);
