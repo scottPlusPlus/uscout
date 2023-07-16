@@ -52,7 +52,7 @@ export async function fetchTwitterData(twitterUsername: string): Promise<any> {
   console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
   const getTweetsResponse = await fetch(getTweetsEndpoint, options);
   const getTweetsData = await getTweetsResponse.json();
-  const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
+  const lastTweet = getTweetsData.data[0];
   console.log("Last Tweet: ", lastTweet);
   console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
   const twitterUnixTimestamp = Date.parse(lastTweet.created_at) / 1000;
