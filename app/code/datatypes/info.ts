@@ -18,7 +18,7 @@ export type ScrapedInfo = {
   authorName?: string;
   authorLink?: string;
   publishTime?: number;
-  timeUpdated?: number;
+  timeUpdated?: number | null;
   timeUpdatedSource?: string;
 };
 

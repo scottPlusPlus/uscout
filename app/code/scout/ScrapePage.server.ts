@@ -60,8 +60,6 @@ async function fetchHtml(url: string): Promise<string> {
 
 async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
   try {
-    // const identifier = await archive.getArchiveOrgIdentifier(urlStr);
-    // console.log("Identifier: ", identifier);
     const urlObj = new URL(urlStr);
     const domain = urlObj.hostname;
     console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
@@ -138,14 +136,9 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       return twitterObject;
     }
 
-    const lastModifiedDateGmtTimeStamp = await archive.getLatestSnapshot(
-      domain
-    );
-    const lastModifiedDataUnixTimeStamp = archive.getUnixTimeStamp(
-      lastModifiedDateGmtTimeStamp
-    );
+    const lastModifiedTime = await archive.getLatestSnapshotTime(domain);
 
-    console.log("Last Modified Date: ", lastModifiedDataUnixTimeStamp);
+    console.log("Last Modified Date: ", lastModifiedTime);
 
     return {
       url: url,
@@ -155,7 +148,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       summary,
       image,
       contentType: null,
-      timeUpdated: lastModifiedDataUnixTimeStamp,
+      timeUpdated: lastModifiedTime,
       timeUpdatedSource: "archive.org"
     };
   } catch (error) {
