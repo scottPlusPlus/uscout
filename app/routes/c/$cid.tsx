@@ -31,6 +31,7 @@ import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
 import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
 import SearchableItemDisplay from "~/components/SearchableItemDisplay";
+import Spinner from '../../styled-components/Spinner';
 
 
 const ACTIONS = {
@@ -249,7 +250,13 @@ export default function CollectionDetailsPage() {
     console.log("handleAddItem for " + newUrl);
     const action = ACTION_TYPES.ADMIN_ADD_ITEM; //admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
     setAddItemPending(true);
-    submitAction(action, newUrl);
+
+    try {
+      submitAction(action, newUrl);
+    } catch(error) {
+      console.log(error)
+      setAddItemPending(false)
+    }
   }
 
 
@@ -282,6 +289,7 @@ export default function CollectionDetailsPage() {
         <>
           <div className="flex justify-between">
             {addItemField()}
+            {addItemPending && <Spinner/>}
             <div className="justify-end">
               <br></br>
               <button
