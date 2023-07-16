@@ -288,7 +288,7 @@ export default function CollectionDetailsPage() {
       return (
         <>
           <div className="flex justify-between">
-            {addItemField()}
+            {!addItemPending && addItemField()}
             {addItemPending && <Spinner/>}
             <div className="justify-end">
               <br></br>
