@@ -67,7 +67,7 @@ export default function AdminPage() {
     }, {});
   };
 
-  const renderRows2 = () => {
+  const renderRowsAnalyticEventByDay = () => {
     console.log("render rows...");
     const eventCounts = countEvents(sortedEvents());
 
@@ -145,7 +145,7 @@ export default function AdminPage() {
         </thead>
         <tbody>{renderRows()}</tbody>
       </table>
-      <h2 className="text-2xl font-bold mb-4">Analytic Table 2</h2>
+      <h2 className="text-2xl font-bold mb-4">Analytic Event By Day Table</h2>
       <table className="table-auto">
         <thead>
           <tr>
@@ -175,7 +175,7 @@ export default function AdminPage() {
             </th>
           </tr>
         </thead>
-        <tbody>{renderRows2()}</tbody>
+        <tbody>{renderRowsAnalyticEventByDay()}</tbody>
       </table>
 
     </div>
