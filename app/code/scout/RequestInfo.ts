@@ -5,6 +5,10 @@ import { nowUnixTimestamp, twentyFourHoursAgoTimestamp } from "../timeUtils";
 import * as createError from "http-errors";
 import { sanitizeUrl } from "../urlUtils";
 import { ScrapedInfo, UInfoV2 } from "../datatypes/info";
+import { AsyncQueue } from "../agnostic/AsyncQueue";
+import { wait } from "../agnostic/coreUtils";
+
+const staleScrapeQueue = new AsyncQueue();
 
 export async function requestSingle(url: string): Promise<UInfoV2 | null> {
   const sanitizedUrl = sanitizeUrl(url);
@@ -18,8 +22,13 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
     const latestStatus = existing.scrapeHistory[0];
     if (latestStatus.status == 200) {
       if (latestStatus.timestamp < twentyFourHoursAgoTimestamp()) {
-        console.log(" - - but too old, triggering scrape");
-        scrapeAndSavePage(sanitizedUrl);
+        console.log(" - - but too old, kicking to scrape queue");
+        const doScrape = async ()=> {
+          await wait(5000);
+          console.log("scraping from stale scrape queue");
+          await scrapeAndSavePage(sanitizedUrl);
+        }
+        staleScrapeQueue.enqueue(doScrape);
       }
       console.log(" - - returning cached info for " + sanitizedUrl);
       return existing;

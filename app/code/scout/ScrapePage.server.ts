@@ -41,7 +41,7 @@ async function fetchHtml(url: string): Promise<string> {
     try {
       if (scrapeStackApiKey){
         console.log(`attempting to scrape ${url} via scrapestack`);
-        const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=` + url;
+        const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=${url}&render_js=1`;
         response = await axios.get(scrapeStackUrl);
         console.log(`scrapestack got response from ${url} with status ${response.status}`);
         return response.data;
@@ -63,7 +63,7 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     await domainThrottle.enqueue(domain);
     console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
     const html = await fetchHtml(urlStr);
-    console.log(`${urlStr}: process repsonse ${nowHHMMSS()}`);
+    console.log(`${urlStr}: process response ${nowHHMMSS()}`);
 
     const hash = createHash("sha256").update(html).digest("hex");
 
