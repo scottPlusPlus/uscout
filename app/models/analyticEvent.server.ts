@@ -64,14 +64,13 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
   const endDate = new Date();
   endDate.setDate(endDate.getDate() - 2);
 
-  const analyticsData = await prisma.analyticEvent.groupBy({
+  const analyticsData = await prisma.analyticEvent.findMany({
     where: {
       ts: {
         gte: startDate.toISOString(),
         lt: endDate.toISOString()
       }
-    },
-    by: ["event", "data", "ip"]
+    }
   });
 
   const map = new Map<string, ARes>();
