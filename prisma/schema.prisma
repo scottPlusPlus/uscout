@@ -102,6 +102,14 @@ model AnalyticEvent {
   data  String
 }
 
+model AnalyticEventByDay {
+  id    Int      @id @default(autoincrement())
+  day   DateTime @default(now())
+  event String
+  data  String
+  count Int
+}
+
 model Feedback {
   id       Int      @id @default(autoincrement())
   ts       DateTime @default(now())

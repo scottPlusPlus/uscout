@@ -1,9 +1,9 @@
-import { AnalyticEvent } from "@prisma/client";
+import { AnalyticEvent, AnalyticEventByDay } from "@prisma/client";
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { getAnalyticsDataLast7Days, getRecentEvents } from "~/models/analyticEvent.server";
+import { getAnalyticsDataLast7Days, getRecentEvents, tallyAnalytics } from "~/models/analyticEvent.server";
 import { requireUserId } from "~/session.server";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -12,13 +12,19 @@ export async function loader({ request, params }: LoaderArgs) {
     const summary = await getAnalyticsDataLast7Days();
 
     const events = await getRecentEvents();
-    return json({ events , summary});
+    const tallyData  = await tallyAnalytics()
+    console.log("Tally: ", tallyData)
+    return json({ events , summary, tallyData});
 };
 
 export default function AdminPage() {
 
   const data = useLoaderData<typeof loader>();
   const dirtEvents:AnalyticEvent[] = !data ? [] : !data.events ? [] : JSON.parse(JSON.stringify(data.events));
+  const dirtEventsByDay:AnalyticEventByDay[] = !data ? [] : !data.tallyData ? [] : JSON.parse(JSON.stringify(data.tallyData));
+
+
+  console.log("EVENTS BY DAY: ", dirtEventsByDay)
 
   const events = dirtEvents.map((e) => {
     const copy = { ...e };
@@ -47,6 +53,23 @@ export default function AdminPage() {
     return x;
   };
 
+  const sortedEventsByDay = ()=> {
+    console.log("sorting by " + sortBy);
+    const x = dirtEventsByDay.sort((a, b) => {
+      switch(sortBy){
+        case 'event':
+          return a.event.localeCompare(b.event);
+        case 'data':
+          return a.data.localeCompare(b.data);
+        case 'count':
+          return a.count - b.count;
+        default:
+          return dayjs(b.day).diff(dayjs(a.day));
+      }
+    });
+    return x;
+  };
+
   const renderRows = () => {
     console.log("render rows...");
     return sortedEvents().map((aEvent) => (
@@ -59,47 +82,16 @@ export default function AdminPage() {
     ));
   };
 
-  const countEvents = (events) => {
-    return events.reduce((counts, event) => {
-      const key = `${event.event}-${event.data}`;
-      counts[key] = (counts[key] || 0) + 1;
-      return counts;
-    }, {});
-  };
-
   const renderRowsAnalyticEventByDay = () => {
     console.log("render rows...");
-    const eventCounts = countEvents(sortedEvents());
-
-    // Create a Set to track unique event and data combinations
-    const uniqueEventAndData = new Set();
-
-    // Filter events that are older than 90 days
-    const currentDate = new Date();
-    const filteredEvents = sortedEvents().filter((aEvent) => {
-      const eventDate = new Date(aEvent.ts);
-      const daysDifference = Math.floor((currentDate.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDifference <= 90;
-    });
-
-    return filteredEvents.map((aEvent) => {
-      const { event, data } = aEvent;
-      const key = `${event}-${data}`;
-      const isUnique = !uniqueEventAndData.has(key);
-      uniqueEventAndData.add(key);
-
-      // Check if event and data are empty
-      const isEventDataEmpty = !event.trim() && !data.trim();
-
-      return isUnique && !isEventDataEmpty ? (
-        <tr key={aEvent.id}>
-          <td className="px-4 py-2">{dayjs(aEvent.ts).format('YYYY-MM-DD')}</td>
-          <td className="px-4 py-2">{event}</td>
-          <td className="px-4 py-2">{data}</td>
-          <td className="px-4 py-2">{eventCounts[key]}</td>
-        </tr>
-      ) : null;
-    });
+    return sortedEventsByDay().map((aEvent) => (
+      <tr key={aEvent.id}>
+        <td className="px-4 py-2">{dayjs(aEvent.day).format('YYYY-MM-DD')}</td>
+        <td className="px-4 py-2">{aEvent.event}</td>
+        <td className="px-4 py-2">{aEvent.data}</td>
+        <td className="px-4 py-2">{aEvent.count}</td>
+      </tr>
+    ));
   };
 
   return (
@@ -151,7 +143,7 @@ export default function AdminPage() {
           <tr>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('time')}
+              onClick={() => setSortBy('day')}
             >
               Day
             </th>
@@ -169,7 +161,7 @@ export default function AdminPage() {
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('ip')}
+              onClick={() => setSortBy('count')}
             >
               Count
             </th>
