@@ -50,6 +50,8 @@ describe("getLatestSnapshot", () => {
       .invoke("text")
       .then((jsonText) => {
         const jsonData = JSON.parse(jsonText);
+        expect(jsonData.info.fullUrl).to.equal("https://spacex.com");
+        expect(jsonData.info.title).to.equal("SpaceX");
         expect(jsonData.info.timeUpdatedSource).to.equal("twitter.com");
         const timeStampDate = new Date(jsonData.info.timeUpdated * 1000);
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

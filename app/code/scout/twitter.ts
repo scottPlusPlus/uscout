@@ -2,6 +2,13 @@ const axios = require("axios");
 
 const TWITTER_BEARER_TOKEN = "";
 
+interface TwitterData {
+  authorName: string;
+  likes: number;
+  timeUpdated: number;
+  timeUpdatedSource: string;
+}
+
 export const getTwitterHandle = async (root: any) => {
   try {
     const twitterLinks = root.querySelectorAll('a[href*="twitter.com/"]');
@@ -43,7 +50,7 @@ export async function getUserData(username: string) {
 
 export async function fetchTwitterData(
   twitterUsername: string
-): Promise<object | null> {
+): Promise<TwitterData | null> {
   if (!TWITTER_BEARER_TOKEN) {
     console.warn("Warning: Bearer token does not exist.");
     return null;

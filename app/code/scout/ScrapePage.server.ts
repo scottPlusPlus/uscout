@@ -133,7 +133,19 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
         console.error("Failed to fetch Twitter data: ", error);
       }
       console.log("TWITTER OBJECT: ", twitterObject);
-      return twitterObject;
+      return {
+        url: url,
+        fullUrl: url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: null,
+        likes: twitterObject?.likes,
+        authorName: twitterObject?.authorName,
+        timeUpdated: twitterObject?.timeUpdated,
+        timeUpdatedSource: twitterObject?.timeUpdatedSource
+      };
     }
 
     const lastModifiedTime = await archive.getLatestSnapshotTime(domain);
