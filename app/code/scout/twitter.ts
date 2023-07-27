@@ -1,7 +1,6 @@
 const axios = require("axios");
 
-const TWITTER_BEARER_TOKEN = "";
-
+const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
 interface TwitterData {
   authorName: string;
   likes: number;
