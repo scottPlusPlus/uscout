@@ -3,7 +3,8 @@ import { ipAsNumber } from "./ipUtils";
 export enum AB_FLAGS {
     COLOR = 1 << 0, // 0001 in binary
     HERO_1 = 1 << 1, // 0010 in binary
-    HERO_2 = 1 << 2 // 0100 in binary
+    HERO_2 = 1 << 2, // 0100 in binary
+    GRAD_OR_ALT = 1 << 3
 };
 
 export const AB_MOD = 16;
