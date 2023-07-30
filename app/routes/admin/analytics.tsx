@@ -28,10 +28,21 @@ export default function AdminPage() {
     copy.data = copy.data.replace(/^https?:\/\//i, '');
     return copy;
   });
+  const eventsByDay = dirtEventsByDay.map((e) => {
+    const copy = { ...e };
+    copy.data = copy.data.replace(/^https?:\/\//i, '');
+    return copy;
+  });
+
 
   const [sortBy, doSetSortBy] = useState('updated');
   const setSortBy = (str: string) => {
     doSetSortBy(str);
+  }
+
+  const [sortByEventByDay, doSetSortByEventByDay] = useState('updated');
+  const setSortByAEBDT = (str: string) => {
+    doSetSortByEventByDay(str);
   }
 
   const sortedEvents = ()=> {
@@ -51,9 +62,9 @@ export default function AdminPage() {
   };
 
   const sortedEventsByDay = ()=> {
-    console.log("sorting by " + sortBy);
-    const x = dirtEventsByDay.sort((a, b) => {
-      switch(sortBy){
+    console.log("sorting by " + sortByEventByDay);
+    const x = eventsByDay.sort((a, b) => {
+      switch(sortByEventByDay){
         case 'event':
           return a.event.localeCompare(b.event);
         case 'data':
@@ -140,25 +151,25 @@ export default function AdminPage() {
           <tr>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('day')}
+              onClick={() => setSortByAEBDT('day')}
             >
               Day
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('event')}
+              onClick={() => setSortByAEBDT('event')}
             >
               Event
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('data')}
+              onClick={() => setSortByAEBDT('data')}
             >
               Data
             </th>
             <th
               className="px-4 py-2 cursor-pointer"
-              onClick={() => setSortBy('count')}
+              onClick={() => setSortByAEBDT('count')}
             >
               Count
             </th>
