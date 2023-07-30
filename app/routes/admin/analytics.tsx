@@ -3,7 +3,7 @@ import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { getAnalyticsDataLast7Days, getRecentEvents, tallyAnalytics } from "~/models/analyticEvent.server";
+import { deleteOldEvents, getAnalyticsDataLast7Days, getRecentEvents, getTallyEvents, tallyAnalytics } from "~/models/analyticEvent.server";
 import { requireUserId } from "~/session.server";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -12,8 +12,9 @@ export async function loader({ request, params }: LoaderArgs) {
     const summary = await getAnalyticsDataLast7Days();
 
     const events = await getRecentEvents();
-    const tallyData  = await tallyAnalytics()
-    console.log("Tally: ", tallyData)
+    await tallyAnalytics()
+    await deleteOldEvents()
+    const tallyData  = await getTallyEvents()
     return json({ events , summary, tallyData});
 };
 
@@ -22,10 +23,6 @@ export default function AdminPage() {
   const data = useLoaderData<typeof loader>();
   const dirtEvents:AnalyticEvent[] = !data ? [] : !data.events ? [] : JSON.parse(JSON.stringify(data.events));
   const dirtEventsByDay:AnalyticEventByDay[] = !data ? [] : !data.tallyData ? [] : JSON.parse(JSON.stringify(data.tallyData));
-
-
-  console.log("EVENTS BY DAY: ", dirtEventsByDay)
-
   const events = dirtEvents.map((e) => {
     const copy = { ...e };
     copy.data = copy.data.replace(/^https?:\/\//i, '');

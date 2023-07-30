@@ -22,6 +22,26 @@ export async function getRecentEvents(): Promise<AnalyticEvent[]> {
   });
 }
 
+export async function getTallyEvents(): Promise<AnalyticEventByDay[]> {
+  return prisma.analyticEventByDay.findMany({
+    take: 200,
+    orderBy: { day: "desc" }
+  });
+}
+
+export async function deleteOldEvents(): Promise<void> {
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  await prisma.analyticEvent.deleteMany({
+    where: {
+      ts: {
+        lt: ninetyDaysAgo
+      }
+    }
+  });
+}
+
 type AnalyticEventWithCount = AnalyticEvent & { count: number };
 type ARes = {
   event: string;
@@ -42,8 +62,6 @@ export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
     by: ["event", "data", "ip"]
   });
 
-  console.log("analytics Data: ", analyticsData);
-
   const map = new Map<string, ARes>();
   analyticsData.forEach((x) => {
     const key = x.event + x.data;
@@ -59,16 +77,12 @@ export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
 
 export async function tallyAnalytics(): Promise<Array<ARes>> {
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 90);
-
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() - 2);
+  startDate.setDate(startDate.getDate() - 2);
 
   const analyticsData = await prisma.analyticEvent.findMany({
     where: {
       ts: {
-        gte: startDate.toISOString(),
-        lt: endDate.toISOString()
+        lt: startDate.toISOString()
       }
     }
   });
@@ -76,25 +90,46 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
   const map = new Map<string, ARes>();
   analyticsData.forEach((x) => {
     const key = x.event + x.data;
-    const prev = map.get(key) ?? { event: x.event, data: x.data, count: 0 };
+    const prev = map.get(key) ?? {
+      event: x.event,
+      data: x.data,
+      count: 0
+    };
     prev.count += 1;
     map.set(key, prev);
   });
-
-  console.log("analytics Data: ", map);
 
   var res = [...map.values()];
   res = res.sort((a, b) => b.count - a.count);
 
   for (const item of res) {
-    await prisma.analyticEventByDay.create({
-      data: {
+    const existingRecord = await prisma.analyticEventByDay.findFirst({
+      where: {
         event: item.event,
-        data: item.data,
-        count: item.count,
-        day: new Date()
+        data: item.data
       }
     });
+
+    if (existingRecord) {
+      await prisma.analyticEventByDay.update({
+        where: {
+          id: existingRecord.id
+        },
+        data: {
+          count: item.count
+        }
+      });
+    } else {
+      await prisma.analyticEventByDay.create({
+        data: {
+          event: item.event,
+          data: item.data,
+          count: item.count,
+          day: new Date()
+        }
+      });
+    }
   }
+
   return res;
 }
