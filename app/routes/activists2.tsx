@@ -80,7 +80,7 @@ export default function ActivistsPage() {
   const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
 
   return (
-    
+
     <PageWithSections sections={sections} infos={uInfos} ipab={data.ipab} collectionItems={loadedItems}/>
   )
 

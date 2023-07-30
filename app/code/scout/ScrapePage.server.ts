@@ -6,12 +6,11 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
+import * as archive from "../archive";
 
 import axios from "axios";
 import { asUndefined } from "../tsUtils";
 import { ScrapedInfo } from "../datatypes/info";
-
-const TWITTER_BEARER_TOKEN = "";
 
 const domainThrottle = new PromiseQueues();
 
@@ -19,7 +18,7 @@ export default async function scrapePage(url: string): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url);
-  } catch (error:any) {
+  } catch (error: any) {
     try {
       return await scrapePageImpl("http://" + url);
     } catch (err2) {
@@ -36,19 +35,21 @@ async function fetchHtml(url: string): Promise<string> {
   try {
     var response = await axios.get(url);
     return response.data;
-  } catch (error:any) {
+  } catch (error: any) {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
-      if (scrapeStackApiKey){
+      if (scrapeStackApiKey) {
         console.log(`attempting to scrape ${url} via scrapestack`);
         const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=${url}&render_js=1`;
         response = await axios.get(scrapeStackUrl);
-        console.log(`scrapestack got response from ${url} with status ${response.status}`);
+        console.log(
+          `scrapestack got response from ${url} with status ${response.status}`
+        );
         return response.data;
       } else {
         console.log("no scrapeStackApiKey");
       }
-    } catch (error:any){
+    } catch (error: any) {
       console.log("Scrape Stack could not fetch " + url);
     }
     throw error;
@@ -122,48 +123,32 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
 
     const twitterUsername = await twitter.getTwitterHandle(root);
 
-    if (twitterUsername && TWITTER_BEARER_TOKEN.length > 0) {
-      const options = {
-        headers: {
-          Authorization: `Bearer ${TWITTER_BEARER_TOKEN}`
-        }
+    if (twitterUsername) {
+      let twitterObject;
+      try {
+        twitterObject = await twitter.fetchTwitterData(twitterUsername);
+      } catch (error) {
+        console.error("Failed to fetch Twitter data: ", error);
+      }
+      console.log("TWITTER OBJECT: ", twitterObject);
+      return {
+        url: url,
+        fullUrl: url,
+        hash,
+        title,
+        summary,
+        image,
+        contentType: null,
+        likes: twitterObject?.likes,
+        authorName: twitterObject?.authorName,
+        timeUpdated: twitterObject?.timeUpdated,
+        timeUpdatedSource: twitterObject?.timeUpdatedSource
       };
-      const getUserEndpoint =
-        "https://api.twitter.com/2/users/by?usernames=" + twitterUsername;
-      const getUserResponse1 = await fetch(getUserEndpoint, options);
-      const getUserData = await getUserResponse1.json();
-      const userId = getUserData.data[0].id;
-      const getTweetsEndpoint = `https://api.twitter.com/2/users/${userId}/tweets?max_results=25`;
-      console.log("\n= = = = = SENDING TWITTER REQUEST = = = = = \n");
-      const getTweetsResponse = await fetch(getTweetsEndpoint, options);
-      const getTweetsData = await getTweetsResponse.json();
-      const lastTweet = getTweetsData.data[getTweetsData.data.length - 1];
-      console.log("response from twitter:\n" + JSON.stringify(getTweetsData));
-      console.log("LAST TWEET: ", lastTweet);
-      twitter.getUserData(twitterUsername).then((data) => {
-        const user = data.data[0];
-        const authorName = user.name;
-        const description = user.description;
-        const profileImageUrl = user.profile_image_url;
-        const followersCount = user.public_metrics.followers_count;
-        console.log("Author name:", authorName);
-        console.log("Description:", description);
-        console.log("Profile image URL:", profileImageUrl);
-        console.log("Followers:", followersCount);
-
-        return {
-          url: url,
-          fullUrl: url,
-          hash,
-          title,
-          contentType: "twitter",
-          summary: description,
-          authorName: authorName,
-          image: profileImageUrl,
-          likes: followersCount
-        };
-      });
     }
+
+    const lastModifiedTime = await archive.getLatestSnapshotTime(domain);
+
+    console.log("Last Modified Date: ", lastModifiedTime);
 
     return {
       url: url,
@@ -172,7 +157,9 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
       title,
       summary,
       image,
-      contentType: null
+      contentType: null,
+      timeUpdated: lastModifiedTime,
+      timeUpdatedSource: "archive.org"
     };
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error);
