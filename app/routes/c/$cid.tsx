@@ -341,6 +341,7 @@ export default function CollectionDetailsPage() {
         submitAction={submitAction}
         setLoading={setLoading}
         searchTermsUpdatedHandler={handleSearchTermsUpdated}
+        background="bg-gradient-to-b from-neutral-200 to-neutral-400"
       />
 
       <div className={CSS_CLASSES.SECTION_BG}>

@@ -260,6 +260,7 @@ export default function ActivistsPage() {
             admin={false}
             submitAction={fakeSubmitAction}
             setLoading={setLoading}
+            background=""
           />
         </div>
       </section>

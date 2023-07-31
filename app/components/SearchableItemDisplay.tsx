@@ -20,6 +20,7 @@ type Props = {
     setLoading: (loading: boolean) => void,
     searchTermsUpdatedHandler?: (newTerms: SearchTermT[], oldTerms?:SearchTermT[]) => void,
     forceRenderCounter?: number,
+    background: string,
 }
 
 export default function SearchableItemDisplay(props: Props) {
@@ -109,7 +110,7 @@ export default function SearchableItemDisplay(props: Props) {
                 {hiddenItemMsg()}
             </div>
 
-            <div className="py-4">
+            <div className={"py-4 " + props.background}>
                 <div className={CSS_CLASSES.ITEM_GRID_COLS}>
                     {sortedItems.map(item => (
                         <ItemDisplay
