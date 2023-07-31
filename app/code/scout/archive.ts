@@ -1,10 +1,24 @@
+import { ScrapedInfo } from "../datatypes/info";
+
 const axios = require("axios");
 
+export async function hydrateFromArchive(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
+
+  const lastModifiedTime = await getLatestSnapshotTime(scrape.url);
+  console.log("Last Modified Date: ", lastModifiedTime);
+
+  scrape.timeUpdated = lastModifiedTime;
+  scrape.timeUpdatedSource = "archive.org";
+  return scrape;
+}
+
 export async function getLatestSnapshotTime(
-  url: string
+  urlStr: string
 ): Promise<number | null> {
-  console.log("Identifier: ", url);
-  const requestUrl = `https://archive.org/wayback/available?url=${url}`;
+  const urlObj = new URL(urlStr);
+  const domain = urlObj.hostname;
+  console.log("Identifier: ", domain);
+  const requestUrl = `https://archive.org/wayback/available?url=${domain}`;
 
   try {
     const response = await axios.get(requestUrl, {

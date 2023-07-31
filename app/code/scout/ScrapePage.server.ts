@@ -1,4 +1,4 @@
-import { parse } from "node-html-parser";
+import { HTMLElement, parse } from "node-html-parser";
 import { createHash } from "crypto";
 import { PromiseQueues } from "../PromiseQueue.server";
 import { nowHHMMSS } from "../timeUtils";
@@ -6,10 +6,9 @@ import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
 import * as twitter from "./twitter";
-import * as archive from "../archive";
+import * as archive from "./archive";
 
 import axios from "axios";
-import { asUndefined } from "../tsUtils";
 import { ScrapedInfo } from "../datatypes/info";
 
 const domainThrottle = new PromiseQueues();
@@ -60,109 +59,74 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
   try {
     const urlObj = new URL(urlStr);
     const domain = urlObj.hostname;
-    console.log(`${urlStr}: enque domain ${domain}  ${nowHHMMSS()}`);
+    console.log(`${nowHHMMSS()} ${urlStr}: enque domain ${domain}`);
     await domainThrottle.enqueue(domain);
-    console.log(`${urlStr}: sending fetch ${nowHHMMSS()}`);
+
+    console.log(`${nowHHMMSS()} ${urlStr}: sending fetch`);
     const html = await fetchHtml(urlStr);
-    console.log(`${urlStr}: process response ${nowHHMMSS()}`);
-
-    const hash = createHash("sha256").update(html).digest("hex");
-
+    console.log(`${nowHHMMSS()} ${urlStr}: process response`);
     const root = parse(html);
-    const canonicalLink = root.querySelector('link[rel="canonical"]');
-    const canonUrl = canonicalLink?.getAttribute("href");
-    const url = canonUrl ? canonUrl : urlStr;
-    const title = root.querySelector("title")?.text || "";
-    const summary =
-      root.querySelector('meta[name="description"]')?.getAttribute("content") ||
-      "";
 
-    const ogImage = root
-      .querySelector('meta[property="og:image"]')
-      ?.getAttribute("content");
-    const twitterImage = root
-      .querySelector('meta[name="twitter:image"]')
-      ?.getAttribute("content");
-    var image = ogImage || twitterImage;
-    if (!image) {
-      image = await getScreenshot(url);
+    const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root)
+
+    var r = await youtube.hydrateFromYoutube(scrapedInfo);
+    if (r != null){
+      return r;
     }
 
-    const scrapedYoutubeContent = await youtube.scrapeYouTubeVideo(urlStr);
-    const scrapedRedditContent = await reddit.scrapeReddit(urlStr);
-
-    if (scrapedYoutubeContent) {
-      return {
-        url: url,
-        fullUrl: url,
-        hash,
-        title,
-        summary,
-        image,
-        contentType: scrapedYoutubeContent.contentType,
-        likes: scrapedYoutubeContent.likes,
-        authorLink: scrapedYoutubeContent.authorLink,
-        authorName: scrapedYoutubeContent.authorName
-      };
-    } else if (scrapedRedditContent) {
-      return {
-        url: url,
-        fullUrl: url,
-        hash,
-        title,
-        summary,
-        image,
-        contentType: scrapedRedditContent.contentType,
-        likes: scrapedRedditContent.likes,
-        dislikes: scrapedRedditContent.dislikes,
-        authorLink: scrapedRedditContent.authorLink,
-        authorName: scrapedRedditContent.authorName,
-        publishTime: asUndefined(scrapedRedditContent.postCreationTime)
-      };
+    var r = await reddit.hydrateFromReddit(scrapedInfo);
+    if (r != null){
+      return r;
     }
 
-    const twitterUsername = await twitter.getTwitterHandle(root);
-
-    if (twitterUsername) {
-      let twitterObject;
-      try {
-        twitterObject = await twitter.fetchTwitterData(twitterUsername);
-      } catch (error) {
-        console.error("Failed to fetch Twitter data: ", error);
-      }
-      console.log("TWITTER OBJECT: ", twitterObject);
-      return {
-        url: url,
-        fullUrl: url,
-        hash,
-        title,
-        summary,
-        image,
-        contentType: null,
-        likes: twitterObject?.likes,
-        authorName: twitterObject?.authorName,
-        timeUpdated: twitterObject?.timeUpdated,
-        timeUpdatedSource: twitterObject?.timeUpdatedSource
-      };
+    var r = await twitter.hydrateFromTwitter(scrapedInfo, root);
+    if (r != null){
+      return r;
     }
 
-    const lastModifiedTime = await archive.getLatestSnapshotTime(domain);
+    var r = await archive.hydrateFromArchive(scrapedInfo);
+    if (r != null){
+      return r;
+    }
 
-    console.log("Last Modified Date: ", lastModifiedTime);
+    return scrapedInfo;
 
-    return {
-      url: url,
-      fullUrl: url,
-      hash,
-      title,
-      summary,
-      image,
-      contentType: null,
-      timeUpdated: lastModifiedTime,
-      timeUpdatedSource: "archive.org"
-    };
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error);
     throw error;
   }
+}
+
+async function basicScrapeInfoFromHtml(urlStr:string, html:string, root:HTMLElement):Promise<ScrapedInfo> {
+  const hash = createHash("sha256").update(html).digest("hex");
+  const canonicalLink = root.querySelector('link[rel="canonical"]');
+  const canonUrl = canonicalLink?.getAttribute("href");
+  const url = canonUrl ? canonUrl : urlStr;
+  const title = root.querySelector("title")?.text || "";
+  const summary =
+    root.querySelector('meta[name="description"]')?.getAttribute("content") ||
+    "";
+
+  const ogImage = root
+    .querySelector('meta[property="og:image"]')
+    ?.getAttribute("content");
+  const twitterImage = root
+    .querySelector('meta[name="twitter:image"]')
+    ?.getAttribute("content");
+  var image = ogImage || twitterImage;
+  if (!image) {
+    image = await getScreenshot(url);
+  }
+
+  const scrapedInfo:ScrapedInfo = {
+    url: url,
+    fullUrl: url,
+    hash,
+    title,
+    summary,
+    image,
+    contentType: null,
+  };
+  
+  return scrapedInfo;
 }
