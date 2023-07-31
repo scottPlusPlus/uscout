@@ -9,7 +9,7 @@ import { Item, ItemFront } from "~/models/item.server";
 import { ScrapedInfo } from "~/code/datatypes/info";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 import { ACTION_TYPES } from "~/code/actions";
-import { deepCopyArray } from "~/code/arrayUtils";
+import { deepCopyArray } from "~/code/agnostic/arrayUtils";
 
 type Props = {
     loadedItems: Item[],

@@ -2,6 +2,7 @@ export type UInfoV2 = {
   url: string;
   info: ScrapedInfo | null;
   scrapeHistory: Array<scrapeHistory>;
+  latestExpensiveUts: number;
 };
 
 export type ScrapedInfo = {

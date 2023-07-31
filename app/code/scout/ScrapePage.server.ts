@@ -1,7 +1,7 @@
 import { HTMLElement, parse } from "node-html-parser";
 import { createHash } from "crypto";
 import { PromiseQueues } from "../PromiseQueue.server";
-import { nowHHMMSS } from "../timeUtils";
+import { nowHHMMSS } from "../agnostic/timeUtils";
 import * as reddit from "./reddit";
 import * as youtube from "./youtube";
 import getScreenshot from "./ScreenshotService.server";
@@ -13,13 +13,16 @@ import { ScrapedInfo } from "../datatypes/info";
 
 const domainThrottle = new PromiseQueues();
 
-export default async function scrapePage(url: string): Promise<ScrapedInfo> {
+export default async function scrapePage(
+  url: string,
+  doExpensive: boolean = false
+): Promise<ScrapedInfo> {
   console.log(url + ": starting fetch");
   try {
-    return await scrapePageImpl("https://" + url);
+    return await scrapePageImpl("https://" + url, doExpensive);
   } catch (error: any) {
     try {
-      return await scrapePageImpl("http://" + url);
+      return await scrapePageImpl("http://" + url, doExpensive);
     } catch (err2) {
       console.log("failed to fetch " + url + ":  " + error.message);
       throw error;
@@ -55,7 +58,10 @@ async function fetchHtml(url: string): Promise<string> {
   }
 }
 
-async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
+async function scrapePageImpl(
+  urlStr: string,
+  doExpensive: boolean = false
+): Promise<ScrapedInfo> {
   try {
     const urlObj = new URL(urlStr);
     const domain = urlObj.hostname;
@@ -67,37 +73,45 @@ async function scrapePageImpl(urlStr: string): Promise<ScrapedInfo> {
     console.log(`${nowHHMMSS()} ${urlStr}: process response`);
     const root = parse(html);
 
-    const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root)
+    const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root);
 
     var r = await youtube.hydrateFromYoutube(scrapedInfo);
-    if (r != null){
+    if (r != null) {
       return r;
     }
 
-    var r = await reddit.hydrateFromReddit(scrapedInfo);
-    if (r != null){
+    r = await reddit.hydrateFromReddit(scrapedInfo);
+    if (r != null) {
       return r;
     }
 
-    var r = await twitter.hydrateFromTwitter(scrapedInfo, root);
-    if (r != null){
-      return r;
-    }
+    if (doExpensive) {
+      console.log("expensive scrape: let's do it");
+      r = await twitter.hydrateFromTwitter(scrapedInfo, root);
+      if (r != null) {
+        return r;
+      }
 
-    var r = await archive.hydrateFromArchive(scrapedInfo);
-    if (r != null){
-      return r;
+      r = await archive.hydrateFromArchive(scrapedInfo);
+      if (r != null) {
+        return r;
+      }
+    } else {
+      console.log("expensive scrape: skip");
     }
 
     return scrapedInfo;
-
   } catch (error) {
     console.log("error with scrapePageImpl:  " + error);
     throw error;
   }
 }
 
-async function basicScrapeInfoFromHtml(urlStr:string, html:string, root:HTMLElement):Promise<ScrapedInfo> {
+async function basicScrapeInfoFromHtml(
+  urlStr: string,
+  html: string,
+  root: HTMLElement
+): Promise<ScrapedInfo> {
   const hash = createHash("sha256").update(html).digest("hex");
   const canonicalLink = root.querySelector('link[rel="canonical"]');
   const canonUrl = canonicalLink?.getAttribute("href");
@@ -118,7 +132,7 @@ async function basicScrapeInfoFromHtml(urlStr:string, html:string, root:HTMLElem
     image = await getScreenshot(url);
   }
 
-  const scrapedInfo:ScrapedInfo = {
+  const scrapedInfo: ScrapedInfo = {
     url: url,
     fullUrl: url,
     hash,
@@ -127,6 +141,6 @@ async function basicScrapeInfoFromHtml(urlStr:string, html:string, root:HTMLElem
     image,
     contentType: null,
   };
-  
+
   return scrapedInfo;
 }

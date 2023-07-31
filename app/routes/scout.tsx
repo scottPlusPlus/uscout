@@ -5,7 +5,7 @@ import { useTransition } from "@remix-run/react";
 import LoadingText from "~/components/LoadingText";
 import Image3x2 from "~/components/Image3x2";
 import JSONViewer from "~/components/JSONViewer";
-import { nowHHMMSS } from "~/code/timeUtils";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
 import { requestSingle } from "~/code/scout/RequestInfo";
 
 import * as createError from 'http-errors';

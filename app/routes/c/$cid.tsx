@@ -19,7 +19,7 @@ import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 
 import { getUserId } from "~/session.server";
-import { nowHHMMSS } from "~/code/timeUtils";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import EditCollectionData from "~/components/EditCollectionData";
 import { ScrapedInfo } from "~/code/datatypes/info";

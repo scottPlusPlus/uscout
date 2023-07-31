@@ -1,4 +1,4 @@
-import { nowUnixTimestamp } from "../timeUtils";
+import { nowUnixTimestamp } from "./timeUtils";
 import { AsyncQueue } from "./AsyncQueue";
 import { createPromiseWithResolver } from "./PromiseUtils";
 import { wait } from "./coreUtils";
