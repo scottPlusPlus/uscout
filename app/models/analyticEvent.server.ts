@@ -76,8 +76,21 @@ export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
 }
 
 export async function tallyAnalytics(): Promise<Array<ARes>> {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 2);
+  const latestTally = await prisma.analyticEventByDay.findFirst({
+    orderBy: {
+      day: "desc"
+    }
+  });
+
+  let startDate;
+
+  if (latestTally) {
+    startDate = new Date(latestTally.day);
+    startDate.setDate(startDate.getDate() + 1);
+  } else {
+    startDate = new Date();
+    startDate.setDate(startDate.getDate() - 2);
+  }
 
   const analyticsData = await prisma.analyticEvent.findMany({
     where: {
@@ -102,11 +115,15 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
   var res = [...map.values()];
   res = res.sort((a, b) => b.count - a.count);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   for (const item of res) {
     const existingRecord = await prisma.analyticEventByDay.findFirst({
       where: {
         event: item.event,
-        data: item.data
+        data: item.data,
+        day: today
       }
     });
 
@@ -116,7 +133,7 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
           id: existingRecord.id
         },
         data: {
-          count: item.count
+          count: existingRecord.count + item.count
         }
       });
     } else {
@@ -125,7 +142,7 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
           event: item.event,
           data: item.data,
           count: item.count,
-          day: new Date()
+          day: today
         }
       });
     }
