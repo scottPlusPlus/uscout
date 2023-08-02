@@ -3,6 +3,7 @@ import { ScrapedInfo } from "~/code/datatypes/info";
 import ItemDisplay from "./ItemDisplay";
 import Observer from "./Observer";
 import { CSS_CLASSES } from "~/code/front/CssClasses";
+import FixedCenterColumn from "./FixedCenterColumn";
 
 type Props = {
     data: PageSectionT;
@@ -26,7 +27,11 @@ export default function PageSectionC(props: Props) {
     return (
         <>
             <Observer name={props.data.title} />
-            <div >{props.data.body}</div>
+            <FixedCenterColumn>
+                <div className="text-lg">
+                {props.data.body}
+                </div>
+            </FixedCenterColumn>
             <div className="py-8">
                 <div className={CSS_CLASSES.ITEM_GRID_COLS}>
                     {links.map(item => (

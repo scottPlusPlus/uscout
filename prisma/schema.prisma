@@ -53,6 +53,7 @@ model Collection {
   id          String   @id @default(cuid())
   title       String   @default("")
   description String   @default("")
+  settings    String   @default("")
   created     DateTime @default(now())
   updated     DateTime @updatedAt
 }

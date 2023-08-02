@@ -1,7 +1,7 @@
 import { Form, useLoaderData, useSubmit } from "@remix-run/react";
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import UInfoModel from "~/models/uinfo.server";
-import { nowHHMMSS } from "~/code/timeUtils";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
 import UInfoTable from "~/components/UInfoTable";
 import { requireUserId } from "~/session.server";
 import { getStringOrThrow } from "~/code/formUtils";

@@ -14,8 +14,8 @@ export function twentyFourHoursAgo():Date {
     return new Date(now.getTime() - (twentyFourHoursInMS));
 }
 
-export function twentyFourHoursAgoTimestamp():number {
-    return nowUnixTimestamp() - twentyFourHoursInS;
+export function xHoursAgoUts(x:number):number {
+    return nowUnixTimestamp() - (x * 3600);
 }
 
 

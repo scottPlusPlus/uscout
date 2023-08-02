@@ -1,10 +1,15 @@
 import UInfoModel from "~/models/uinfo.server";
 import scrapePage from "./ScrapePage.server";
-import { nowUnixTimestamp, twentyFourHoursAgoTimestamp } from "../timeUtils";
+import { nowUnixTimestamp, xHoursAgoUts } from "../agnostic/timeUtils";
 
 import * as createError from "http-errors";
 import { sanitizeUrl } from "../urlUtils";
 import { ScrapedInfo, UInfoV2 } from "../datatypes/info";
+import { AsyncQueue } from "../agnostic/AsyncQueue";
+import { wait } from "../agnostic/coreUtils";
+import { fillEmptyFields } from "../agnostic/objectUtils";
+
+const staleScrapeQueue = new AsyncQueue();
 
 export async function requestSingle(url: string): Promise<UInfoV2 | null> {
   const sanitizedUrl = sanitizeUrl(url);
@@ -12,17 +17,22 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
     return Promise.reject(createError.BadRequest("Invalid URL"));
   }
 
-  const existing = await UInfoModel.getInfo(sanitizedUrl);
-  if (existing) {
+  const prevScrape = await UInfoModel.getInfo(sanitizedUrl);
+  if (prevScrape) {
     console.log(" - " + sanitizedUrl + " already exists");
-    const latestStatus = existing.scrapeHistory[0];
+    const latestStatus = prevScrape.scrapeHistory[0];
     if (latestStatus.status == 200) {
-      if (latestStatus.timestamp < twentyFourHoursAgoTimestamp()) {
-        console.log(" - - but too old, triggering scrape");
-        scrapeAndSavePage(sanitizedUrl);
+      if (latestStatus.timestamp < xHoursAgoUts(24)) {
+        console.log(" - - but too old, kicking to scrape queue");
+        const doScrape = async ()=> {
+          await wait(10 * 1000);
+          console.log("scraping from stale scrape queue");
+          await scrapeAndSavePage(sanitizedUrl, prevScrape);
+        }
+        staleScrapeQueue.enqueue(doScrape);
       }
       console.log(" - - returning cached info for " + sanitizedUrl);
-      return existing;
+      return prevScrape;
     } else {
       console.log(" - - previous scrape had an error");
       if (latestStatus.timestamp > (nowUnixTimestamp() - 3600)) {
@@ -31,7 +41,7 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
       }
     }
   }
-  const scrapePromise = scrapeAndSavePage(sanitizedUrl);
+  const scrapePromise = scrapeAndSavePage(sanitizedUrl, null);
   const timeoutPromise = new Promise<null>((resolve, _) => {
     setTimeout(() => {
       console.log(`Timeout exceeded for ${sanitizedUrl}`);
@@ -41,10 +51,24 @@ export async function requestSingle(url: string): Promise<UInfoV2 | null> {
   return await Promise.race([scrapePromise, timeoutPromise]);
 }
 
-async function scrapeAndSavePage(url: string): Promise<UInfoV2 | null> {
-  const now = Math.floor(Date.now() / 1000);
+async function scrapeAndSavePage(url: string, prevScrape:UInfoV2|null): Promise<UInfoV2 | null> {
+  const now = nowUnixTimestamp();
+  var doExpensive = true;
+  var newLatestExpensive = now;
+  if (prevScrape){
+    if (prevScrape.latestExpensiveUts){
+      if (prevScrape.latestExpensiveUts > xHoursAgoUts(7*24)){
+        doExpensive = false;
+        newLatestExpensive = prevScrape.latestExpensiveUts;
+      }
+    }
+  }
+
   try {
-    const scrape = await scrapePage(url);
+    const scrape = await scrapePage(url, doExpensive);
+    if (prevScrape && prevScrape.info){
+      fillEmptyFields(scrape, prevScrape.info);
+    }
 
     const newInfo: UInfoV2 = {
       url: url,
@@ -55,6 +79,7 @@ async function scrapeAndSavePage(url: string): Promise<UInfoV2 | null> {
           status: 200,
         },
       ],
+      latestExpensiveUts: newLatestExpensive
     };
     return await UInfoModel.setInfo(newInfo);
   } catch (error: any) {
@@ -69,6 +94,7 @@ async function scrapeAndSavePage(url: string): Promise<UInfoV2 | null> {
           status: 400,
         },
       ],
+      latestExpensiveUts: newLatestExpensive
     };
     await UInfoModel.setInfo(newInfo);
     return null;

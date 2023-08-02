@@ -19,7 +19,7 @@ import TagCloud from "~/components/TagCloud";
 import sendAnalyticEvent from "~/code/front/analyticUtils";
 
 import { getUserId } from "~/session.server";
-import { nowHHMMSS } from "~/code/timeUtils";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import EditCollectionData from "~/components/EditCollectionData";
 import { ScrapedInfo } from "~/code/datatypes/info";
@@ -29,7 +29,9 @@ import { requestMany } from "~/code/scout/RequestInfo";
 import { ACTION_TYPES, collectionAction } from "~/code/actions";
 import { SearchTermT } from "~/code/datatypes/SearchTermT";
 import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
-import { info } from "console";
+import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
+import SearchableItemDisplay from "~/components/SearchableItemDisplay";
+import Spinner from '../../components/Spinner';
 
 
 const ACTIONS = {
@@ -96,13 +98,11 @@ export default function CollectionDetailsPage() {
     )
   }
 
-
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
 
-  console.log("have data: " + JSON.stringify(data));
+  // console.log("have data: " + JSON.stringify(data));
   console.log("have actionData: " + JSON.stringify(ad));
-
 
   const infoMap = new Map<string, ScrapedInfo>();
   data.infos.forEach(info => {
@@ -110,53 +110,70 @@ export default function CollectionDetailsPage() {
     infoMap.set(info.url, betterInfo);
   });
 
+
+
   var allItems: Item[] = data.items.map(item => {
     return JSON.parse(JSON.stringify(item));
   });
   var loadedItems = itemsFromRemixData(data.items, infoMap);
+
+  if (ad?.action == "updateItem") {
+    const adddd = JSON.parse(JSON.stringify(ad));
+    const loadedItem = loadedItems.find(item => { return item.url == adddd.data.url });
+    console.log("have loaded item: " + JSON.stringify(loadedItem));
+  }
+
+
   const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
-  const pendingCount = loadedItems.filter(item => item.status == "pending").length;
-
-  const userId = data.userId;
-
-
-  // console.log(`Have ${loadedItems.length} loaded items`);
-  // console.log("loadedUrls: " + loadedItemUrls);
-
-
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
-  const [showPending, setShowPending] = useState<Boolean>(false);
-  const [searchTerms, setSearchTerms] = useState<SearchTermT[]>([]);
-  const [sortedItems, setSortedItems] = useState<Item[]>(loadedItems);
+  const [showPending, setShowPending] = useState<boolean>(false);
+  const [initialSearchTerms, setInitialSearchTerms] = useState<SearchTermT[]>([]);
   const [admin, setAdmin] = useState(false);
+  const [addItemPending, setAddItemPending] = useState(false);
+  const [searchBarRenderCounter, setSearchBarRenderCounter] = useState("");
+  const [itemsToView, setItemsToView] = useState<Item[]>([]);
 
-  const itemsToCountTags = showPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+
+  function refreshItemsWithNewPending(newShowPending: boolean) {
+    //console.log("refresh items with pending");
+    const newItemsToView = newShowPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+    setShowPending(newShowPending);
+    setItemsToView(newItemsToView);
+  }
 
   useEffect(() => {
-    //on first load
+    //on load items
     console.log("on first load...");
     const url = new URL(window.location.href);
     console.log("got first url");
-    const initialSearchParams: SearchTermT[] = [];
+    const initialTems: SearchTermT[] = [];
     url.searchParams.forEach((value, key) => {
       const valAsNum = Number(value);
       if (!isNaN(valAsNum)) {
-        initialSearchParams.push({ term: key, priority: valAsNum });
+        initialTems.push({ term: key, priority: valAsNum });
       }
     });
-    if (initialSearchParams.length == 0) {
-      initialSearchParams.push({ term: "", priority: 100 });
-    }
+    refreshItemsWithNewPending(showPending);
+    setInitialSearchTerms(initialTems);
+    //refreshSearch();
+  }, [loadedItemUrls]);
+
+  function refreshSearch() {
+    setSearchBarRenderCounter(searchBarRenderCounter + 1);
+  }
+
+  //on first load
+  useEffect(() => {
+    const url = new URL(window.location.href);
     var ref = document.referrer;
     if (ref.length > 0) {
       ref = " ref= " + ref;
     }
     sendAnalyticEvent("visit", url.toString() + ref);
-    setSearchTerms(initialSearchParams);
-    handleSearchUpdate(initialSearchParams, showPending);
-  }, [loadedItemUrls]);
+    refreshItemsWithNewPending(showPending);
+  }, []);
 
   useEffect(() => {
     //on an action...
@@ -166,11 +183,15 @@ export default function CollectionDetailsPage() {
       const index = loadedItems.findIndex(item => item.url === actionItem.url);
       console.log(`replaced ${actionItem.url} into index ${index}`);
       loadedItems[index] = actionItem;
-      handleSearchUpdate(searchTerms, showPending);
+      refreshItemsWithNewPending(showPending);
+      refreshSearch();
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
-      handleSearchUpdate(searchTerms, showPending);
+      setAddItemPending(false);
+      refreshSearch();
     }
   }, [ad?.time]);
+
+
 
   const submitAction = (action: string, actionData: string) => {
     console.log(`submitAction:  ${action},  ${actionData}`);
@@ -186,105 +207,63 @@ export default function CollectionDetailsPage() {
       sendAnalyticEvent("search", newUrl);
     }, 500, { trailing: true }), []);
 
-  const handleSearchUpdate = (newTerms: SearchTermT[], newShowPending: Boolean) => {
-    console.log("handleSearchUpdate: " + JSON.stringify(newTerms));
 
-    const url = new URL(window.location.href);
-    url.searchParams.forEach((value, key) => {
-      const valAsNum = Number(value);
-      if (!isNaN(valAsNum)) {
-        url.searchParams.delete(key);
-      }
-    });
+  if (admin && !showPending) {
+    console.log("turning on pending...");
+    refreshItemsWithNewPending(true);
+  }
+  if (!admin && showPending) {
+    console.log("turning off pending...");
+    refreshItemsWithNewPending(false);
+  }
+
+  const handleSearchTermsUpdated = (newTerms: SearchTermT[], oldTerms?: SearchTermT[]) => {
+    //console.log("cid: handleSearchTermsUpdated: " + JSON.stringify(newTerms));
+    //console.log("current url = " + window.location.href);
+    const newUrl = new URL(window.location.href);
+    if (oldTerms) {
+      oldTerms.forEach(term => {
+        newUrl.searchParams.delete(term.term);
+      });
+    }
+
     newTerms.forEach(term => {
       if (term.term.length == 0 || term.priority == 0) {
         return
       }
-      url.searchParams.set(term.term, term.priority.toString());
+      newUrl.searchParams.set(term.term, term.priority.toString());
     });
-    const newUrl = `${url.origin}${url.pathname}${url.search}`;
+    const newUrlStr = newUrl.toString();
     if (window.history.replaceState) {
-      window.history.replaceState({ path: newUrl }, document.title, newUrl);
+      const newerUrl = new URL(newUrl);
+      //console.log("replace state: " + newerUrl);
+      window.history.replaceState({ path: newUrlStr }, document.title, newUrlStr);
     } else {
-      window.history.pushState({}, '', newUrl);
+      //console.log("push state: " + newUrl);
+      window.history.pushState({}, '', newUrlStr);
     }
-    var shownItems = loadedItems;
-    if (!newShowPending) {
-      shownItems = shownItems.filter(item => item.status != "pending");
-    }
-
-    //send analytic event if no change in 1/2 second
-    debouncedOnChange(`${url.pathname}${url.search}`);
-
-    const validTerms = newTerms.filter(term => {
-      return term.term.length > 0
-    });
-    const prioritizedItems = remapItemPriorities(shownItems, infoMap, validTerms)
-    var sorted = prioritizedItems.sort((a, b) => {
-      return b.priority - a.priority;
-    });
-    if (sorted.length > 0 && validTerms.length > 0) {
-      sorted = sorted.filter(i => i.priority > 50);
-    }
-
-    setSortedItems(sorted);
-    setSearchTerms(newTerms);
-    setShowPending(newShowPending);
-  }
-
-  if (admin && !showPending) {
-    console.log("turning on pending...");
-    handleSearchUpdate(searchTerms, true);
-  }
-
-
-  const handleTagClick = (tag: string) => {
-    console.log("tag clicked " + tag);
-    const newTerms = [...searchTerms];
-    newTerms.push({ term: tag, priority: 100 });
-    handleSearchUpdate(newTerms, showPending);
-  }
-
-  const handleLinkClick = (linkUrl: string) => {
-    sendAnalyticEvent("link", linkUrl);
+    debouncedOnChange(`${newUrl.pathname}${newUrl.search}`);
   }
 
 
   const handleAddItem = (newUrl: string) => {
     console.log("handleAddItem for " + newUrl);
-    const action = admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
-    submitAction(action, newUrl);
+    const action = ACTION_TYPES.ADMIN_ADD_ITEM; //admin ? ACTION_TYPES.ADMIN_ADD_ITEM : ACTION_TYPES.MAKE_SUGGESTION;
+    setAddItemPending(true);
+
+    try {
+      submitAction(action, newUrl);
+    } catch(error) {
+      console.log(error)
+      setAddItemPending(false)
+    }
   }
 
-
-  const handleItemEdit = (item: ItemFront) => {
-    console.log("handleItemEdit for " + item.url);
-    submitAction(ACTION_TYPES.UPDATE_ITEM, JSON.stringify(item));
-  }
-
-  const handleRemoveItem = (item: ItemFront) => {
-    console.log("handleRemoveItem for " + item.url);
-    submitAction(ACTION_TYPES.REMOVE_ITEM, item.url);
-    setLoading(true);
-  }
 
   const handleOverrideCollection = (data: CollectionJson) => {
     console.log("handleOverrideCollection");
     const action = ACTION_TYPES.OVERRIDE_COLLECTION;
     submitAction(action, JSON.stringify(data));
-  }
-
-  const hiddenItemMsg = () => {
-    var count = () => {
-      if (showPending) {
-        return loadedItems.length - sortedItems.length;
-      }
-      return (loadedItems.length - pendingCount) - sortedItems.length;
-    }
-    if (count() <= 0) {
-      return null;
-    }
-    return (<p>{count()} Hidden Items</p>)
   }
 
   const handleUpdateCollectionData = (collection: Collection) => {
@@ -298,24 +277,50 @@ export default function CollectionDetailsPage() {
   function footer() {
     const toggleText = admin ? "Toggle Admin Off" : "Toggle Admin On";
     const submitError = ad?.error ? ad?.error : undefined;
-    if (!data.admin) {
+
+    const addItemField = () => {
+      return (
+        <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} disabled={addItemPending} />
+      )
+    }
+
+    if (data.admin) {
+      return (
+        <>
+          <div className="flex justify-between">
+            {!addItemPending && addItemField()}
+            {addItemPending && <Spinner/>}
+            <div className="justify-end">
+              <br></br>
+              <button
+                className={CSS_CLASSES.SUBMIT_BUTTON}
+                type="submit"
+                onClick={() => {
+                  setAdmin(!admin);
+                }}
+              >
+                {toggleText}
+              </button>
+            </div>
+          </div>
+
+          {admin && (
+            <div>
+              <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
+            </div>
+          )}
+        </>
+      );
+    }
+
+    const settings = collectionSettings(collection);
+    if (settings.addItemSettings == ADD_ITEM_SETTING.ADMINS) {
       return null;
     }
+
     return (
       <div>
-        <button
-          className={CSS_CLASSES.SUBMIT_BUTTON}
-          type="submit"
-          onClick={() => { setAdmin(!admin) }}
-        >
-          {toggleText}
-        </button>
-        {admin && (
-          <div>
-            <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} />
-            <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
-          </div>
-        )}
+        {addItemField()}
       </div>
     )
   }
@@ -328,28 +333,16 @@ export default function CollectionDetailsPage() {
         <EditCollectionData collection={collection} onSubmit={handleUpdateCollectionData} />
       )}
 
-      <div className={CSS_CLASSES.SECTION_BG}>
-        <DynamicInputFields searchTerms={searchTerms} onChange={(x) => { handleSearchUpdate(x, showPending) }} />
-        <TagCloud items={itemsToCountTags} onTagClick={handleTagClick} />
-        {hiddenItemMsg()}
-      </div>
-
-      <div className="py-4">
-        <div className={CSS_CLASSES.ITEM_GRID_COLS}>
-          {sortedItems.map(item => (
-            <ItemDisplay
-              key={item.url}
-              item={item}
-              info={infoMap.get(item.url)!}
-              onTagClick={handleTagClick}
-              onLinkClick={handleLinkClick}
-              admin={admin}
-              onItemUpdate={handleItemEdit}
-              onItemDelete={handleRemoveItem}
-            />
-          ))}
-        </div>
-      </div>
+      <SearchableItemDisplay
+        loadedItems={itemsToView}
+        initialTerms={initialSearchTerms}
+        infoMap={infoMap}
+        admin={admin}
+        submitAction={submitAction}
+        setLoading={setLoading}
+        searchTermsUpdatedHandler={handleSearchTermsUpdated}
+        background="bg-gradient-to-b from-neutral-200 to-neutral-400"
+      />
 
       <div className={CSS_CLASSES.SECTION_BG}>
         {footer()}
