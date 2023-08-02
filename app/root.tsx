@@ -1,5 +1,8 @@
 import type { LinksFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import { useEffect } from 'react';
+import Modal from 'react-modal';
+
 import {
   Links,
   LiveReload,
@@ -43,6 +46,9 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function App() {
+  useEffect(() => {
+    Modal.setAppElement('#appContainer');
+  }, []);
   return (
     <html lang="en" className="h-full">
       <head>
@@ -50,10 +56,13 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
+      <div id="appContainer">
+
         <Outlet />
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        </div>
       </body>
     </html>
   );
