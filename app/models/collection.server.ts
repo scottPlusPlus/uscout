@@ -4,6 +4,7 @@ import { prisma } from "~/db.server";
 import { getRoleType, ROLE_TYPE } from "./role.server";
 import { CollectionJson } from "~/code/datatypes/collectionJson";
 import { getCollectionItems, Item, removeItem, upsertItem } from "./item.server";
+import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
 
 export async function getCollection(id: string) {
   return prisma.collection.findUnique({ where: { id } });
@@ -60,6 +61,7 @@ export async function updateCollection(
     data: {
       title: collection.title,
       description: collection.description,
+      settings: collection.settings,
     },
   });
 }

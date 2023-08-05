@@ -1,3 +1,29 @@
+import { ScrapedInfo } from "../datatypes/info";
+import { asUndefined } from "../tsUtils";
+
+export async function hydrateFromReddit(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
+  if (!isRedditLink(scrape.url)){
+    return null;
+  }
+
+  const redditInfo = await scrapeReddit(scrape.url);
+  if (!redditInfo){
+    return null;
+  }
+
+  scrape.contentType = redditInfo.contentType;
+  scrape.likes = redditInfo.likes;
+  scrape.dislikes = redditInfo.dislikes;
+  scrape.authorLink = redditInfo.authorLink;
+  scrape.authorName = redditInfo.authorName;
+  scrape.publishTime = asUndefined(redditInfo.postCreationTime);
+
+  return scrape;
+}
+
+
+
+
 function isRedditLink(url: string) {
   // Create a regular expression to match Reddit links
   const regex =
@@ -6,6 +32,34 @@ function isRedditLink(url: string) {
   // Test the URL against the regular expression
   return regex.test(url);
 }
+
+
+export async function scrapeReddit(urlStr: string) {
+  if (isRedditLink(urlStr)) {
+    const contentType = "Reddit";
+    const authorLink = await getPostAuthorName(urlStr);
+    let postVotes = await getPostVotes(urlStr);
+    const likes = postVotes?.upvotes;
+    const dislikes = postVotes?.downvotes;
+    const authorName = await getPostAuthorName(urlStr);
+    // const title = getPostTitle(urlStr)
+
+    const postCreationDate = await getPostCreationTime(urlStr);
+    const postCreationTime = await getPostCreationTime(urlStr);
+
+    // console.log('Reddit Post Creation Date: ', postCreationDate)
+    // console.log('Reddit Author Name: ', redditAuthorName)
+    return {
+      contentType,
+      authorLink,
+      likes,
+      dislikes,
+      authorName,
+      postCreationTime
+    };
+  }
+}
+
 
 export function getSubredditName(url: string) {
   const regex = /https?:\/\/(?:www\.)?reddit\.com\/r\/(\w+)/;
@@ -120,31 +174,5 @@ export async function getCommentCount(url: string) {
     }
   } else {
     return null;
-  }
-}
-
-export async function scrapeReddit(urlStr: string) {
-  if (isRedditLink(urlStr)) {
-    const contentType = "Reddit";
-    const authorLink = await getPostAuthorName(urlStr);
-    let postVotes = await getPostVotes(urlStr);
-    const likes = postVotes?.upvotes;
-    const dislikes = postVotes?.downvotes;
-    const authorName = await getPostAuthorName(urlStr);
-    // const title = getPostTitle(urlStr)
-
-    const postCreationDate = await getPostCreationTime(urlStr);
-    const postCreationTime = await getPostCreationTime(urlStr);
-
-    // console.log('Reddit Post Creation Date: ', postCreationDate)
-    // console.log('Reddit Author Name: ', redditAuthorName)
-    return {
-      contentType,
-      authorLink,
-      likes,
-      dislikes,
-      authorName,
-      postCreationTime
-    };
   }
 }

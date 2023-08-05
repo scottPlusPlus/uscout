@@ -16,7 +16,8 @@ export const ACTION_TYPES = {
 }
 
 export async function collectionAction(actor: string | undefined, collectionId: string, actionType:string, inputData:string){
-    
+    console.log(`collectionAction: ${actionType} ${inputData}`) ; 
+
     var err: string | null = null;
     var data: Object | null = null;
     var redirect: string | null = null;
@@ -61,17 +62,16 @@ async function actionAddSubmission(cid: string, inputData: string): Promise<Obje
     }
   }
   
-  async function actionAdminAddItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
-    if (actor == null) {
-      throw ("Must be logged in");
+  async function actionAdminAddItem(cid: string, actor: string | null | undefined, inputData: string): Promise<Object | null> {
+    if (!actor) {
+      actor=null;
     }
-    await addItem(actor, cid, inputData);
-    return null;
+    return await addItem(actor, cid, inputData);
   }
   
   async function actionUpdateItem(cid: string, actor: string | undefined, inputData: string): Promise<Object | null> {
     if (actor == null) {
-      throw ("Must be logged in");
+      throw new Error("Must be logged in");
     }
     try {
       const itemFront: ItemFront = JSON.parse(inputData);
@@ -83,7 +83,7 @@ async function actionAddSubmission(cid: string, inputData: string): Promise<Obje
   
   async function actionUpdateCollection(cid: string, actor: string | undefined, inputData: string): Promise<Object> {
     if (actor == null) {
-      throw ("Must be logged in");
+      throw new Error("Must be logged in");
     }
     const collection: Collection = JSON.parse(inputData);
     return await updateCollection(actor, collection);
@@ -91,7 +91,7 @@ async function actionAddSubmission(cid: string, inputData: string): Promise<Obje
   
   async function actionOverrideCollection(cid: string, actor: string | undefined, inputData: string): Promise<void> {
     if (actor == null) {
-      throw ("Must be logged in");
+      throw new Error("Must be logged in");
     }
     const collection: CollectionJson = assertValidCollection(JSON.parse(inputData));
     await overrideCollection(actor, collection);
@@ -99,7 +99,7 @@ async function actionAddSubmission(cid: string, inputData: string): Promise<Obje
   
   async function actionRemoveItem(cid:string,  actor: string | undefined, inputData: string): Promise<void> {
     if (actor == null) {
-      throw ("Must be logged in");
+      throw new Error("Must be logged in");
     }
     const itemUrl = inputData;
     return await removeItem(actor, cid, itemUrl);

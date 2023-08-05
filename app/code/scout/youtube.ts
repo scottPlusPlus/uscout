@@ -1,5 +1,25 @@
+import { ScrapedInfo } from "../datatypes/info";
+
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+
+export async function hydrateFromYoutube(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
+  if (!isYouTubeVideo(scrape.url)) {
+    return null;
+  }
+  const youtubeInfo = await scrapeYouTubeVideo(scrape.url);
+  if (!youtubeInfo){
+    return null;
+  }
+  scrape.contentType= youtubeInfo.contentType;
+  scrape.likes = youtubeInfo.likes;
+  scrape.authorLink = youtubeInfo.authorLink;
+  scrape.authorName = youtubeInfo.authorName;
+  return scrape;
+}
+
+
 async function scrapeYouTubeVideoImpl(videoId: string) {
-  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${YOUTUBE_API_KEY}`;
   const response = await fetch(apiUrl);
   const data = await response.json();
@@ -39,7 +59,6 @@ export function getVideoIdFromUrl(url: string) {
 }
 
 export async function scrapeYouTubeVideo(urlStr: string) {
-  if (isYouTubeVideo(urlStr)) {
     let videoId = getVideoIdFromUrl(urlStr);
     if (videoId === null) {
       return null;
@@ -64,5 +83,4 @@ export async function scrapeYouTubeVideo(urlStr: string) {
       // dislikes,
       authorName
     };
-  }
 }

@@ -6,7 +6,7 @@ import { ScrapedInfo } from "~/code/datatypes/info";
 import { itemsFromRemixData } from "~/code/front/itemUtils";
 import { getIpAddress } from "~/code/ipUtils";
 import { requestMany } from "~/code/scout/RequestInfo";
-import { nowHHMMSS } from "~/code/timeUtils";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
 import { asInt } from "~/code/tsUtils";
 import { sanitizeUrl } from "~/code/urlUtils";
 import PageWithSections from "~/components/PageWithSections";
@@ -80,7 +80,7 @@ export default function ActivistsPage() {
   const loadedItems = itemsFromRemixData(data.collectionItems, infoMap);
 
   return (
-    
+
     <PageWithSections sections={sections} infos={uInfos} ipab={data.ipab} collectionItems={loadedItems}/>
   )
 

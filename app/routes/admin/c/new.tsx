@@ -91,7 +91,6 @@ export default function NewCollectionPage() {
                         }
                     />
                 </label>
-
                 <label className="flex w-full flex-col gap-1">
                     <span>Title: </span>
                     <input

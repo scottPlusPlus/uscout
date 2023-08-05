@@ -40,7 +40,7 @@ export default function ItemDisplay(props: ItemProps) {
     }
 
     return (
-        <div className="border shadow-md bg-white">
+        <div className="border shadow-md bg-white text-black">
             <a onClick={handleLinkClick} href={thisFullUrl} target="_blank">
                 <Image3x2 src={props.info.image} />
             </a>
