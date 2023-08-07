@@ -54,6 +54,13 @@ type ARes = {
   count: number;
 };
 
+type AResByDay = {
+  event: string;
+  data: string;
+  count: number;
+  ts: Date;
+};
+
 export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
@@ -80,7 +87,7 @@ export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
   return res;
 }
 
-export async function tallyAnalytics(): Promise<Array<ARes>> {
+export async function tallyAnalytics(): Promise<Array<AResByDay>> {
   try {
     const latestTally = await prisma.analyticEventByDay.findFirst({
       orderBy: {
@@ -101,22 +108,30 @@ export async function tallyAnalytics(): Promise<Array<ARes>> {
       endDate = new Date(0);
     }
 
+    console.log("Start Date:", startDate.toISOString());
+    console.log("End Date:", endDate.toISOString());
+
     const analyticsData = await prisma.analyticEvent.findMany({
+      // orderBy: { ts: "desc" }
+
       where: {
         ts: {
-          lt: startDate.toISOString(),
-          gt: endDate.toISOString()
+          gt: endDate.toISOString(),
+          lt: startDate.toISOString()
         }
       }
     });
 
-    const map = new Map<string, ARes>();
+    console.log("Length: ", analyticsData.length);
+
+    const map = new Map<string, AResByDay>();
     analyticsData.forEach((x) => {
-      const key = x.event + x.data;
+      const key = x.event + x.data + x.ts;
       const prev = map.get(key) ?? {
         event: x.event,
         data: x.data,
-        count: 0
+        count: 0,
+        ts: x.ts
       };
       prev.count += 1;
       map.set(key, prev);
