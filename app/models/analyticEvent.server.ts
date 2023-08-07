@@ -140,15 +140,13 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
     var res = [...map.values()];
     res = res.sort((a, b) => b.count - a.count);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     for (const item of res) {
+      item.ts.setHours(0, 0, 0, 0);
       const existingRecord = await prisma.analyticEventByDay.findFirst({
         where: {
           event: item.event,
           data: item.data,
-          day: today
+          day: item.ts
         }
       });
 
@@ -167,7 +165,7 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
             event: item.event,
             data: item.data,
             count: item.count,
-            day: today
+            day: item.ts
           }
         });
       }
