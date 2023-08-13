@@ -4,13 +4,15 @@ import { prisma } from "~/db.server";
 export async function addAnalyticEvent(
   ip: string,
   event: string,
-  data: string
+  data: string,
+  ts: number
 ): Promise<void> {
   await prisma.analyticEvent.create({
     data: {
       ip: ip,
       event: event,
-      data: data
+      data: data,
+      ts: ts
     }
   });
 }
@@ -30,14 +32,17 @@ export async function getTallyEvents(): Promise<AnalyticEventByDay[]> {
 }
 
 export async function deleteOldEvents(): Promise<void> {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const currentDate = new Date();
+  const ninetyDaysAgo = new Date(currentDate);
+  ninetyDaysAgo.setDate(currentDate.getDate() - 90);
+
+  const ninetyDaysAgoUnixTimestamp = Math.floor(ninetyDaysAgo.getTime() / 1000);
 
   try {
     await prisma.analyticEvent.deleteMany({
       where: {
         ts: {
-          lt: ninetyDaysAgo
+          lt: ninetyDaysAgoUnixTimestamp
         }
       }
     });
@@ -58,17 +63,18 @@ type AResByDay = {
   event: string;
   data: string;
   count: number;
-  ts: Date;
+  ts: string;
 };
 
 export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
+  const startDateUnixTimestamp = Math.floor(startDate.getTime() / 1000);
 
   const analyticsData = await prisma.analyticEvent.groupBy({
     where: {
       ts: {
-        gte: startDate.toISOString()
+        gte: startDateUnixTimestamp
       }
     },
     by: ["event", "data", "ip"]
@@ -107,31 +113,35 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
       startDate.setDate(startDate.getDate() - 2);
       endDate = new Date(0);
     }
+    const startDateUnixTimestamp = Math.floor(startDate.getTime() / 1000);
+    const endDateUnixTimestamp = Math.floor(endDate.getTime() / 1000);
 
-    console.log("Start Date:", startDate.toISOString());
-    console.log("End Date:", endDate.toISOString());
+    console.log("Start Date:", startDateUnixTimestamp);
+    console.log("End Date:", endDateUnixTimestamp);
 
     const analyticsData = await prisma.analyticEvent.findMany({
-      // orderBy: { ts: "desc" }
-
       where: {
         ts: {
-          gt: endDate.toISOString(),
-          lt: startDate.toISOString()
+          gt: endDateUnixTimestamp,
+          lt: startDateUnixTimestamp
         }
       }
     });
 
-    console.log("Length: ", analyticsData.length);
-
     const map = new Map<string, AResByDay>();
     analyticsData.forEach((x) => {
-      const key = x.event + x.data + x.ts;
+      const date = new Date(x.ts * 1000);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      const formattedDate = `${year}-${month}-${day}`;
+      const key = x.event + x.data + formattedDate;
       const prev = map.get(key) ?? {
         event: x.event,
         data: x.data,
         count: 0,
-        ts: x.ts
+        ts: formattedDate
       };
       prev.count += 1;
       map.set(key, prev);
@@ -141,7 +151,6 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
     res = res.sort((a, b) => b.count - a.count);
 
     for (const item of res) {
-      item.ts.setHours(0, 0, 0, 0);
       const existingRecord = await prisma.analyticEventByDay.findFirst({
         where: {
           event: item.event,
@@ -170,7 +179,6 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
         });
       }
     }
-
     return res;
   } catch (error) {
     console.error("An error occurred while tallying analytics:", error);

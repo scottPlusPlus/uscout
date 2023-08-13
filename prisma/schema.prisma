@@ -96,8 +96,8 @@ model Note {
 }
 
 model AnalyticEvent {
-  id    Int      @id @default(autoincrement())
-  ts    DateTime @default(now())
+  id    Int    @id @default(autoincrement())
+  ts    Int
   ip    String
   event String
   data  String
