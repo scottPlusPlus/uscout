@@ -163,11 +163,22 @@ function fillWithPageText(summary: string, root: HTMLElement):string {
   for(const element of elements){
       var text = element.textContent || "";
       text = text.trim();
-      if (!text.endsWith(".")){
-        text = text+".";
+
+      //if we end with a-z (so not some punctuation) add a .
+      const lastChar = text.charAt(text.length - 1);
+      const reg =  /^[a-zA-Z]$/;
+      if (reg.test(lastChar)){
+        text = text+". ";
+      } else {
+        text = text+" ";
       }
-      results += text + " ";
-      const newWords= text.split(/\s+/).length;
+      const textWords = text.split(/\s+/);
+      const newWords= textWords.length;
+      if (wordCount + newWords > 60){
+        results += textWords.slice(0, 60-wordCount).join(" ") + ".";
+      } else {
+        results += text;
+      }
       wordCount += newWords;
       if (wordCount > 50){
         results = results.trimEnd() + "..";
