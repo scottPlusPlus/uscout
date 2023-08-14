@@ -70,7 +70,11 @@ async function scrapePageImpl(
 
     console.log(`${nowHHMMSS()} ${urlStr}: sending fetch`);
     const html = await fetchHtml(urlStr);
-    console.log(`${nowHHMMSS()} ${urlStr}: process response`);
+    if (!html || typeof html !== "string"){
+      throw new Error("failed getting html for " + urlStr);
+    }
+    const len = html.length;
+    console.log(`${nowHHMMSS()} ${urlStr}: process response of ${len} html chars`);
     const root = parse(html);
 
     const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root);
@@ -117,9 +121,10 @@ async function basicScrapeInfoFromHtml(
   const canonUrl = canonicalLink?.getAttribute("href");
   const url = canonUrl ? canonUrl : urlStr;
   const title = root.querySelector("title")?.text || "";
-  const summary =
+  var summary =
     root.querySelector('meta[name="description"]')?.getAttribute("content") ||
     "";
+  summary = fillWithPageText(summary, root);
 
   const ogImage = root
     .querySelector('meta[property="og:image"]')
@@ -144,3 +149,31 @@ async function basicScrapeInfoFromHtml(
 
   return scrapedInfo;
 }
+
+
+function fillWithPageText(summary: string, root: HTMLElement):string {
+  var wordCount = summary.split(/\s+/).length;
+
+  const elements = root.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li");
+  var results = summary;
+  if (results.length > 0){
+    results += "\n";
+  }
+
+  for(const element of elements){
+      var text = element.textContent || "";
+      text = text.trim();
+      if (!text.endsWith(".")){
+        text = text+".";
+      }
+      results += text + " ";
+      const newWords= text.split(/\s+/).length;
+      wordCount += newWords;
+      if (wordCount > 50){
+        results = results.trimEnd() + "..";
+        break;
+      }
+  }
+  results = results.trimEnd();
+  return results;
+};

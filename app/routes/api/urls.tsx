@@ -10,12 +10,23 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export const action = async ({ request }: ActionArgs) => {
     console.log("api urls Action " + request.method);
-    const data = await request.json();
-    const j = JSON.stringify(data);
-    console.log(j);
-    const urlsStrings:string[] = data.urls;
-    invariant(urlsStrings, "Must pass a 'urls' parameter with array of url-strings you want");
+    try {
+      // const fuck = await request.text();
+      // console.log(fuck);
+      // throw(new Error("whatever"));
+      const data = await request.json();
+      console.log("data: " + data);
 
-    const res = await requestMany(urlsStrings);
-    return json({ info: res });
+      const j = JSON.stringify(data);
+      console.log(j);
+      const urlsStrings:string[] = data.urls;
+      invariant(urlsStrings, "Must pass a 'urls' parameter with array of url-strings you want");
+  
+      const res = await requestMany(urlsStrings);
+      return json({ info: res });
+    } catch (err:any){
+      console.log(err.message);
+      throw(err);
+    }
+
 };
