@@ -9,5 +9,5 @@ cheatsheet.txt
 /cypress/videos
 /prisma/data.db
 /prisma/data.db-journal
-
+/logs
 /app/styles/tailwind.css

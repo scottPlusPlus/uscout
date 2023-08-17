@@ -10,6 +10,7 @@ import * as archive from "./archive";
 
 import axios from "axios";
 import { ScrapedInfo } from "../datatypes/info";
+import { logger } from "../log/logger";
 
 const domainThrottle = new PromiseQueues();
 
@@ -17,14 +18,14 @@ export default async function scrapePage(
   url: string,
   doExpensive: boolean = false
 ): Promise<ScrapedInfo> {
-  console.log(url + ": starting fetch");
+  logger.info(url + ": starting fetch");
   try {
     return await scrapePageImpl("https://" + url, doExpensive);
   } catch (error: any) {
     try {
       return await scrapePageImpl("http://" + url, doExpensive);
     } catch (err2) {
-      console.log("failed to fetch " + url + ":  " + error.message);
+      logger.warn("failed to fetch " + url + ":  " + error.message);
       throw error;
     }
   }
@@ -41,7 +42,7 @@ async function fetchHtml(url: string): Promise<string> {
     console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey) {
-        console.log(`attempting to scrape ${url} via scrapestack`);
+        logger.info(`attempting to scrape ${url} via scrapestack`);
         const scrapeStackUrl = `http://api.scrapestack.com/scrape?access_key=${scrapeStackApiKey}&url=${url}&render_js=1`;
         response = await axios.get(scrapeStackUrl);
         console.log(
@@ -74,7 +75,7 @@ async function scrapePageImpl(
       throw new Error("failed getting html for " + urlStr);
     }
     const len = html.length;
-    console.log(`${nowHHMMSS()} ${urlStr}: process response of ${len} html chars`);
+    logger.info(`${nowHHMMSS()} ${urlStr}: process response of ${len} html chars`);
     const root = parse(html);
 
     const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root);
@@ -90,7 +91,7 @@ async function scrapePageImpl(
     }
 
     if (doExpensive) {
-      console.log("expensive scrape: let's do it");
+      logger.info("expensive scrape: let's do it");
       r = await twitter.hydrateFromTwitter(scrapedInfo, root);
       if (r != null) {
         return r;
@@ -101,12 +102,12 @@ async function scrapePageImpl(
         return r;
       }
     } else {
-      console.log("expensive scrape: skip");
+      logger.info("expensive scrape: skip");
     }
 
     return scrapedInfo;
   } catch (error) {
-    console.log("error with scrapePageImpl:  " + error);
+    logger.warn("error with scrapePageImpl:  " + error);
     throw error;
   }
 }
