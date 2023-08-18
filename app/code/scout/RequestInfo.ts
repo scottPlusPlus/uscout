@@ -115,7 +115,7 @@ async function scrapeAndSavePage(
 export async function requestMany(urls: string[]): Promise<ScrapedInfo[]> {
   logger.info("request many", urls);
   const promises = urls.map((u) => {
-    return requestSingle(u);
+      return requestSingleOrNull(u);
   });
   const data = await Promise.all(promises);
   const res: ScrapedInfo[] = [];
@@ -127,4 +127,13 @@ export async function requestMany(urls: string[]): Promise<ScrapedInfo[]> {
     }
   });
   return res;
+}
+
+async function requestSingleOrNull(url:string):Promise<UInfoV2 | null> {
+  try {
+    return await requestSingle(url);
+  } catch (err:any){
+    logger.warn('failed to scrape ' + url);
+    return Promise.resolve(null);
+  }
 }

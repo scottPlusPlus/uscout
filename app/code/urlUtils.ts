@@ -1,17 +1,32 @@
 export function sanitizeUrl(input: string): string | null {
-    input.trim();
-    input = input.replace(/^https?:\/\//i, '');
-    input = input.replace(/\/$/, "");
+  var mutatedInput = input;
+  mutatedInput.trim();
+  mutatedInput = mutatedInput.replace(/^https?:\/\//i, "");
+  mutatedInput = mutatedInput.replace(/\/$/, "");
 
-    const inputSplit = input.split("/");
-    inputSplit[0] = inputSplit[0].toLowerCase();
-    input = inputSplit.join("/");
+  const minputSplit = mutatedInput.split("/");
+  minputSplit[0] = minputSplit[0].toLowerCase();
+  mutatedInput = minputSplit.join("/");
 
-    //https://regexr.com/3abjr  (with additions for after the host)
-    const urlRegex = /^((?!-))(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})(\/.*)?$/;
-    const validUrl = urlRegex.test(input);
-    if (!validUrl) {
-        return null;
+  const paramSplit = mutatedInput.split("?");
+  if (paramSplit.length > 2) {
+    return null;
+  }
+  const leadingUrl = paramSplit[0];
+  const urlRegex =
+    /^(?:[a-zA-Z0-9.-]+\.)*[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s?&]*)?$/;
+  const validUrl = urlRegex.test(leadingUrl);
+  if (!validUrl) {
+    return null;
+  }
+
+  if (paramSplit.length == 2) {
+    const params = paramSplit[1];
+    const paramsRegex = /^[^\s?&]+(?:=[^\s?&]+)?(?:&[^\s?&]+(=[^\s?&]+)?)*$/;
+    if (!paramsRegex.test(params)) {
+      return null;
     }
-    return input;
+  }
+
+  return mutatedInput;
 }

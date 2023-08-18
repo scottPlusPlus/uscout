@@ -1,5 +1,6 @@
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node"; // or cloudflare/deno
 import invariant from "tiny-invariant";
+import { logger } from "~/code/log/logger";
 import { requestMany } from "~/code/scout/RequestInfo";
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -25,7 +26,7 @@ export const action = async ({ request }: ActionArgs) => {
       const res = await requestMany(urlsStrings);
       return json({ info: res });
     } catch (err:any){
-      console.log(err.message);
+      logger.error(`api urls Action err! ${err.message}`);
       throw(err);
     }
 
