@@ -6,11 +6,6 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import path from "path";
 import { todayYYYYMMDD } from "../agnostic/timeUtils";
 
-// export const logStreams = {
-//     logs: new RecentLogsStream({maxLogs:100}),
-//     errors: new RecentLogsStream({maxLogs:100})
-// }
-
 
 const drfTransport = new DailyRotateFile({
     dirname: "logs",
