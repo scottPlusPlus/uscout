@@ -36,13 +36,13 @@ export async function getTallyEvents(): Promise<AnalyticEventByDay[]> {
 }
 
 export async function deleteOldEvents(): Promise<void> {
-  const ninteDaysAgoUts = xHoursAgoUts(24 * 90);
+  const ninteyDaysAgoUts = xHoursAgoUts(24 * 90);
 
   try {
     await prisma.analyticEvent.deleteMany({
       where: {
         ts: {
-          lt: ninteDaysAgoUts
+          lt: ninteyDaysAgoUts
         }
       }
     });
