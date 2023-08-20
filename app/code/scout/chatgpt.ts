@@ -3,7 +3,7 @@ import axios from "axios";
 const CHATGPT_API_URL = process.env.CHATGPT_API_URL;
 const CHATGPT_API_KEY = process.env.CHATGPT_API_KEY;
 
-export async function requestGpttags(prompt: string) {
+export async function requestChatgpt(prompt: string) {
   // console.log(CHATGPT_API_URL);
 
   // if (!CHATGPT_API_URL) {

@@ -6,7 +6,7 @@ import LoadingText from "~/components/LoadingText";
 // import Image3x2 from "~/components/Image3x2";
 import JSONViewer from "~/components/JSONViewer";
 import { nowHHMMSS } from "~/code/agnostic/timeUtils";
-import { requestGpttags } from "~/code/scout/gpttags";
+import { requestGpttags } from "~/code/scout/chatgpt";
 import scrapePage from "../../code/scout/ScrapePage.server";
 
 import * as createError from 'http-errors';
@@ -97,7 +97,9 @@ export default function Gpttags() {
                         <h2 className="text-lg font-medium leading-6 text-gray-900">
                             Result
                         </h2>
-                        <div data-test="jsonDisplay" className="mt-1 text-sm text-gray-600"><JSONViewer dataObj={info}/></div>
+                        <div data-test="jsonDisplay" className="mt-1 text-sm text-gray-600 overflow-x-auto overflow-wrap-break-word word-wrap-break-word white-space-normal max-width-100">
+    <JSONViewer dataObj={info}/>
+</div>
                     </>
                 ) : null}
                 {/* {infoImage ? (
