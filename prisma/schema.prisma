@@ -96,11 +96,21 @@ model Note {
 }
 
 model AnalyticEvent {
-  id    Int      @id @default(autoincrement())
-  ts    DateTime @default(now())
+  id    Int    @id @default(autoincrement())
+  ts    Int
   ip    String
   event String
   data  String
+}
+
+model AnalyticEventByDay {
+  id    Int      @id @default(autoincrement())
+  day   DateTime @default(now())
+  event String
+  data  String
+  count Int
+
+  @@unique([event, data, day])
 }
 
 model Feedback {

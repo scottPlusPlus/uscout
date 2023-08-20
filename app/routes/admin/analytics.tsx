@@ -1,9 +1,9 @@
-import { AnalyticEvent } from "@prisma/client";
+import { AnalyticEvent, AnalyticEventByDay } from "@prisma/client";
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { getAnalyticsDataLast7Days, getRecentEvents } from "~/models/analyticEvent.server";
+import { deleteOldEvents, getAnalyticsDataLast7Days, getRecentEvents, getTallyEvents, tallyAnalytics } from "~/models/analyticEvent.server";
 import { requireUserId } from "~/session.server";
 
 export async function loader({ request, params }: LoaderArgs) {
@@ -12,23 +12,37 @@ export async function loader({ request, params }: LoaderArgs) {
     const summary = await getAnalyticsDataLast7Days();
 
     const events = await getRecentEvents();
-    return json({ events , summary});
+    await tallyAnalytics()
+    await deleteOldEvents()
+    const tallyData  = await getTallyEvents()
+    return json({ events , summary, tallyData});
 };
 
 export default function AdminPage() {
 
   const data = useLoaderData<typeof loader>();
   const dirtEvents:AnalyticEvent[] = !data ? [] : !data.events ? [] : JSON.parse(JSON.stringify(data.events));
-
+  const dirtEventsByDay:AnalyticEventByDay[] = !data ? [] : !data.tallyData ? [] : JSON.parse(JSON.stringify(data.tallyData));
   const events = dirtEvents.map((e) => {
     const copy = { ...e };
     copy.data = copy.data.replace(/^https?:\/\//i, '');
     return copy;
   });
+  const eventsByDay = dirtEventsByDay.map((e) => {
+    const copy = { ...e };
+    copy.data = copy.data.replace(/^https?:\/\//i, '');
+    return copy;
+  });
+
 
   const [sortBy, doSetSortBy] = useState('updated');
   const setSortBy = (str: string) => {
     doSetSortBy(str);
+  }
+
+  const [sortByEventByDay, doSetSortByEventByDay] = useState('updated');
+  const setSortByAEBDT = (str: string) => {
+    doSetSortByEventByDay(str);
   }
 
   const sortedEvents = ()=> {
@@ -47,6 +61,23 @@ export default function AdminPage() {
     return x;
   };
 
+  const sortedEventsByDay = ()=> {
+    console.log("sorting by " + sortByEventByDay);
+    const x = eventsByDay.sort((a, b) => {
+      switch(sortByEventByDay){
+        case 'event':
+          return a.event.localeCompare(b.event);
+        case 'data':
+          return a.data.localeCompare(b.data);
+        case 'count':
+          return a.count - b.count;
+        default:
+          return dayjs(b.day).diff(dayjs(a.day));
+      }
+    });
+    return x;
+  };
+
   const renderRows = () => {
     console.log("render rows...");
     return sortedEvents().map((aEvent) => (
@@ -55,6 +86,18 @@ export default function AdminPage() {
         <td className="px-4 py-2">{aEvent.event}</td>
         <td className="px-4 py-2">{aEvent.data}</td>
         <td className="px-4 py-2">{aEvent.ip}</td>
+      </tr>
+    ));
+  };
+
+  const renderRowsAnalyticEventByDay = () => {
+    console.log("render rows...");
+    return sortedEventsByDay().map((aEvent) => (
+      <tr key={aEvent.id}>
+        <td className="px-4 py-2">{dayjs(aEvent.day).format('YYYY-MM-DD')}</td>
+        <td className="px-4 py-2">{aEvent.event}</td>
+        <td className="px-4 py-2">{aEvent.data}</td>
+        <td className="px-4 py-2">{aEvent.count}</td>
       </tr>
     ));
   };
@@ -102,6 +145,39 @@ export default function AdminPage() {
         </thead>
         <tbody>{renderRows()}</tbody>
       </table>
+      <h2 className="text-2xl font-bold mb-4">Analytic Event By Day Table</h2>
+      <table className="table-auto">
+        <thead>
+          <tr>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortByAEBDT('day')}
+            >
+              Day
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortByAEBDT('event')}
+            >
+              Event
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortByAEBDT('data')}
+            >
+              Data
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => setSortByAEBDT('count')}
+            >
+              Count
+            </th>
+          </tr>
+        </thead>
+        <tbody>{renderRowsAnalyticEventByDay()}</tbody>
+      </table>
+
     </div>
     </div>
   );

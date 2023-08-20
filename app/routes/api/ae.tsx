@@ -17,7 +17,8 @@ export const action = async ({ request }: ActionArgs) => {
         const eventData:string = data.data;
         invariant(event, "Must pass an 'data' parameter");
         const ip = getIpAddress(request);
-        await addAnalyticEvent(ip, event, eventData);
+        const currentUnixTimestamp = Math.floor(Date.now() / 1000);
+        await addAnalyticEvent(ip, event, eventData, currentUnixTimestamp);
     } catch (e:any){
         console.error("error saving analytic event: " + e.message);
     }
