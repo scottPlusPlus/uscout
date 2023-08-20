@@ -101,16 +101,14 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
       }
     });
 
-    let startDate;
+    let startDate = new Date();
+    startDate.setDate(startDate.getDate() - 2);
+
     let endDate;
 
     if (latestTally) {
       endDate = new Date(latestTally.day);
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 2);
     } else {
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 2);
       endDate = new Date(0);
     }
     const startDateUnixTimestamp = Math.floor(startDate.getTime() / 1000);
