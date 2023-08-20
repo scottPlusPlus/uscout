@@ -151,34 +151,28 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
     res = res.sort((a, b) => b.count - a.count);
 
     for (const item of res) {
-      const existingRecord = await prisma.analyticEventByDay.findFirst({
+      await prisma.analyticEventByDay.upsert({
         where: {
+          event_data_day: {
+            event: item.event,
+            data: item.data,
+            day: item.ts
+          }
+        },
+        update: {
+          count: {
+            increment: item.count
+          }
+        },
+        create: {
           event: item.event,
           data: item.data,
+          count: item.count,
           day: item.ts
         }
       });
-
-      if (existingRecord) {
-        await prisma.analyticEventByDay.update({
-          where: {
-            id: existingRecord.id
-          },
-          data: {
-            count: existingRecord.count + item.count
-          }
-        });
-      } else {
-        await prisma.analyticEventByDay.create({
-          data: {
-            event: item.event,
-            data: item.data,
-            count: item.count,
-            day: item.ts
-          }
-        });
-      }
     }
+
     return res;
   } catch (error) {
     console.error("An error occurred while tallying analytics:", error);
