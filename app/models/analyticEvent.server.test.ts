@@ -14,17 +14,34 @@ test("analytic event server: test mocked db part1 tally events", async () => {
     678293369, 678293369, 678293369, 678293369, 778293369, 778293369, 778293369
   ];
 
+  const dateUnixTimeStamps2: number[] = [
+    478293369, 478293369, 878293369, 878293369, 878293369, 978293369, 178293369,
+    178293369
+  ];
+
   for (const ts of dateUnixTimeStamps) {
     addAnalyticEvent("testIp", "testEvent", "testData", ts);
   }
 
-  const recentEvents = await getRecentEvents();
+  for (const ts of dateUnixTimeStamps2) {
+    addAnalyticEvent("testIp2", "testEvent2", "testData2", ts);
+  }
+  addAnalyticEvent("testIp", "testEvent3", "testData3", 978293369);
+
+  // const recentEvents = await getRecentEvents();
 
   await tallyAnalytics();
   const tallyEvents = await getTallyEvents();
   console.log(tallyEvents);
-  expect(tallyEvents[0].count).toEqual(3);
-  expect(tallyEvents[1].count).toEqual(4);
+  expect(tallyEvents[0].count).toEqual(4);
+  expect(tallyEvents[1].count).toEqual(3);
+  expect(tallyEvents[2].count).toEqual(3);
+  expect(tallyEvents[3].count).toEqual(2);
+  expect(tallyEvents[4].count).toEqual(2);
+  expect(tallyEvents[5].count).toEqual(1);
+  expect(tallyEvents[6].event).toEqual("testEvent3");
+  expect(tallyEvents[6].data).toEqual("testData3");
+  expect(tallyEvents[6].count).toEqual(1);
 });
 
 test("analytic event server: test mocked db part1 delete events", async () => {
