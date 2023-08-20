@@ -1,12 +1,16 @@
 import { AnalyticEvent, AnalyticEventByDay } from "@prisma/client";
 import { prisma } from "~/db.server";
+import { nowUnixTimestamp, xHoursAgoUts } from "../code/agnostic/timeUtils";
 
 export async function addAnalyticEvent(
   ip: string,
   event: string,
   data: string,
-  ts: number
+  ts?: number
 ): Promise<void> {
+  if (!ts) {
+    ts = nowUnixTimestamp();
+  }
   await prisma.analyticEvent.create({
     data: {
       ip: ip,
@@ -32,17 +36,13 @@ export async function getTallyEvents(): Promise<AnalyticEventByDay[]> {
 }
 
 export async function deleteOldEvents(): Promise<void> {
-  const currentDate = new Date();
-  const ninetyDaysAgo = new Date(currentDate);
-  ninetyDaysAgo.setDate(currentDate.getDate() - 90);
-
-  const ninetyDaysAgoUnixTimestamp = Math.floor(ninetyDaysAgo.getTime() / 1000);
+  const ninteDaysAgoUts = xHoursAgoUts(24 * 90);
 
   try {
     await prisma.analyticEvent.deleteMany({
       where: {
         ts: {
-          lt: ninetyDaysAgoUnixTimestamp
+          lt: ninteDaysAgoUts
         }
       }
     });
@@ -69,8 +69,7 @@ type AResByDay = {
 export async function getAnalyticsDataLast7Days(): Promise<Array<ARes>> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
-  const startDateUnixTimestamp = Math.floor(startDate.getTime() / 1000);
-
+  const startDateUnixTimestamp = nowUnixTimestamp();
   const analyticsData = await prisma.analyticEvent.groupBy({
     where: {
       ts: {
