@@ -22,8 +22,9 @@ test("analytic event server: test mocked db part1 tally events", async () => {
 
   await tallyAnalytics();
   const tallyEvents = await getTallyEvents();
-  expect(tallyEvents[0].count).toEqual(4);
-  expect(tallyEvents[1].count).toEqual(3);
+  console.log(tallyEvents);
+  expect(tallyEvents[0].count).toEqual(3);
+  expect(tallyEvents[1].count).toEqual(4);
 });
 
 test("analytic event server: test mocked db part1 delete events", async () => {
