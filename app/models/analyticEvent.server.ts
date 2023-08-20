@@ -1,6 +1,13 @@
 import { AnalyticEvent, AnalyticEventByDay } from "@prisma/client";
 import { prisma } from "~/db.server";
-import { nowUnixTimestamp, xHoursAgoUts } from "../code/agnostic/timeUtils";
+import {
+  nowUnixTimestamp,
+  xHoursAgoUts,
+  unixTimestampToDate,
+  getYearFromDate,
+  getFormattedMonthFromDate,
+  getFormattedDayFromDate
+} from "../code/agnostic/timeUtils";
 
 export async function addAnalyticEvent(
   ip: string,
@@ -127,10 +134,10 @@ export async function tallyAnalytics(): Promise<Array<AResByDay>> {
 
     const map = new Map<string, AResByDay>();
     analyticsData.forEach((x) => {
-      const date = new Date(x.ts * 1000);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
+      const date = unixTimestampToDate(x.ts);
+      const year = getYearFromDate(date);
+      const month = getFormattedMonthFromDate(date);
+      const day = getFormattedDayFromDate(date);
 
       const formattedDate = `${year}-${month}-${day}`;
       const key = x.event + x.data + formattedDate;
