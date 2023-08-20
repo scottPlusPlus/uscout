@@ -98,8 +98,8 @@ export default function Gpttags() {
                             Result
                         </h2>
                         <div data-test="jsonDisplay" className="mt-1 text-sm text-gray-600 overflow-x-auto overflow-wrap-break-word word-wrap-break-word white-space-normal max-width-100">
-    <JSONViewer dataObj={info}/>
-</div>
+                            <JSONViewer dataObj={info}/>
+                        </div>
                     </>
                 ) : null}
                 {/* {infoImage ? (
