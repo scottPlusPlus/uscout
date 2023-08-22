@@ -37,9 +37,15 @@ const scrapeStackApiKey = process.env.SCRAPE_STACK_API_KEY;
 async function fetchHtml(url: string): Promise<string> {
   try {
     var response = await axios.get(url);
+    console.log(`status from ${url}: ${response.status}`);
+    if (!response.data || typeof response.data !== "string"){
+      const msg = `unexpected response from url`;
+      logger.warn(msg);
+      throw new Error(msg);      
+    }
     return response.data;
   } catch (error: any) {
-    console.error(`Failed to fetch HTML for ${url}: ${error.message}`);
+    logger.warn(`fetchHtml failed for ${url}: ${error.message}`);
     try {
       if (scrapeStackApiKey) {
         logger.info(`attempting to scrape ${url} via scrapestack`);
@@ -53,7 +59,7 @@ async function fetchHtml(url: string): Promise<string> {
         console.log("no scrapeStackApiKey");
       }
     } catch (error: any) {
-      console.log("Scrape Stack could not fetch " + url);
+      logger.warn("fetchHtml: Scrape Stack could not fetch " + url);
     }
     throw error;
   }
