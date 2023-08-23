@@ -158,18 +158,21 @@ async function basicScrapeInfoFromHtml(
 }
 
 
-function fillWithPageText(summary: string, root: HTMLElement):string {
+export function fillWithPageText(summary: string, root: HTMLElement):string {
   var wordCount = summary.split(/\s+/).length;
 
-  const elements = root.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li");
+  const body = root.querySelector('body');
+  if (body == null){
+    return summary;
+  }
+  const elements = body.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li");
   var results = summary;
   if (results.length > 0){
     results += "\n";
   }
 
   for(const element of elements){
-      var text = element.textContent || "";
-      text = text.trim();
+      var text =  extractVisibleText(element);
 
       //if we end with a-z (so not some punctuation) add a .
       const lastChar = text.charAt(text.length - 1);
@@ -195,3 +198,16 @@ function fillWithPageText(summary: string, root: HTMLElement):string {
   results = results.trimEnd();
   return results;
 };
+
+function extractVisibleText(element: HTMLElement): string {
+  let visibleText = '';
+
+  for (const childNode of element.childNodes) {
+    if (childNode.nodeType === 3) {
+      // Text node
+      visibleText += childNode.rawText;
+    }
+  }
+
+  return visibleText.trim();
+}
