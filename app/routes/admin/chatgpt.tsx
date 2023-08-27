@@ -6,7 +6,7 @@ import LoadingText from "~/components/LoadingText";
 // import Image3x2 from "~/components/Image3x2";
 import JSONViewer from "~/components/JSONViewer";
 import { nowHHMMSS } from "~/code/agnostic/timeUtils";
-import { requestGpttags } from "~/code/scout/chatgpt";
+import { requestChatgpt } from "~/code/scout/chatgpt";
 import scrapePage from "../../code/scout/ScrapePage.server";
 
 import * as createError from 'http-errors';
@@ -33,7 +33,7 @@ export const action = async ({ request }: ActionArgs) => {
           "and this title: " +
           title +
           ". Respond with 5 tags in best order it represents.";
-        // const scrapeInfo = await requestGpttags(prompt);
+        // const scrapeInfo = await requestChatgpt(prompt);
         return { info: prompt };
     } catch (err) {
         console.log(err);
