@@ -85,27 +85,37 @@ export async function addUserToCollection(
 
 export async function removeUserFromCollection(
   userId: string,
-  collectionId: string
+  collectionId: string,
+  role: UserRole
 ): Promise<void> {
   if (!userId && !collectionId) {
     console.log("User ID or Collection ID is not provided.");
     return;
   }
 
-  try {
-    await prisma.collectionRoles.delete({
-      where: {
-        collectionId_userId: {
-          collectionId: collectionId,
-          userId: userId
-        }
+  switch (role) {
+    case "owner":
+      console.log("Unable to remove admin from collection.");
+      return;
+    case "contributor":
+      try {
+        await prisma.collectionRoles.delete({
+          where: {
+            collectionId_userId: {
+              collectionId: collectionId,
+              userId: userId
+            }
+          }
+        });
+        console.log("User successfully removed from the collection.");
+      } catch (error) {
+        console.error(
+          `Error removing user ${userId} from collection ${collectionId}:`,
+          error
+        );
       }
-    });
-    console.log("User successfully removed from the collection.");
-  } catch (error) {
-    console.error(
-      `Error removing user ${userId} from collection ${collectionId}:`,
-      error
-    );
+    default:
+      console.log("The specified role does not exist.");
+      throw new Error("The specified role does not exist.");
   }
 }
