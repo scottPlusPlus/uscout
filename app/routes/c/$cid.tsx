@@ -268,7 +268,7 @@ export default function CollectionDetailsPage() {
   const handleAddUser = ({ inputField, roleField }: FormData) => {
     console.log("handleAddUser for " + inputField);
     const action = ACTION_TYPES.CREATE_USER;
-    setAddItemPending(true);
+    setAddUserPending(true);
     try {
       const actionData = JSON.stringify({ inputField, roleField });
       submitAction(action, actionData);
