@@ -6,7 +6,7 @@ export const ROLE_TYPE = {
   CONTRIBUTOR: "contributor"
 };
 
-type UserRole = "owner" | "contributor";
+export type UserRole = "owner" | "contributor";
 
 export async function getRoleType(
   actorId: string | undefined | null,
@@ -40,10 +40,6 @@ export async function addUserToCollection(
   collectionId: string,
   role: UserRole
 ): Promise<void> {
-  if (!userId) {
-    console.log("User ID is not provided.");
-  }
-
   let assignedRole: string = "";
 
   switch (role) {
@@ -83,39 +79,39 @@ export async function addUserToCollection(
   }
 }
 
-export async function removeUserFromCollection(
-  userId: string,
-  collectionId: string,
-  role: UserRole
-): Promise<void> {
-  if (!userId && !collectionId) {
-    console.log("User ID or Collection ID is not provided.");
-    return;
-  }
+// export async function removeUserFromCollection(
+//   userId: string,
+//   collectionId: string,
+//   role: UserRole
+// ): Promise<void> {
+//   if (!userId && !collectionId) {
+//     console.log("User ID or Collection ID is not provided.");
+//     return;
+//   }
 
-  switch (role) {
-    case "owner":
-      console.log("Unable to remove admin from collection.");
-      return;
-    case "contributor":
-      try {
-        await prisma.collectionRoles.delete({
-          where: {
-            collectionId_userId: {
-              collectionId: collectionId,
-              userId: userId
-            }
-          }
-        });
-        console.log("User successfully removed from the collection.");
-      } catch (error) {
-        console.error(
-          `Error removing user ${userId} from collection ${collectionId}:`,
-          error
-        );
-      }
-    default:
-      console.log("The specified role does not exist.");
-      throw new Error("The specified role does not exist.");
-  }
-}
+//   switch (role) {
+//     case "owner":
+//       console.log("Unable to remove admin from collection.");
+//       return;
+//     case "contributor":
+//       try {
+//         await prisma.collectionRoles.delete({
+//           where: {
+//             collectionId_userId: {
+//               collectionId: collectionId,
+//               userId: userId
+//             }
+//           }
+//         });
+//         console.log("User successfully removed from the collection.");
+//       } catch (error) {
+//         console.error(
+//           `Error removing user ${userId} from collection ${collectionId}:`,
+//           error
+//         );
+//       }
+//     default:
+//       console.log("The specified role does not exist.");
+//       throw new Error("The specified role does not exist.");
+//   }
+// }
