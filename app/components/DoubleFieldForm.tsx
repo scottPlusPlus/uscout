@@ -15,7 +15,7 @@ interface TwoFieldFormProps {
 
 export default function TwoFieldForm(props: TwoFieldFormProps) {
     const [inputField, setInputField] = useState(props.initialValue || "");
-    const [roleField, setRoleField] = useState("");
+    const [roleField, setRoleField] = useState("owner");
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setInputField(event.target.value);
