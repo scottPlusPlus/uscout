@@ -265,12 +265,12 @@ export default function CollectionDetailsPage() {
     }
   }
 
-  const handleAddUser = ({ inputField, roleField }: FormData) => {
-    console.log("handleAddUser for " + inputField);
+  const handleAddUser = (user: FormData) => {
+    console.log("handleAddUser for " + user.inputField);
     const action = ACTION_TYPES.CREATE_USER;
     setAddUserPending(true);
     try {
-      const actionData = JSON.stringify({ inputField, roleField });
+      const actionData = JSON.stringify(user);
       submitAction(action, actionData);
     } catch(error) {
       setAddUserPending(false)
