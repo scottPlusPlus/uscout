@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import CollectionDataDisplay from "~/components/CollectionDataDisplay";
 import { cleanCollectionType } from "~/code/modelUtils";
 import SingleFieldForm from "~/components/SingleFieldForm";
+import DoubleFieldForm from "~/components/DoubleFieldForm";
 import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/front/CssClasses";
 import TagCloud from "~/components/TagCloud";
@@ -59,6 +60,11 @@ export async function action({ request, params }: ActionArgs) {
   return json({ action: aType, error: actionResult.err, data: actionResult.data, time: now });
 }
 
+interface FormData {
+  inputField: string;
+  roleField: string;
+}
+
 
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
@@ -87,7 +93,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 
-//Main Render Function = = = = = 
+//Main Render Function = = = = =
 export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
 
@@ -100,7 +106,6 @@ export default function CollectionDetailsPage() {
 
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
-
   // console.log("have data: " + JSON.stringify(data));
   console.log("have actionData: " + JSON.stringify(ad));
 
@@ -132,6 +137,7 @@ export default function CollectionDetailsPage() {
   const [initialSearchTerms, setInitialSearchTerms] = useState<SearchTermT[]>([]);
   const [admin, setAdmin] = useState(false);
   const [addItemPending, setAddItemPending] = useState(false);
+  const [addUserPending, setAddUserPending] = useState(false);
   const [searchBarRenderCounter, setSearchBarRenderCounter] = useState("");
   const [itemsToView, setItemsToView] = useState<Item[]>([]);
 
@@ -259,6 +265,18 @@ export default function CollectionDetailsPage() {
     }
   }
 
+  const handleAddUser = ({ inputField, roleField }: FormData) => {
+    console.log("handleAddUser for " + inputField);
+    const action = ACTION_TYPES.CREATE_USER;
+    setAddItemPending(true);
+    try {
+      const actionData = JSON.stringify({ inputField, roleField });
+      submitAction(action, actionData);
+    } catch(error) {
+      setAddUserPending(false)
+    }
+  }
+
 
   const handleOverrideCollection = (data: CollectionJson) => {
     console.log("handleOverrideCollection");
@@ -284,11 +302,17 @@ export default function CollectionDetailsPage() {
       )
     }
 
+    const addUserField = () => {
+      return (
+        <DoubleFieldForm inputFieldName="Add User" onSubmit={handleAddUser} disabled={addUserPending} />
+      )
+    }
     if (data.admin) {
       return (
         <>
           <div className="flex justify-between">
             {!addItemPending && addItemField()}
+            {admin && addUserField()}
             {addItemPending && <Spinner/>}
             <div className="justify-end">
               <br></br>
