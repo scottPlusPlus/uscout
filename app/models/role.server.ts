@@ -36,13 +36,13 @@ export async function getRolesTable(): Promise<CollectionRoles[]> {
 }
 
 export async function addUserToCollection(
-  userId: string,
+  actorId: string,
   collectionId: string,
-  role: UserRole
+  roleType: string
 ): Promise<void> {
   let assignedRole: string = "";
 
-  switch (role) {
+  switch (roleType) {
     case "owner":
       assignedRole = ROLE_TYPE.OWNER;
       break;
@@ -59,23 +59,23 @@ export async function addUserToCollection(
       where: {
         collectionId_userId: {
           collectionId: collectionId,
-          userId: userId
+          userId: actorId
         }
       },
       update: {
         role: assignedRole
       },
       create: {
-        id: collectionId + userId,
+        id: collectionId + actorId,
         collectionId: collectionId,
-        userId: userId,
+        userId: actorId,
         role: assignedRole
       }
     });
     console.log("User successfully added to the collection.");
   } catch (error) {
     console.error("Error adding user as owner:", error);
-    console.error(`Error adding user with role ${role}:`, error);
+    console.error(`Error adding user with role ${roleType}:`, error);
   }
 }
 

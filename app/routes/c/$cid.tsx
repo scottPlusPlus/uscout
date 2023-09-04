@@ -50,14 +50,17 @@ export async function action({ request, params }: ActionArgs) {
   const userId = await getUserId(request);
   const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
 
-  const actionResult = await collectionAction(userId, params.cid, aType, inputData);
-  const now = nowHHMMSS();
-  console.log("done with action at " + now);
+  if (userId) {
+    const actionResult = await collectionAction(userId, params.cid, aType, inputData);
 
-  if (actionResult.redirect) {
-    redirect(actionResult.redirect);
-  }
+    const now = nowHHMMSS();
+    console.log("done with action at " + now);
+
+    if (actionResult.redirect) {
+      redirect(actionResult.redirect);
+    }
   return json({ action: aType, error: actionResult.err, data: actionResult.data, time: now });
+}
 }
 
 interface FormData {
