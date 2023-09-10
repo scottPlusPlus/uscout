@@ -222,6 +222,8 @@ export default function CollectionDetailsPage() {
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
       setAddItemPending(false);
       refreshSearch();
+    } else if (ad?.action == ACTION_TYPES.CREATE_USER) {
+      setAddUserPending(false);
     }
   }, [ad?.time]);
 
