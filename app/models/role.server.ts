@@ -42,11 +42,20 @@ export async function addUserToCollection(
   user: string
 ): Promise<void> {
   let assignedRole: string = "";
+  const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
   const userObject = JSON.parse(user);
-  let idByEmailObject = await getIdByEmail(userObject.inputField);
+
+  const idByEmailObject = await getIdByEmail(userObject.inputField);
+
   if (idByEmailObject) {
     const contributorId = idByEmailObject.id;
     const email = idByEmailObject.email;
+
+    // Validate the email
+    if (!EMAIL_REGEX.test(email)) {
+      console.error("Invalid email format.");
+      throw new Error("Invalid email format.");
+    }
 
     switch (userObject.roleField) {
       case "owner":
