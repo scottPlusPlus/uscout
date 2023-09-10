@@ -43,7 +43,6 @@ export async function addUserToCollection(
 ): Promise<void> {
   let assignedRole: string = "";
   const userObject = JSON.parse(user);
-  console.log("USER OBJECT: ", userObject);
   let idByEmailObject = await getIdByEmail(userObject.inputField);
   if (idByEmailObject) {
     const contributorId = idByEmailObject.id;
