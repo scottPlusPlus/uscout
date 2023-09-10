@@ -54,8 +54,8 @@ export async function collectionAction(
     } else if (actionType == ACTION_TYPES.REMOVE_ITEM) {
       await actionRemoveItem(collectionId, actor, inputData);
       redirect = "/c/" + collectionId;
-    } else if (actionType == ACTION_TYPES.REMOVE_ITEM) {
-      await actionAdminAddUser(collectionId, actor, inputData);
+    } else if (actionType == ACTION_TYPES.CREATE_USER) {
+      await actionAdminAddUser(collectionId, inputData);
       redirect = "/c/" + collectionId;
     } else {
       throw "invalid action";
@@ -149,10 +149,6 @@ async function actionRemoveItem(
   return await removeItem(actor, cid, itemUrl);
 }
 
-async function actionAdminAddUser(
-  cid: string,
-  actor: string,
-  roleType: string
-): Promise<void> {
-  await addUserToCollection(actor, cid, roleType);
+async function actionAdminAddUser(cid: string, user: string): Promise<void> {
+  await addUserToCollection(cid, user);
 }
