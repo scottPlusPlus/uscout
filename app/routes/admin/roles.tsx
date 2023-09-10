@@ -26,7 +26,6 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export async function action({ request, params }: ActionArgs) {
-  console.log("HELLO WORLD!");
   invariant(params.cid, "cid not found");
   console.log("CollectionDetailsPage action");
 
@@ -58,6 +57,10 @@ export async function action({ request, params }: ActionArgs) {
       time: now
     });
   }
+}
+
+function isEmptyObject(obj: object) {
+  return Object.keys(obj).length === 0;
 }
 
 export default function AdminPage(props: AdminPageProps) {
@@ -97,11 +100,13 @@ export default function AdminPage(props: AdminPageProps) {
         <td className="px-4 py-2">{r.collectionId}</td>
         <td className="px-4 py-2">{r.userId}</td>
         <td className="px-4 py-2">{r.role}</td>
-        <td className="px-4 py-2">
-          <button onClick={() => handleDeleteUser(r)}>
-            <i className="fas fa-trash-alt"></i>
-          </button>
-        </td>
+        {!isEmptyObject(props) && (
+          <td className="px-4 py-2">
+            <button onClick={() => handleDeleteUser(r)}>
+              <i className="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        )}
       </tr>
     ));
   };
@@ -150,7 +155,9 @@ export default function AdminPage(props: AdminPageProps) {
                 User
               </th>
               <th className="cursor-pointer px-4 py-2">Role</th>
-              <th className="px-4 py-2">Actions</th>{" "}
+              {!isEmptyObject(props) && (
+                <th className="px-4 py-2">Actions</th>
+              )}{" "}
             </tr>
           </thead>
           <tbody>{renderRows()}</tbody>
