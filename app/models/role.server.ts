@@ -100,39 +100,42 @@ export async function addUserToCollection(
   }
 }
 
-// export async function removeUserFromCollection(
-//   userId: string,
-//   collectionId: string,
-//   role: UserRole
-// ): Promise<void> {
-//   if (!userId && !collectionId) {
-//     console.log("User ID or Collection ID is not provided.");
-//     return;
-//   }
+export async function removeUserFromCollection(
+  collectionId: string,
+  user: string
+): Promise<void> {
+  const userObject = JSON.parse(user);
+  const userId = userObject.userId;
+  const role = userObject.role;
 
-//   switch (role) {
-//     case "owner":
-//       console.log("Unable to remove admin from collection.");
-//       return;
-//     case "contributor":
-//       try {
-//         await prisma.collectionRoles.delete({
-//           where: {
-//             collectionId_userId: {
-//               collectionId: collectionId,
-//               userId: userId
-//             }
-//           }
-//         });
-//         console.log("User successfully removed from the collection.");
-//       } catch (error) {
-//         console.error(
-//           `Error removing user ${userId} from collection ${collectionId}:`,
-//           error
-//         );
-//       }
-//     default:
-//       console.log("The specified role does not exist.");
-//       throw new Error("The specified role does not exist.");
-//   }
-// }
+  if (!userId && !collectionId) {
+    console.log("User ID or Collection ID is not provided.");
+    return;
+  }
+
+  switch (role) {
+    case "owner":
+      console.log("Unable to remove admin from collection.");
+      return;
+    case "contributor":
+      try {
+        await prisma.collectionRoles.delete({
+          where: {
+            collectionId_userId: {
+              collectionId: collectionId,
+              userId: userId
+            }
+          }
+        });
+        console.log("User successfully removed from the collection.");
+      } catch (error) {
+        console.error(
+          `Error removing user ${userId} from collection ${collectionId}:`,
+          error
+        );
+      }
+    default:
+      console.log("The specified role does not exist.");
+      throw new Error("The specified role does not exist.");
+  }
+}

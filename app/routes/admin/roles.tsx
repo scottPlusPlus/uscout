@@ -1,9 +1,23 @@
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { CollectionRoles } from "@prisma/client";
-import { useLoaderData } from "@remix-run/react";
-import { LoaderArgs, json } from "@remix-run/server-runtime";
-import { useState } from "react";
+import { useLoaderData, useSubmit } from "@remix-run/react";
+import { useState, useRef } from "react";
 import { getRolesTable } from "~/models/role.server";
 import { requireUserId } from "~/session.server";
+import { ACTION_TYPES, collectionAction } from "~/code/actions";
+import invariant from "tiny-invariant";
+import { getStringOrThrow } from "~/code/formUtils";
+import { getUserId } from "~/session.server";
+import { nowHHMMSS } from "~/code/agnostic/timeUtils";
+interface AdminPageProps {
+  rolesData: CollectionRoles[];
+}
+
+const ACTIONS = {
+  TYPE_FIELD: "a",
+  DATA_FIELD: "aData"
+};
 
 export async function loader({ request, params }: LoaderArgs) {
   const _ = await requireUserId(request);
@@ -11,12 +25,47 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({ roles });
 }
 
-interface AdminPageProps {
-  rolesData: CollectionRoles[];
+export async function action({ request, params }: ActionArgs) {
+  console.log("HELLO WORLD!");
+  invariant(params.cid, "cid not found");
+  console.log("CollectionDetailsPage action");
+
+  console.log("Params: ", params);
+
+  const formData = await request.formData();
+  const aType = getStringOrThrow(formData, ACTIONS.TYPE_FIELD);
+  const userId = await getUserId(request);
+  const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
+
+  if (userId) {
+    const actionResult = await collectionAction(
+      userId,
+      params.cid,
+      aType,
+      inputData
+    );
+
+    const now = nowHHMMSS();
+    console.log("done with action at " + now);
+
+    if (actionResult.redirect) {
+      redirect(actionResult.redirect);
+    }
+    return json({
+      action: aType,
+      error: actionResult.err,
+      data: actionResult.data,
+      time: now
+    });
+  }
 }
 
 export default function AdminPage(props: AdminPageProps) {
   const data = useLoaderData<typeof loader>();
+
+  const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
+  const submit = useSubmit();
+
   const rolesData: CollectionRoles[] = !data
     ? []
     : !data.roles
@@ -49,12 +98,7 @@ export default function AdminPage(props: AdminPageProps) {
         <td className="px-4 py-2">{r.userId}</td>
         <td className="px-4 py-2">{r.role}</td>
         <td className="px-4 py-2">
-          <button
-            onClick={() => {
-              handleDelete(r.id);
-              console.log(r);
-            }}
-          >
+          <button onClick={() => handleDeleteUser(r)}>
             <i className="fas fa-trash-alt"></i>
           </button>
         </td>
@@ -62,10 +106,27 @@ export default function AdminPage(props: AdminPageProps) {
     ));
   };
 
-  const handleDelete = (roleId: string) => {
-    // Handle the deletion logic here.
-    // For instance, you might make an API call to delete the role with the provided ID
-    console.log("Deleting role with ID:", roleId);
+  const handleDeleteUser = (collectionRole: Object) => {
+    console.log("handleDeleteUser for " + collectionRole);
+    const action = ACTION_TYPES.DELETE_USER;
+    // setAddUserPending(true);
+    try {
+      const actionData = JSON.stringify(collectionRole);
+      console.log("actionData: ", actionData);
+      submitAction(action, actionData);
+    } catch (error) {
+      //   setAddUserPending(false);
+    }
+  };
+
+  const submitAction = (action: string, actionData: string) => {
+    console.log(`submitAction:  ${action},  ${actionData}`);
+    const formData = new FormData(formRef.current || undefined);
+    formData.set(ACTIONS.TYPE_FIELD, action);
+    formData.set(ACTIONS.DATA_FIELD, actionData);
+    // handleSearchUpdate(searchTerms, true);
+    console.log("Form Data: ", formData);
+    submit(formData, { method: "delete" });
   };
 
   return (

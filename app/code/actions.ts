@@ -10,7 +10,10 @@ import {
   suggestItem,
   updateItem
 } from "~/models/item.server";
-import { addUserToCollection } from "~/models/role.server";
+import {
+  addUserToCollection,
+  removeUserFromCollection
+} from "~/models/role.server";
 import {
   CollectionJson,
   assertValidCollection
@@ -25,7 +28,8 @@ export const ACTION_TYPES = {
   REMOVE_ITEM: "removeItem",
   CREATE_BLOB: "createBlob",
   UPDATE_BLOB: "updateBlob",
-  CREATE_USER: "createUser"
+  CREATE_USER: "createUser",
+  DELETE_USER: "deleteuser"
 };
 
 export async function collectionAction(
@@ -56,6 +60,9 @@ export async function collectionAction(
       redirect = "/c/" + collectionId;
     } else if (actionType == ACTION_TYPES.CREATE_USER) {
       await actionAdminAddUser(collectionId, inputData);
+      redirect = "/c/" + collectionId;
+    } else if (actionType == ACTION_TYPES.DELETE_USER) {
+      await actionAdminDeleteUser(collectionId, inputData);
       redirect = "/c/" + collectionId;
     } else {
       throw "invalid action";
@@ -151,4 +158,8 @@ async function actionRemoveItem(
 
 async function actionAdminAddUser(cid: string, user: string): Promise<void> {
   await addUserToCollection(cid, user);
+}
+
+async function actionAdminDeleteUser(cid: string, user: string): Promise<void> {
+  await removeUserFromCollection(cid, user);
 }
