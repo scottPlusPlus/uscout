@@ -1,4 +1,6 @@
 import { CollectionRoles } from "@prisma/client";
+import { getIdByEmail } from "./user.server";
+
 import { prisma } from "~/db.server";
 
 export const ROLE_TYPE = {
@@ -36,46 +38,57 @@ export async function getRolesTable(): Promise<CollectionRoles[]> {
 }
 
 export async function addUserToCollection(
-  actorId: string,
   collectionId: string,
-  roleType: string
+  user: string
 ): Promise<void> {
   let assignedRole: string = "";
+  const userObject = JSON.parse(user);
+  console.log("USER OBJECT: ", userObject);
+  let idByEmailObject = await getIdByEmail(userObject.inputField);
+  if (idByEmailObject) {
+    const contributorId = idByEmailObject.id;
+    const email = idByEmailObject.email;
 
-  switch (roleType) {
-    case "owner":
-      assignedRole = ROLE_TYPE.OWNER;
-      break;
-    case "contributor":
-      assignedRole = ROLE_TYPE.CONTRIBUTOR;
-      break;
-    default:
-      console.log("The specified role does not exist.");
-      throw new Error("The specified role does not exist.");
-  }
+    switch (userObject.roleField) {
+      case "owner":
+        assignedRole = ROLE_TYPE.OWNER;
+        break;
+      case "contributor":
+        assignedRole = ROLE_TYPE.CONTRIBUTOR;
+        break;
+      default:
+        console.log("The specified role does not exist.");
+        throw new Error("The specified role does not exist.");
+    }
 
-  try {
-    await prisma.collectionRoles.upsert({
-      where: {
-        collectionId_userId: {
+    try {
+      await prisma.collectionRoles.upsert({
+        where: {
+          collectionId_userId: {
+            collectionId: collectionId,
+            userId: contributorId
+          }
+        },
+        update: {
+          role: assignedRole
+        },
+        create: {
+          id: collectionId + contributorId,
           collectionId: collectionId,
-          userId: actorId
+          userId: contributorId,
+          role: assignedRole
         }
-      },
-      update: {
-        role: assignedRole
-      },
-      create: {
-        id: collectionId + actorId,
-        collectionId: collectionId,
-        userId: actorId,
-        role: assignedRole
-      }
-    });
-    console.log("User successfully added to the collection.");
-  } catch (error) {
-    console.error("Error adding user as owner:", error);
-    console.error(`Error adding user with role ${roleType}:`, error);
+      });
+      console.log("User successfully added to the collection.");
+    } catch (error) {
+      console.error("Error adding user as owner:", error);
+      console.error(
+        `Error adding user with role ${userObject.roleField}:`,
+        error
+      );
+    }
+  } else {
+    throw new Error("User not found by email.");
   }
 }
 
