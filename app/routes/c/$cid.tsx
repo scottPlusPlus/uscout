@@ -13,8 +13,11 @@ import {
   actorMayUpdateCollection,
   getCollection
 } from "~/models/collection.server";
+import AdminPage from "../admin/roles";
+import { getRolesTable } from "~/models/role.server";
 import { getCollectionItems, Item, ItemFront } from "~/models/item.server";
 import { Collection } from "@prisma/client";
+import { CollectionRoles } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -97,6 +100,8 @@ export async function loader({ request, params }: LoaderArgs) {
   var now = nowHHMMSS();
   console.log(`Remix LOADER for c/${params.cid} at ${now}`);
 
+  const roles = await getRolesTable();
+
   var collection = await getCollection(params.cid);
   if (collection == null) {
     throw new Response("Invalid Collection id", { status: 404 });
@@ -114,7 +119,7 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 
   console.log("Remix LOADER returning json");
-  return json({ collection, items, infos, userId, admin });
+  return json({ collection, items, infos, userId, admin, roles });
 }
 
 //Main Render Function = = = = =
@@ -131,6 +136,11 @@ export default function CollectionDetailsPage() {
   // console.log("have data: " + JSON.stringify(data));
   console.log("have actionData: " + JSON.stringify(ad));
 
+  const rolesData: CollectionRoles[] = !data
+    ? []
+    : !data.roles
+    ? []
+    : JSON.parse(JSON.stringify(data.roles));
   const infoMap = new Map<string, ScrapedInfo>();
   data.infos.forEach((info) => {
     const betterInfo = JSON.parse(JSON.stringify(info));
@@ -360,6 +370,7 @@ export default function CollectionDetailsPage() {
           <div className="flex justify-between">
             {!addItemPending && addItemField()}
             {admin && addUserField()}
+            {admin && <AdminPage rolesData={rolesData} />}
             {addItemPending && <Spinner />}
             <div className="justify-end">
               <br></br>
