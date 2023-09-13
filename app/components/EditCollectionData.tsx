@@ -29,6 +29,7 @@ export default function EditCollectionData(props: EditCollectionProps) {
   const [newTitle, setNewTitle] = useState(props.collection.title);
   const [newDescription, setNewDescription] = useState(props.collection.description);
   const [newAddSetting, setNewAddSetting] = useState(settings.addItemSettings);
+  const [newApiKeys, setNewApiKeys] = useState(settings.apiKeys);
 
   const handleSubmit = (event: React.FormEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -37,6 +38,7 @@ export default function EditCollectionData(props: EditCollectionProps) {
     newCollection.description = newDescription;
     const newSettings = { ...settings };
     newSettings.addItemSettings = newAddSetting;
+    newSettings.apiKeys = newApiKeys;
     newCollection.settings = JSON.stringify(newSettings);
     props.onSubmit(newCollection);
   };
@@ -83,6 +85,23 @@ export default function EditCollectionData(props: EditCollectionProps) {
             </option>
           ))}
         </select>
+        <br />
+        <label>
+          Api Keys:
+          <input
+            type="text"
+            className={CSS_CLASSES.INPUT_FIELD}
+            value={newApiKeys.join(", ")}
+            onChange={(event) => {
+              const raw = event.target.value;
+              var arr = raw.split(",");
+              arr = arr.map(v => {
+                return v.trim();
+              });
+              setNewApiKeys(arr);
+            }}
+          />
+        </label>
 
         <br /><br />
         <button type="submit" className={CSS_CLASSES.SUBMIT_BUTTON} onClick={handleSubmit}>Save</button>

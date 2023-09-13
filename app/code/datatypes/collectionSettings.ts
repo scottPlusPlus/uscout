@@ -1,8 +1,10 @@
 import { Collection } from "@prisma/client"
 import { parseJson } from "~/code/jsonUtils";
+import { fillEmptyFields } from "../agnostic/objectUtils";
 
 export type CollectionSettings = {
-    addItemSettings: string
+    addItemSettings: string,
+    apiKeys:Array<String>,
 }
 
 export const ADD_ITEM_SETTING = {
@@ -13,14 +15,17 @@ export const ADD_ITEM_SETTING = {
 
 export function collectionSettings(collection:Collection):CollectionSettings {
     var settings = parseJson<CollectionSettings>(collection.settings);
-    if (settings != null){
-        return settings;
+    const dSettings = defaultSettings();
+    if (!settings){
+        return dSettings;
     }
-    return defaultSettings();
+    fillEmptyFields(settings, dSettings);
+    return settings;
 }
 
 export function defaultSettings():CollectionSettings {
     return {
-        addItemSettings: ADD_ITEM_SETTING.OPEN
+        addItemSettings: ADD_ITEM_SETTING.ADMINS,
+        apiKeys:[]
     }
 }
