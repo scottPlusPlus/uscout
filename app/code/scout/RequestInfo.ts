@@ -9,6 +9,7 @@ import { AsyncQueue } from "../agnostic/AsyncQueue";
 import { wait } from "../agnostic/coreUtils";
 import { fillEmptyFields } from "../agnostic/objectUtils";
 import { logger } from "../log/logger";
+import { getHtml } from "~/models/savedHtmlDb.server";
 
 const staleScrapeQueue = new AsyncQueue();
 
@@ -112,10 +113,10 @@ async function scrapeAndSavePage(
   }
 }
 
-export async function requestMany(urls: string[]): Promise<ScrapedInfo[]> {
-  logger.info("request many", urls);
+export async function requestMany(urls: string[], fullHtml:boolean=false): Promise<ScrapedInfo[]> {
+  logger.info("request many", urls, fullHtml);
   const promises = urls.map((u) => {
-      return requestSingleOrNull(u);
+      return requestSingleOrNull(u, fullHtml);
   });
   const data = await Promise.all(promises);
   const res: ScrapedInfo[] = [];
@@ -129,9 +130,22 @@ export async function requestMany(urls: string[]): Promise<ScrapedInfo[]> {
   return res;
 }
 
-async function requestSingleOrNull(url:string):Promise<UInfoV2 | null> {
+async function requestSingleOrNull(url:string, fullHtml:boolean):Promise<UInfoV2 | null> {
   try {
-    return await requestSingle(url);
+    const res = await requestSingle(url);
+    if (!res || !res.info){
+      return res;
+    }
+    if (fullHtml){
+      logger.info("try fullHtml for " + res.info.url);
+      const savedHtml = await getHtml(res.info.url);
+      if (savedHtml){
+        res.info.fullHtml = savedHtml.html;
+      } else {
+        logger.warn("no fullHtml for " + res.info.url);
+      }
+    }
+    return res;
   } catch (err:any){
     logger.warn('failed to scrape ' + url);
     return Promise.resolve(null);

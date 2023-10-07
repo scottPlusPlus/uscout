@@ -11,6 +11,8 @@ import * as archive from "./archive";
 import axios from "axios";
 import { ScrapedInfo } from "../datatypes/info";
 import { logger } from "../log/logger";
+import { saveHtml } from "~/models/savedHtmlDb.server";
+import { sanitizeUrl } from "../urlUtils";
 
 const domainThrottle = new PromiseQueues();
 
@@ -82,9 +84,11 @@ async function scrapePageImpl(
     }
     const len = html.length;
     logger.info(`${nowHHMMSS()} ${urlStr}: process response of ${len} html chars`);
+    
     const root = parse(html);
 
     const scrapedInfo = await basicScrapeInfoFromHtml(urlStr, html, root);
+    await saveHtml(scrapedInfo.url, html);
 
     var r = await youtube.hydrateFromYoutube(scrapedInfo);
     if (r != null) {
@@ -123,10 +127,11 @@ async function basicScrapeInfoFromHtml(
   html: string,
   root: HTMLElement
 ): Promise<ScrapedInfo> {
+  const saneUrl = sanitizeUrl(urlStr)!;
   const hash = createHash("sha256").update(html).digest("hex");
   const canonicalLink = root.querySelector('link[rel="canonical"]');
   const canonUrl = canonicalLink?.getAttribute("href");
-  const url = canonUrl ? canonUrl : urlStr;
+  const fullUrl = canonUrl ? canonUrl : urlStr;
   const title = root.querySelector("title")?.text || "";
   var summary =
     root.querySelector('meta[name="description"]')?.getAttribute("content") ||
@@ -141,12 +146,12 @@ async function basicScrapeInfoFromHtml(
     ?.getAttribute("content");
   var image = ogImage || twitterImage;
   if (!image) {
-    image = await getScreenshot(url);
+    image = await getScreenshot(fullUrl);
   }
 
   const scrapedInfo: ScrapedInfo = {
-    url: url,
-    fullUrl: url,
+    url: saneUrl,
+    fullUrl: fullUrl,
     hash,
     title,
     summary,

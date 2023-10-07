@@ -2,11 +2,11 @@ import { ScrapedInfo } from "../datatypes/info";
 import { asUndefined } from "../tsUtils";
 
 export async function hydrateFromReddit(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
-  if (!isRedditLink(scrape.url)){
+  if (!isRedditLink(scrape.fullUrl)){
     return null;
   }
 
-  const redditInfo = await scrapeReddit(scrape.url);
+  const redditInfo = await scrapeReddit(scrape.fullUrl);
   if (!redditInfo){
     return null;
   }

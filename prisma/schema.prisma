@@ -37,6 +37,12 @@ model UInfoDb {
   updated  DateTime @updatedAt
 }
 
+model SavedHtml {
+  url        String @id
+  html       String
+  updatedUts Int    @default(0)
+}
+
 model ItemModel {
   id         String   @id
   collection String

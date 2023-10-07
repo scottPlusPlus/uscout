@@ -12,18 +12,12 @@ export const loader = async ({ request }: LoaderArgs) => {
 export const action = async ({ request }: ActionArgs) => {
     console.log("api urls Action " + request.method);
     try {
-      // const fuck = await request.text();
-      // console.log(fuck);
-      // throw(new Error("whatever"));
       const data = await request.json();
-      console.log("data: " + data);
-
-      const j = JSON.stringify(data);
-      console.log(j);
+      logger.info("/api/urls", data);
       const urlsStrings:string[] = data.urls;
       invariant(urlsStrings, "Must pass a 'urls' parameter with array of url-strings you want");
-  
-      const res = await requestMany(urlsStrings);
+      
+      const res = await requestMany(urlsStrings, data.fullHtml ?? false);
       return json({ info: res });
     } catch (err:any){
       logger.error(`api urls Action err! ${err.message}`);

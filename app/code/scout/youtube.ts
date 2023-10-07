@@ -4,10 +4,10 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 
 export async function hydrateFromYoutube(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
-  if (!isYouTubeVideo(scrape.url)) {
+  if (!isYouTubeVideo(scrape.fullUrl)) {
     return null;
   }
-  const youtubeInfo = await scrapeYouTubeVideo(scrape.url);
+  const youtubeInfo = await scrapeYouTubeVideo(scrape.fullUrl);
   if (!youtubeInfo){
     return null;
   }

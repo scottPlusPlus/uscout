@@ -21,6 +21,7 @@ export type ScrapedInfo = {
   publishTime?: number;
   timeUpdated?: number | null;
   timeUpdatedSource?: string;
+  fullHtml?: string;
 };
 
 type scrapeHistory = {

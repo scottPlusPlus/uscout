@@ -4,7 +4,7 @@ const axios = require("axios");
 
 export async function hydrateFromArchive(scrape:ScrapedInfo):Promise<ScrapedInfo|null> {
 
-  const lastModifiedTime = await getLatestSnapshotTime(scrape.url);
+  const lastModifiedTime = await getLatestSnapshotTime(scrape.fullUrl);
   console.log("Last Modified Date: ", lastModifiedTime);
 
   scrape.timeUpdated = lastModifiedTime;
