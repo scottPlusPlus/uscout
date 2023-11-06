@@ -1,5 +1,5 @@
 import { CollectionRoles } from "@prisma/client";
-import { getIdByEmail } from "./user.server";
+import { getUserByEmail } from "./user.server";
 
 import { prisma } from "~/db.server";
 
@@ -45,7 +45,7 @@ export async function addUserToCollection(
   const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
   const userObject = JSON.parse(user);
 
-  const idByEmailObject = await getIdByEmail(userObject.inputField);
+  const idByEmailObject = await getUserByEmail(userObject.inputField);
 
   if (idByEmailObject) {
     const contributorId = idByEmailObject.id;
