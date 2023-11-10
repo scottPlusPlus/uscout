@@ -1,18 +1,30 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData, useSubmit } from "@remix-run/react";
-import { debounce } from 'lodash';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useSubmit
+} from "@remix-run/react";
+import { debounce } from "lodash";
 
 import invariant from "tiny-invariant";
-import { actorMayUpdateCollection, getCollection } from "~/models/collection.server";
+import {
+  actorMayUpdateCollection,
+  getCollection
+} from "~/models/collection.server";
+import AdminPage from "../admin/roles";
+import { getRolesTable } from "~/models/role.server";
 import { getCollectionItems, Item, ItemFront } from "~/models/item.server";
 import { Collection } from "@prisma/client";
+import { CollectionRoles } from "@prisma/client";
 import ItemDisplay from "~/components/ItemDisplay";
 import DynamicInputFields from "~/components/DynamicInputFields";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CollectionDataDisplay from "~/components/CollectionDataDisplay";
 import { cleanCollectionType } from "~/code/modelUtils";
 import SingleFieldForm from "~/components/SingleFieldForm";
+import DoubleFieldForm from "~/components/DoubleFieldForm";
 import { getStringOrThrow } from "~/code/formUtils";
 import { CSS_CLASSES } from "~/code/front/CssClasses";
 import TagCloud from "~/components/TagCloud";
@@ -28,16 +40,21 @@ import { CollectionJson } from "~/code/datatypes/collectionJson";
 import { requestMany } from "~/code/scout/RequestInfo";
 import { ACTION_TYPES, collectionAction } from "~/code/actions";
 import { SearchTermT } from "~/code/datatypes/SearchTermT";
-import { itemsFromRemixData, remapItemPriorities } from "~/code/front/itemUtils";
-import { ADD_ITEM_SETTING, collectionSettings } from "~/code/datatypes/collectionSettings";
+import {
+  itemsFromRemixData,
+  remapItemPriorities
+} from "~/code/front/itemUtils";
+import {
+  ADD_ITEM_SETTING,
+  collectionSettings
+} from "~/code/datatypes/collectionSettings";
 import SearchableItemDisplay from "~/components/SearchableItemDisplay";
-import Spinner from '../../components/Spinner';
-
+import Spinner from "../../components/Spinner";
 
 const ACTIONS = {
   TYPE_FIELD: "a",
-  DATA_FIELD: "aData",
-}
+  DATA_FIELD: "aData"
+};
 
 //Remix Action
 export async function action({ request, params }: ActionArgs) {
@@ -49,22 +66,41 @@ export async function action({ request, params }: ActionArgs) {
   const userId = await getUserId(request);
   const inputData = getStringOrThrow(formData, ACTIONS.DATA_FIELD);
 
-  const actionResult = await collectionAction(userId, params.cid, aType, inputData);
-  const now = nowHHMMSS();
-  console.log("done with action at " + now);
+  if (userId) {
+    const actionResult = await collectionAction(
+      userId,
+      params.cid,
+      aType,
+      inputData
+    );
 
-  if (actionResult.redirect) {
-    redirect(actionResult.redirect);
+    const now = nowHHMMSS();
+    console.log("done with action at " + now);
+
+    if (actionResult.redirect) {
+      redirect(actionResult.redirect);
+    }
+    return json({
+      action: aType,
+      error: actionResult.err,
+      data: actionResult.data,
+      time: now
+    });
   }
-  return json({ action: aType, error: actionResult.err, data: actionResult.data, time: now });
 }
 
+interface FormData {
+  inputField: string;
+  roleField: string;
+}
 
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
   invariant(params.cid, "cid not found");
   var now = nowHHMMSS();
   console.log(`Remix LOADER for c/${params.cid} at ${now}`);
+
+  const roles = await getRolesTable();
 
   var collection = await getCollection(params.cid);
   if (collection == null) {
@@ -83,62 +119,68 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 
   console.log("Remix LOADER returning json");
-  return json({ collection, items, infos, userId, admin });
+  return json({ collection, items, infos, userId, admin, roles });
 }
 
-
-//Main Render Function = = = = = 
+//Main Render Function = = = = =
 export default function CollectionDetailsPage() {
   console.log("rendering CollectionDetailsPage");
 
   const [isLoading, setLoading] = useState<Boolean>(false);
   if (isLoading) {
-    return (
-      <p>Loading...</p>
-    )
+    return <p>Loading...</p>;
   }
 
   const data = useLoaderData<typeof loader>();
   const ad = useActionData<typeof action>();
-
   // console.log("have data: " + JSON.stringify(data));
   console.log("have actionData: " + JSON.stringify(ad));
 
+  const rolesData: CollectionRoles[] = !data
+    ? []
+    : !data.roles
+    ? []
+    : JSON.parse(JSON.stringify(data.roles));
   const infoMap = new Map<string, ScrapedInfo>();
-  data.infos.forEach(info => {
+  data.infos.forEach((info) => {
     const betterInfo = JSON.parse(JSON.stringify(info));
     infoMap.set(info.url, betterInfo);
   });
 
-
-
-  var allItems: Item[] = data.items.map(item => {
+  var allItems: Item[] = data.items.map((item) => {
     return JSON.parse(JSON.stringify(item));
   });
   var loadedItems = itemsFromRemixData(data.items, infoMap);
 
   if (ad?.action == "updateItem") {
     const adddd = JSON.parse(JSON.stringify(ad));
-    const loadedItem = loadedItems.find(item => { return item.url == adddd.data.url });
+    const loadedItem = loadedItems.find((item) => {
+      return item.url == adddd.data.url;
+    });
     console.log("have loaded item: " + JSON.stringify(loadedItem));
   }
 
-
-  const loadedItemUrls = JSON.stringify(loadedItems.map(item => item.url).sort());
+  const loadedItemUrls = JSON.stringify(
+    loadedItems.map((item) => item.url).sort()
+  );
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
   const [showPending, setShowPending] = useState<boolean>(false);
-  const [initialSearchTerms, setInitialSearchTerms] = useState<SearchTermT[]>([]);
+  const [initialSearchTerms, setInitialSearchTerms] = useState<SearchTermT[]>(
+    []
+  );
   const [admin, setAdmin] = useState(false);
   const [addItemPending, setAddItemPending] = useState(false);
+  const [addUserPending, setAddUserPending] = useState(false);
   const [searchBarRenderCounter, setSearchBarRenderCounter] = useState("");
   const [itemsToView, setItemsToView] = useState<Item[]>([]);
 
-
   function refreshItemsWithNewPending(newShowPending: boolean) {
     //console.log("refresh items with pending");
-    const newItemsToView = newShowPending ? loadedItems : loadedItems.filter(item => item.status != "pending");
+    const newItemsToView = newShowPending
+      ? loadedItems
+      : loadedItems.filter((item) => item.status != "pending");
     setShowPending(newShowPending);
     setItemsToView(newItemsToView);
   }
@@ -180,7 +222,9 @@ export default function CollectionDetailsPage() {
     console.log("handling action: " + JSON.stringify(ad));
     if (ad?.action == ACTION_TYPES.UPDATE_ITEM) {
       const actionItem: Item = ad?.data as Item;
-      const index = loadedItems.findIndex(item => item.url === actionItem.url);
+      const index = loadedItems.findIndex(
+        (item) => item.url === actionItem.url
+      );
       console.log(`replaced ${actionItem.url} into index ${index}`);
       loadedItems[index] = actionItem;
       refreshItemsWithNewPending(showPending);
@@ -188,25 +232,30 @@ export default function CollectionDetailsPage() {
     } else if (ad?.action == ACTION_TYPES.ADMIN_ADD_ITEM) {
       setAddItemPending(false);
       refreshSearch();
+    } else if (ad?.action == ACTION_TYPES.CREATE_USER) {
+      setAddUserPending(false);
     }
   }, [ad?.time]);
 
-
-
   const submitAction = (action: string, actionData: string) => {
     console.log(`submitAction:  ${action},  ${actionData}`);
-    const formData = new FormData(formRef.current || undefined)
+    const formData = new FormData(formRef.current || undefined);
     formData.set(ACTIONS.TYPE_FIELD, action);
     formData.set(ACTIONS.DATA_FIELD, actionData);
     // handleSearchUpdate(searchTerms, true);
     submit(formData, { method: "post" });
-  }
+  };
 
   const debouncedOnChange = useCallback(
-    debounce((newUrl) => {
-      sendAnalyticEvent("search", newUrl);
-    }, 500, { trailing: true }), []);
-
+    debounce(
+      (newUrl) => {
+        sendAnalyticEvent("search", newUrl);
+      },
+      500,
+      { trailing: true }
+    ),
+    []
+  );
 
   if (admin && !showPending) {
     console.log("turning on pending...");
@@ -217,19 +266,22 @@ export default function CollectionDetailsPage() {
     refreshItemsWithNewPending(false);
   }
 
-  const handleSearchTermsUpdated = (newTerms: SearchTermT[], oldTerms?: SearchTermT[]) => {
+  const handleSearchTermsUpdated = (
+    newTerms: SearchTermT[],
+    oldTerms?: SearchTermT[]
+  ) => {
     //console.log("cid: handleSearchTermsUpdated: " + JSON.stringify(newTerms));
     //console.log("current url = " + window.location.href);
     const newUrl = new URL(window.location.href);
     if (oldTerms) {
-      oldTerms.forEach(term => {
+      oldTerms.forEach((term) => {
         newUrl.searchParams.delete(term.term);
       });
     }
 
-    newTerms.forEach(term => {
+    newTerms.forEach((term) => {
       if (term.term.length == 0 || term.priority == 0) {
-        return
+        return;
       }
       newUrl.searchParams.set(term.term, term.priority.toString());
     });
@@ -237,14 +289,17 @@ export default function CollectionDetailsPage() {
     if (window.history.replaceState) {
       const newerUrl = new URL(newUrl);
       //console.log("replace state: " + newerUrl);
-      window.history.replaceState({ path: newUrlStr }, document.title, newUrlStr);
+      window.history.replaceState(
+        { path: newUrlStr },
+        document.title,
+        newUrlStr
+      );
     } else {
       //console.log("push state: " + newUrl);
-      window.history.pushState({}, '', newUrlStr);
+      window.history.pushState({}, "", newUrlStr);
     }
     debouncedOnChange(`${newUrl.pathname}${newUrl.search}`);
-  }
-
+  };
 
   const handleAddItem = (newUrl: string) => {
     console.log("handleAddItem for " + newUrl);
@@ -253,24 +308,35 @@ export default function CollectionDetailsPage() {
 
     try {
       submitAction(action, newUrl);
-    } catch(error) {
-      console.log(error)
-      setAddItemPending(false)
+    } catch (error) {
+      console.log(error);
+      setAddItemPending(false);
     }
-  }
+  };
 
+  const handleAddUser = (user: FormData) => {
+    console.log("handleAddUser for " + user.inputField);
+    const action = ACTION_TYPES.CREATE_USER;
+    setAddUserPending(true);
+    try {
+      const actionData = JSON.stringify(user);
+      submitAction(action, actionData);
+    } catch (error) {
+      setAddUserPending(false);
+    }
+  };
 
   const handleOverrideCollection = (data: CollectionJson) => {
     console.log("handleOverrideCollection");
     const action = ACTION_TYPES.OVERRIDE_COLLECTION;
     submitAction(action, JSON.stringify(data));
-  }
+  };
 
   const handleUpdateCollectionData = (collection: Collection) => {
     const collectionStr = JSON.stringify(collection);
     console.log("updating collection: " + collectionStr);
     submitAction(ACTION_TYPES.UPDATE_COLLECTION, collectionStr);
-  }
+  };
 
   const collection = cleanCollectionType(data.collection);
 
@@ -280,16 +346,32 @@ export default function CollectionDetailsPage() {
 
     const addItemField = () => {
       return (
-        <SingleFieldForm name="Add Item" errors={submitError} onSubmit={handleAddItem} disabled={addItemPending} />
-      )
-    }
+        <SingleFieldForm
+          name="Add Item"
+          errors={submitError}
+          onSubmit={handleAddItem}
+          disabled={addItemPending}
+        />
+      );
+    };
 
+    const addUserField = () => {
+      return (
+        <DoubleFieldForm
+          inputFieldName="Add User"
+          onSubmit={handleAddUser}
+          disabled={addUserPending}
+        />
+      );
+    };
     if (data.admin) {
       return (
         <>
           <div className="flex justify-between">
             {!addItemPending && addItemField()}
-            {addItemPending && <Spinner/>}
+            {admin && addUserField()}
+            {admin && <AdminPage rolesData={rolesData} />}
+            {addItemPending && <Spinner />}
             <div className="justify-end">
               <br></br>
               <button
@@ -306,7 +388,11 @@ export default function CollectionDetailsPage() {
 
           {admin && (
             <div>
-              <CollectionJsonComponent collection={collection} items={allItems} onSave={handleOverrideCollection} />
+              <CollectionJsonComponent
+                collection={collection}
+                items={allItems}
+                onSave={handleOverrideCollection}
+              />
             </div>
           )}
         </>
@@ -318,11 +404,7 @@ export default function CollectionDetailsPage() {
       return null;
     }
 
-    return (
-      <div>
-        {addItemField()}
-      </div>
-    )
+    return <div>{addItemField()}</div>;
   }
 
   return (
@@ -330,7 +412,10 @@ export default function CollectionDetailsPage() {
       <Form ref={formRef} className="invisible"></Form>
       <CollectionDataDisplay collection={collection} />
       {admin && (
-        <EditCollectionData collection={collection} onSubmit={handleUpdateCollectionData} />
+        <EditCollectionData
+          collection={collection}
+          onSubmit={handleUpdateCollectionData}
+        />
       )}
 
       <SearchableItemDisplay
@@ -344,9 +429,7 @@ export default function CollectionDetailsPage() {
         background="bg-gradient-to-b from-neutral-200 to-neutral-400"
       />
 
-      <div className={CSS_CLASSES.SECTION_BG}>
-        {footer()}
-      </div>
+      <div className={CSS_CLASSES.SECTION_BG}>{footer()}</div>
     </div>
   );
 }

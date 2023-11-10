@@ -69,6 +69,8 @@ model CollectionRoles {
   collectionId String
   userId       String
   role         String
+
+  @@unique([collectionId, userId])
 }
 
 model User {
