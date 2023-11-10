@@ -1,15 +1,10 @@
-import { createUser, getUserById, getUserByEmail } from "./user.server";
-import {
-  createCollection,
-  getCollection,
-  collectionsForUser
-} from "./collection.server";
+import { createUser, getUserById } from "./user.server";
+import { createCollection, collectionsForUser } from "./collection.server";
 import {
   getRoleType,
   addUserToCollection,
   removeUserFromCollection,
-  ROLE_TYPE,
-  getRolesTable
+  ROLE_TYPE
 } from "./role.server";
 
 test("create a user and get its id", async () => {
@@ -72,7 +67,7 @@ test("create a user and get its id", async () => {
 
   const UserB = {
     inputField: userBById!.email,
-    roleField: "contributor"
+    roleField: ROLE_TYPE.CONTRIBUTOR
   };
 
   const UserBObjectString = JSON.stringify(UserB);
@@ -81,19 +76,22 @@ test("create a user and get its id", async () => {
   userBPermissions = await getRoleType(createdUserB.id, newCollectionData.id);
 
   expect(userBPermissions).toBeTruthy();
+  expect(userCPermissions).toBeNull();
 
   const userBObjectRemove = {
     id: newCollectionData.id + userBById?.id,
     collectionId: newCollectionData.id,
     userId: createdUserB?.id,
-    role: "contributor"
+    role: ROLE_TYPE.CONTRIBUTOR
   };
 
-  // await removeUserFromCollection(JSON.stringify(userBObjectRemove));
+  await removeUserFromCollection(JSON.stringify(userBObjectRemove));
+  userBPermissions = await getRoleType(createdUserB.id, newCollectionData.id);
+  let userCPermissionss = await getRoleType(
+    createdUserC.id,
+    newCollectionData.id
+  );
+
+  expect(userBPermissions).toEqual(null);
+  expect(userCPermissionss).toEqual(null);
 });
-/*REMOVE USER OBJECT:  {
-  id: '123clmdtefar00020z22z5689bb6',
-  collectionId: '123',
-  userId: 'clmdtefar00020z22z5689bb6',
-  role: 'contributor'
-}*/
