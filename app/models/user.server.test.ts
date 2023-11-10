@@ -7,7 +7,8 @@ import {
   ROLE_TYPE
 } from "./role.server";
 
-test("create a user and get its id", async () => {
+test("create users and create a collection. Add other users to the collection and verify their roles. Remove the users from the collection and verify their roles.", async () => {
+  // Creating user A
   const createdUserA = await createUser("userA@gmail.com", "password");
 
   expect(createdUserA).toBeTruthy();
@@ -18,6 +19,7 @@ test("create a user and get its id", async () => {
   expect(userAById).toBeTruthy();
   expect(userAById!.email).toEqual(createdUserA.email);
 
+  // Create the collection for User A
   const newCollectionData = {
     id: "123",
     title: "My New Collection",
@@ -25,13 +27,14 @@ test("create a user and get its id", async () => {
   };
   await createCollection(newCollectionData, createdUserA.id);
 
+  // Verify role type for User A is Owner
   let userAPermissions = await getRoleType(
     createdUserA.id,
     newCollectionData.id
   );
+  expect(userAPermissions).toEqual(ROLE_TYPE.OWNER);
 
-  expect(userAPermissions).toBeTruthy();
-
+  // Create User B
   const createdUserB = await createUser("userB@gmail.com", "password");
 
   expect(createdUserB).toBeTruthy();
@@ -42,6 +45,7 @@ test("create a user and get its id", async () => {
   expect(userBById).toBeTruthy();
   expect(userBById!.email).toEqual(createdUserB.email);
 
+  // Create User C
   const createdUserC = await createUser("userC@gmail.com", "password");
 
   expect(createdUserC).toBeTruthy();
@@ -52,6 +56,7 @@ test("create a user and get its id", async () => {
   expect(userCById).toBeTruthy();
   expect(userCById!.email).toEqual(createdUserC.email);
 
+  // Verify role type for User B is null
   let userBPermissions = await getRoleType(
     createdUserB.id,
     newCollectionData.id
@@ -59,12 +64,14 @@ test("create a user and get its id", async () => {
 
   expect(userBPermissions).toEqual(null);
 
+  // Verify role type for User C is null
   const userCPermissions = await getRoleType(
     createdUserB.id,
     newCollectionData.id
   );
   expect(userCPermissions).toEqual(null);
 
+  // Add User B to User A's collection
   const UserB = {
     inputField: userBById!.email,
     roleField: ROLE_TYPE.CONTRIBUTOR
@@ -73,11 +80,13 @@ test("create a user and get its id", async () => {
   const UserBObjectString = JSON.stringify(UserB);
   await addUserToCollection(newCollectionData.id, UserBObjectString);
 
+  // Verify role type for User B is Contributor
   userBPermissions = await getRoleType(createdUserB.id, newCollectionData.id);
 
-  expect(userBPermissions).toBeTruthy();
+  expect(userBPermissions).toEqual(ROLE_TYPE.CONTRIBUTOR);
   expect(userCPermissions).toBeNull();
 
+  // Remove User B from User A's collection
   const userBObjectRemove = {
     id: newCollectionData.id + userBById?.id,
     collectionId: newCollectionData.id,
@@ -92,6 +101,7 @@ test("create a user and get its id", async () => {
     newCollectionData.id
   );
 
+  // Verify that the role types for User B and User C are null
   expect(userBPermissions).toEqual(null);
   expect(userCPermissionss).toEqual(null);
 });
