@@ -51,6 +51,12 @@ export async function addUserToCollection(
     const contributorId = idByEmailObject.id;
     const email = idByEmailObject.email;
 
+    console.log(`Adding user to collection. User details:`, userObject);
+    console.log(
+      `Email validation passed for ${email}:`,
+      EMAIL_REGEX.test(email)
+    );
+
     // Validate the email
     if (!EMAIL_REGEX.test(email)) {
       console.error("Invalid email format.");
@@ -70,7 +76,7 @@ export async function addUserToCollection(
     }
 
     try {
-      await prisma.collectionRoles.upsert({
+      const upsertResult = await prisma.collectionRoles.upsert({
         where: {
           collectionId_userId: {
             collectionId: collectionId,
@@ -87,6 +93,7 @@ export async function addUserToCollection(
           role: assignedRole
         }
       });
+      console.log(`Upsert operation result:`, upsertResult);
       console.log("User successfully added to the collection.");
     } catch (error) {
       console.error("Error adding user as owner:", error);
@@ -100,19 +107,16 @@ export async function addUserToCollection(
   }
 }
 
-export async function removeUserFromCollection(
-  collectionId: string,
-  user: string
-): Promise<void> {
+export async function removeUserFromCollection(user: string): Promise<void> {
   const userObject = JSON.parse(user);
   const userId = userObject.userId;
+  const collectionId = userObject.collectionId;
   const role = userObject.role;
 
   if (!userId && !collectionId) {
     console.log("User ID or Collection ID is not provided.");
     return;
   }
-
   switch (role) {
     case "owner":
       console.log("Unable to remove admin from collection.");
@@ -128,6 +132,7 @@ export async function removeUserFromCollection(
           }
         });
         console.log("User successfully removed from the collection.");
+        return;
       } catch (error) {
         console.error(
           `Error removing user ${userId} from collection ${collectionId}:`,

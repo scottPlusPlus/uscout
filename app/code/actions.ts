@@ -62,7 +62,7 @@ export async function collectionAction(
       await actionAdminAddUser(collectionId, inputData);
       redirect = "/c/" + collectionId;
     } else if (actionType == ACTION_TYPES.DELETE_USER) {
-      await actionAdminDeleteUser(collectionId, inputData);
+      await actionAdminDeleteUser(inputData);
       redirect = "/c/" + collectionId;
     } else {
       throw "invalid action";
@@ -160,6 +160,6 @@ async function actionAdminAddUser(cid: string, user: string): Promise<void> {
   await addUserToCollection(cid, user);
 }
 
-async function actionAdminDeleteUser(cid: string, user: string): Promise<void> {
-  await removeUserFromCollection(cid, user);
+async function actionAdminDeleteUser(user: string): Promise<void> {
+  await removeUserFromCollection(user);
 }
