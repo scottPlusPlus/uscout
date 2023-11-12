@@ -37,7 +37,7 @@ export default function TwoFieldForm(props: TwoFieldFormProps) {
     event.preventDefault();
     props.onSubmit({ inputField, roleField });
     setInputField(props.initialValue || "");
-    setRoleField("");
+    setRoleField("owner");
   };
 
   const buttonClass = props.disabled
