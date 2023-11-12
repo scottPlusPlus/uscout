@@ -14,6 +14,8 @@ interface AdminPageProps {
   rolesData: CollectionRoles[];
 }
 
+type CollectionRolesWithUserEmail = CollectionRoles & { email?: string };
+
 const ACTIONS = {
   TYPE_FIELD: "a",
   DATA_FIELD: "aData"
@@ -69,36 +71,37 @@ export default function AdminPage(props: AdminPageProps) {
   const formRef = useRef<HTMLFormElement>(null); //Add a form ref.
   const submit = useSubmit();
 
-  const rolesData: CollectionRoles[] = !data
+  const rolesData: CollectionRolesWithUserEmail[] = !data
     ? []
     : !data.roles
     ? []
     : JSON.parse(JSON.stringify(data.roles));
 
-  const [sortBy, doSetSortBy] = useState("updated");
+  const [sortBy, doSetSortBy] = useState("email");
   const setSortBy = (str: string) => {
     doSetSortBy(str);
   };
 
   const sortedEvents = () => {
     console.log("sorting by " + sortBy);
-    const x = rolesData.sort((a, b) => {
+    const roles = rolesData.sort((a, b) => {
       switch (sortBy) {
-        case "userId":
-          return a.userId.localeCompare(b.userId);
+        case "role":
+          return a.role.localeCompare(b.role);
         default:
-          return a.collectionId.localeCompare(b.collectionId);
+          const emailA = a.email ?? "";
+          const emailB = b.email ?? "";
+          return emailA.localeCompare(emailB);
       }
     });
-    return x;
+    return roles;
   };
 
   const renderRows = () => {
     console.log("render rows...");
     return sortedEvents().map((r) => (
-      <tr key={r.id}>
-        <td className="px-4 py-2">{r.collectionId}</td>
-        <td className="px-4 py-2">{r.userId}</td>
+      <tr key={r.email}>
+        <td className="px-4 py-2">{r.email}</td>
         <td className="px-4 py-2">{r.role}</td>
         {!isEmptyObject(props) && (
           <td className="px-4 py-2">
@@ -144,20 +147,17 @@ export default function AdminPage(props: AdminPageProps) {
             <tr>
               <th
                 className="cursor-pointer px-4 py-2"
-                onClick={() => setSortBy("collectionId")}
-              >
-                Collection
-              </th>
-              <th
-                className="cursor-pointer px-4 py-2"
-                onClick={() => setSortBy("userId")}
+                onClick={() => setSortBy("email")}
               >
                 User
               </th>
-              <th className="cursor-pointer px-4 py-2">Role</th>
-              {!isEmptyObject(props) && (
-                <th className="px-4 py-2">Actions</th>
-              )}{" "}
+              <th
+                className="cursor-pointer px-4 py-2"
+                onClick={() => setSortBy("role")}
+              >
+                Role
+              </th>
+              {!isEmptyObject(props) && <th className="px-4 py-2">Actions</th>}{" "}
             </tr>
           </thead>
           <tbody>{renderRows()}</tbody>

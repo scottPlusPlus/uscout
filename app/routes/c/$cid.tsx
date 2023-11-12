@@ -14,7 +14,8 @@ import {
   getCollection
 } from "~/models/collection.server";
 import AdminPage from "../admin/roles";
-import { getRolesTable } from "~/models/role.server";
+import { getUserById } from "~/models/user.server";
+import { getRolesTable, getRoleType } from "~/models/role.server";
 import { getCollectionItems, Item, ItemFront } from "~/models/item.server";
 import { Collection } from "@prisma/client";
 import { CollectionRoles } from "@prisma/client";
@@ -94,25 +95,38 @@ interface FormData {
   roleField: string;
 }
 
+type CollectionRolesWithUserEmail = CollectionRoles & { email: string };
+
 //Remix Loader Func
 export async function loader({ request, params }: LoaderArgs) {
   invariant(params.cid, "cid not found");
   var now = nowHHMMSS();
   console.log(`Remix LOADER for c/${params.cid} at ${now}`);
 
-  const roles = await getRolesTable();
-
   var collection = await getCollection(params.cid);
   if (collection == null) {
     throw new Response("Invalid Collection id", { status: 404 });
   }
-
+  const collectionUsers = collection.id
+    ? (await getRolesTable()).filter(
+        (role) => role.collectionId === collection?.id
+      )
+    : [];
   const items = await getCollectionItems(params.cid);
   const urls = items.map((i) => sanitizeUrl(i.url)!);
   const infos = await requestMany(urls);
 
   console.log(" - have infos, checking admin");
   const userId = await getUserId(request);
+  const roles: CollectionRolesWithUserEmail[] = await Promise.all(
+    collectionUsers.map(async (role) => {
+      const user = await getUserById(role.userId);
+      return {
+        ...role,
+        email: user?.email || ""
+      };
+    })
+  );
   var admin = false;
   if (userId) {
     admin = await actorMayUpdateCollection(userId, params.cid);
