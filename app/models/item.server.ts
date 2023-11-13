@@ -168,11 +168,13 @@ export async function updateItem(
   actorId: string,
   collectionId: string,
   input: ItemFront
-): Promise<Item> {  
+): Promise<Item> {
   console.log("ACTION: Update Item: " + JSON.stringify(input));
 
   const mayUpdate = await actorMayUpdateCollection(actorId, collectionId);
-  if (!mayUpdate) {
+  console.log("May Update: ", mayUpdate)
+  const currentUserRole = await getRoleType(actorId, collectionId)
+  if (!mayUpdate && !currentUserRole) {
     console.log(" - bad permissions :/");
     throw new Error("user does not have permissions");
   }

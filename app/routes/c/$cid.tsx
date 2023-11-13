@@ -161,6 +161,7 @@ export default function CollectionDetailsPage() {
     infoMap.set(info.url, betterInfo);
   });
 
+  const currentUser = data.roles.filter((role) => role.userId === data.userId);
   var allItems: Item[] = data.items.map((item) => {
     return JSON.parse(JSON.stringify(item));
   });
@@ -432,16 +433,19 @@ export default function CollectionDetailsPage() {
         />
       )}
 
-      <SearchableItemDisplay
-        loadedItems={itemsToView}
-        initialTerms={initialSearchTerms}
-        infoMap={infoMap}
-        admin={admin}
-        submitAction={submitAction}
-        setLoading={setLoading}
-        searchTermsUpdatedHandler={handleSearchTermsUpdated}
-        background="bg-gradient-to-b from-neutral-200 to-neutral-400"
-      />
+      {currentUser[0]?.role && (
+        <SearchableItemDisplay
+          loadedItems={itemsToView}
+          initialTerms={initialSearchTerms}
+          infoMap={infoMap}
+          admin={admin}
+          currentUserRole={currentUser[0].role}
+          submitAction={submitAction}
+          setLoading={setLoading}
+          searchTermsUpdatedHandler={handleSearchTermsUpdated}
+          background="bg-gradient-to-b from-neutral-200 to-neutral-400"
+        />
+      )}
 
       <div className={CSS_CLASSES.SECTION_BG}>{footer()}</div>
     </div>

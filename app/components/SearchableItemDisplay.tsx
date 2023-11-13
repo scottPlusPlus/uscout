@@ -16,6 +16,7 @@ type Props = {
     initialTerms: SearchTermT[],
     infoMap: Map<string, ScrapedInfo>,
     admin: boolean,
+    currentUserRole: String,
     submitAction: (action: string, actionData: string) => void
     setLoading: (loading: boolean) => void,
     searchTermsUpdatedHandler?: (newTerms: SearchTermT[], oldTerms?:SearchTermT[]) => void,
@@ -120,6 +121,7 @@ export default function SearchableItemDisplay(props: Props) {
                             onTagClick={handleTagClick}
                             onLinkClick={handleLinkClick}
                             admin={props.admin}
+                            currentUserRole={props.currentUserRole}
                             onItemUpdate={handleItemEdit}
                             onItemDelete={handleRemoveItem}
                         />

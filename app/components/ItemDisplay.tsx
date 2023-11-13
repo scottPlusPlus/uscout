@@ -11,7 +11,8 @@ type ItemProps = {
     onLinkClick?: (url: string) => void,
     onItemUpdate: (arg0: ItemFront) => void,
     onItemDelete: (arg0: ItemFront) => void,
-    admin: boolean
+    admin: boolean,
+    currentUserRole: String
 }
 
 export default function ItemDisplay(props: ItemProps) {
@@ -66,7 +67,7 @@ export default function ItemDisplay(props: ItemProps) {
                 <p className="text-gray-700 text-base">{props.item.comment}</p>
             </div>
             <div>
-                {props.admin && (
+                {props.currentUserRole && (
                     <EditableItem
                         item={props.item}
                         info={props.info}
